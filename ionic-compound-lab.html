@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ionic Compound Lab</title>
+<style>
+:root{
+  --bg:#eaf1f7; --ink:#14263b; --muted:#5b6b7e; --teal:#0e9f8e; --teal-d:#0a7a6d;
+  --good:#16874a; --bad:#cf3b35;
+  --pf:22px; --slotw:132px; --sloth:72px; --subw:58px; --subh:58px;
+  --nameslotw:168px; --romanw:64px; --boxh:300px;
+}
+@media (max-width:640px){
+  :root{--pf:17px; --slotw:92px; --sloth:60px; --subw:46px; --subh:46px; --nameslotw:120px; --romanw:50px; --boxh:260px;}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+#app{max-width:1040px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+h1{font-size:22px;margin:0}
+.hidden{display:none!important}
+button{font:inherit;cursor:pointer}
+.btn{border:0;border-radius:12px;padding:12px 22px;font-weight:700;font-size:17px;background:var(--teal);color:#fff;box-shadow:0 3px 0 var(--teal-d)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--teal-d)}
+.btn.ghost{background:#fff;color:var(--ink);box-shadow:0 2px 0 #c5d2df;border:1px solid #c5d2df}
+.btn.small{padding:7px 12px;font-size:14px;border-radius:9px}
+.card{background:#fff;border-radius:18px;padding:20px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+
+/* start screen */
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 18px}
+@media (max-width:640px){.modes{grid-template-columns:1fr}}
+.mode{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;border-radius:14px;border:3px solid #d3dde8;background:#f8fbfd;color:var(--ink)}
+.mode b{font-size:18px}
+.mode span{font-size:14px;color:var(--muted)}
+.mode.sel{border-color:var(--teal);background:#e8f8f5}
+.opts{display:grid;gap:12px;margin-bottom:20px}
+.opt{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.opt label{font-weight:600}
+.opt small{color:var(--muted)}
+input[type=range]{width:180px}
+select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid #c5d2df}
+.howto{color:var(--muted);font-size:15px;line-height:1.5;margin:0 0 6px}
+
+/* game layout */
+.layout{display:grid;grid-template-columns:1fr 150px;gap:16px;align-items:start}
+@media (max-width:760px){
+  .layout{grid-template-columns:1fr}
+  #side{order:-1;display:flex!important;flex-direction:row;align-items:center;justify-content:center;gap:16px}
+  #tube{height:110px!important}
+}
+#prompt{text-align:center;margin-bottom:12px}
+#promptLabel{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+#promptMain{font-size:36px;font-weight:800;margin-top:4px;min-height:46px}
+#promptMain sub{font-size:.6em}
+#stage{position:relative}
+#box{height:var(--boxh);border-radius:18px;border:3px solid #1d3a5c;position:relative;
+  background:
+   radial-gradient(circle at 20% 30%,rgba(255,255,255,.06) 0 14px,transparent 15px),
+   radial-gradient(circle at 70% 70%,rgba(255,255,255,.05) 0 22px,transparent 23px),
+   radial-gradient(circle at 85% 25%,rgba(255,255,255,.05) 0 10px,transparent 11px),
+   linear-gradient(#17304f,#0f2138)}
+#box .lbl{position:absolute;left:14px;bottom:8px;font-size:12px;letter-spacing:.1em;color:rgba(255,255,255,.35);font-weight:700}
+#build{margin-top:14px;background:#fff;border-radius:18px;padding:18px 12px 12px;box-shadow:0 2px 10px rgba(20,38,59,.08);text-align:center}
+#buildRow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding-bottom:26px}
+.paren{font-size:calc(var(--sloth) * 1.05);font-weight:200;color:#7d8fa3;width:.38em;text-align:center;line-height:1;transition:opacity .15s}
+.paren.off{opacity:0}
+.slot{border:3px dashed #9fb3c8;border-radius:14px;background:#f4f8fb;min-width:var(--slotw);height:var(--sloth);
+  display:flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s}
+.slot::before{content:attr(data-ph);color:#b4c3d3;font-weight:700;font-size:15px}
+.slot.filled::before{content:""}
+.slot.filled{border-style:solid;border-color:#c9d6e3}
+.slot.sub{min-width:var(--subw);width:var(--subw);height:var(--subh);transform:translateY(calc(var(--subh) * .55))}
+.slot.name{min-width:var(--nameslotw)}
+.slot.roman{min-width:var(--romanw);width:var(--romanw);height:var(--subh)}
+.slot.hot{border-color:var(--teal);background:#e1f7f3}
+.slot.good{border-color:var(--good)!important;background:#e5f6ec}
+#buildRow.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+#caption{font-size:13px;color:var(--muted);margin-top:2px}
+#meter{margin-top:8px;font-weight:700;font-size:16px;color:var(--muted)}
+#meter b{padding:2px 10px;border-radius:999px;background:#eef2f6;margin-left:4px}
+#meter.zero b{background:#d8f2e3;color:var(--good)}
+#meter.nonzero b{background:#fdeacc;color:#a85d00}
+#controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+#feedback{flex:1;min-width:200px;font-weight:700;font-size:16px;min-height:24px}
+#feedback.good{color:var(--good)} #feedback.bad{color:var(--bad)} #feedback.info{color:var(--muted)}
+
+/* pieces */
+.piece{position:absolute;left:0;top:0;padding:8px 14px;border-radius:12px;font-weight:800;font-size:var(--pf);line-height:1.15;
+  cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;white-space:nowrap;color:#fff;text-align:center;
+  box-shadow:0 3px 8px rgba(0,0,0,.3);will-change:transform;animation:fadein .35s}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.piece.ion{background:linear-gradient(#3f7dff,#2459d6)}
+.piece.num{background:linear-gradient(#ffa63f,#e07a10);min-width:44px}
+.piece.name{background:linear-gradient(#9266ff,#6a3de0)}
+.piece.roman{background:linear-gradient(#ebb923,#bf8f0a);min-width:44px}
+.piece.dragging{cursor:grabbing;box-shadow:0 12px 24px rgba(0,0,0,.4)}
+.piece sub{font-size:.6em;vertical-align:baseline;position:relative;top:.25em}
+.piece .chg{font-size:11px;font-weight:600;opacity:.9;margin-top:1px}
+
+/* test tube */
+#side{background:#fff;border-radius:18px;padding:14px;text-align:center;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+#tube{height:300px;width:auto;display:block;margin:0 auto}
+#tube.pop{animation:pop .5s}
+@keyframes pop{50%{transform:scale(1.07)}}
+#liqGroup{transition:transform .9s cubic-bezier(.3,.8,.3,1)}
+.bub{fill:rgba(255,255,255,.65);animation:rise 2.6s infinite ease-in}
+@keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(calc(var(--rise,0px) * -1));opacity:0}}
+#count{font-size:22px;font-weight:800;margin-top:6px}
+#countLbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* end overlay */
+.overlay{position:fixed;inset:0;background:rgba(15,33,56,.7);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5000}
+.overlay .card{max-width:440px;width:100%;text-align:center}
+.overlay h2{margin:0 0 6px;font-size:28px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 20px}
+.stat{background:#f1f6fa;border-radius:12px;padding:10px}
+.stat b{display:block;font-size:24px}
+.stat span{font-size:13px;color:var(--muted)}
+.end-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>⚗️ Ionic Compound Lab</h1>
+    <button class="btn ghost small hidden" id="quitBtn">Settings</button>
+  </header>
+
+  <!-- START SCREEN -->
+  <section id="start" class="card">
+    <p class="howto">Pieces are floating around in the mix, so you will have to hunt for the ones you need. Drag them into the build area, then press <b>Check</b>. Every correct answer fills the test tube. Fill it to finish!</p>
+    <div class="modes">
+      <button class="mode sel" data-mode="formula"><b>Name → Formula</b><span>Given a name like “calcium chloride,” build the formula.</span></button>
+      <button class="mode" data-mode="naming"><b>Formula → Name</b><span>Given a formula like CaCl₂, build the name.</span></button>
+      <button class="mode" data-mode="mixed"><b>Mixed</b><span>A random blend of both types.</span></button>
+    </div>
+    <div class="opts">
+      <div class="opt"><label for="nRange">Problems per round</label><input type="range" id="nRange" min="12" max="15" value="12"><b id="nOut">12</b></div>
+      <div class="opt"><label for="speedSel">Piece speed</label>
+        <select id="speedSel"><option value="slow">Slow</option><option value="medium" selected>Medium</option><option value="fast">Fast</option></select></div>
+      <div class="opt"><input type="checkbox" id="chgChk"><label for="chgChk">Show ion charges on the pieces</label><small>(Name → Formula)</small></div>
+      <div class="opt"><input type="checkbox" id="meterChk" checked><label for="meterChk">Show live net-charge meter</label><small>(Name → Formula)</small></div>
+    </div>
+    <button class="btn" id="startBtn">Start</button>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="hidden">
+    <div class="layout">
+      <div class="main">
+        <div id="prompt"><div id="promptLabel"></div><div id="promptMain"></div></div>
+        <div id="stage">
+          <div id="box"><span class="lbl">THE MIX</span></div>
+          <div id="build">
+            <div id="buildRow"></div>
+            <div id="caption"></div>
+            <div id="meter" class="hidden">Net charge: <b id="meterVal">—</b></div>
+          </div>
+        </div>
+        <div id="controls">
+          <button class="btn" id="checkBtn">Check</button>
+          <button class="btn ghost" id="clearBtn">Return pieces</button>
+          <div id="feedback" class="info"></div>
+        </div>
+      </div>
+      <aside id="side">
+        <svg id="tube" viewBox="0 0 100 300" role="img" aria-label="Progress test tube">
+          <defs>
+            <clipPath id="tubeClip"><path d="M26 14 L26 252 A24 24 0 0 0 74 252 L74 14 Z"/></clipPath>
+            <linearGradient id="liq" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#6ff0dc"/><stop offset="1" stop-color="#0e9f8e"/></linearGradient>
+          </defs>
+          <g clip-path="url(#tubeClip)">
+            <g id="liqGroup" style="transform:translateY(264px)"><rect x="20" y="14" width="60" height="264" fill="url(#liq)"/></g>
+            <g id="bubbles" style="--rise:0px">
+              <circle class="bub" cx="38" cy="266" r="3" style="animation-delay:0s"/>
+              <circle class="bub" cx="55" cy="268" r="4" style="animation-delay:.7s"/>
+              <circle class="bub" cx="65" cy="266" r="2.5" style="animation-delay:1.3s"/>
+              <circle class="bub" cx="46" cy="268" r="2" style="animation-delay:1.9s"/>
+              <circle class="bub" cx="60" cy="266" r="3" style="animation-delay:2.3s"/>
+            </g>
+          </g>
+          <path d="M24 12 L24 252 A26 26 0 0 0 76 252 L76 12" fill="none" stroke="#7d93ab" stroke-width="4" stroke-linecap="round"/>
+          <path d="M15 12 H85" stroke="#7d93ab" stroke-width="5" stroke-linecap="round"/>
+          <path d="M33 30 V220" stroke="#fff" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div id="countLbl">Test tube</div>
+          <div id="count">0 / 12</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- END -->
+  <div id="end" class="overlay hidden">
+    <div class="card">
+      <h2>🎉 Test tube full!</h2>
+      <div>Nice work. You finished the round.</div>
+      <div class="stats">
+        <div class="stat"><b id="stProb">12</b><span>Problems solved</span></div>
+        <div class="stat"><b id="stFirst">0</b><span>Right on first try</span></div>
+        <div class="stat"><b id="stChecks">0</b><span>Total checks</span></div>
+        <div class="stat"><b id="stTime">0:00</b><span>Time</span></div>
+      </div>
+      <div class="end-actions">
+        <button class="btn" id="againBtn">Play again</button>
+        <button class="btn ghost" id="settingsBtn">Change settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const ROMAN = {1:'I',2:'II',3:'III',4:'IV'};
+
+/* ---------- ion data ---------- */
+function cat(key,sym,name,charges,poly){return {id:'c:'+key,sym:sym,name:name,charges:charges,poly:!!poly,isCat:true};}
+function an(key,sym,name,charge,poly){return {id:'a:'+key,sym:sym,name:name,charge:charge,poly:!!poly,isCat:false};}
+const CATIONS = [
+  cat('Li','Li','lithium',[1]), cat('Na','Na','sodium',[1]), cat('K','K','potassium',[1]), cat('Ag','Ag','silver',[1]),
+  cat('Mg','Mg','magnesium',[2]), cat('Ca','Ca','calcium',[2]), cat('Ba','Ba','barium',[2]), cat('Zn','Zn','zinc',[2]),
+  cat('Al','Al','aluminum',[3]),
+  cat('NH4','NH<sub>4</sub>','ammonium',[1],true),
+  cat('Fe','Fe','iron',[2,3]), cat('Cu','Cu','copper',[1,2]), cat('Pb','Pb','lead',[2,4]),
+  cat('Sn','Sn','tin',[2,4]), cat('Co','Co','cobalt',[2,3]), cat('Cr','Cr','chromium',[2,3])
+];
+const ANIONS = [
+  an('F','F','fluoride',1), an('Cl','Cl','chloride',1), an('Br','Br','bromide',1), an('I','I','iodide',1),
+  an('O','O','oxide',2), an('S','S','sulfide',2), an('N','N','nitride',3), an('P','P','phosphide',3),
+  an('OH','OH','hydroxide',1,true), an('NO3','NO<sub>3</sub>','nitrate',1,true),
+  an('C2H3O2','C<sub>2</sub>H<sub>3</sub>O<sub>2</sub>','acetate',1,true),
+  an('SO4','SO<sub>4</sub>','sulfate',2,true), an('CO3','CO<sub>3</sub>','carbonate',2,true),
+  an('PO4','PO<sub>4</sub>','phosphate',3,true)
+];
+
+/* ---------- helpers ---------- */
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function rand(a,b){return a+Math.random()*(b-a);}
+function fmtTime(s){const m=Math.floor(s/60);const r=Math.floor(s%60);return m+':'+(r<10?'0':'')+r;}
+function formulaPart(ion,sub){
+  if(sub===1) return ion.sym;
+  return (ion.poly ? '('+ion.sym+')' : ion.sym) + '<sub>'+sub+'</sub>';
+}
+
+/* ---------- state ---------- */
+const cfg = {mode:'formula', n:12, speed:'medium', showCharges:false, meter:true};
+const SPEEDS = {slow:32, medium:58, fast:92};
+let problems=[], idx=-1, cur=null;
+let correctCount=0, firstTry=0, totalChecks=0, startTime=0;
+let pieces=[], slots=[], slotMap={};
+let bounds={x0:0,y0:0,x1:400,y1:300};
+let locked=false, dragging=null, zTop=10;
+
+const stage=$('#stage'), box=$('#box'), buildRow=$('#buildRow');
+
+/* ---------- problem generation ---------- */
+function makeProblem(cationObj,c,anionObj,mode){
+  const a=anionObj.charge, g=gcd(c,a);
+  const multi=cationObj.charges.length>1;
+  const p={mode:mode,cat:cationObj,an:anionObj,c:c,a:a,catSub:a/g,anSub:c/g,multi:multi,roman:multi?ROMAN[c]:null};
+  p.nameText=cationObj.name+(multi?'('+ROMAN[c]+')':'')+' '+anionObj.name;
+  p.formulaHTML=formulaPart(cationObj,p.catSub)+formulaPart(anionObj,p.anSub);
+  return p;
+}
+function buildProblemList(n){
+  const combos=[];
+  CATIONS.forEach(ct=>ct.charges.forEach(c=>ANIONS.forEach(a=>combos.push({cat:ct,c:c,an:a}))));
+  shuffle(combos);
+  const multi=combos.filter(x=>x.cat.charges.length>1);
+  const fixed=combos.filter(x=>x.cat.charges.length===1);
+  const nm=Math.round(n*0.35);
+  const picks=shuffle(multi.slice(0,nm).concat(fixed.slice(0,n-nm)));
+  let modes=[];
+  for(let i=0;i<n;i++){
+    modes.push(cfg.mode==='mixed' ? (i%2?'formula':'naming') : cfg.mode);
+  }
+  if(cfg.mode==='mixed') shuffle(modes);
+  return picks.map((x,i)=>makeProblem(x.cat,x.c,x.an,modes[i]));
+}
+
+/* ---------- slots ---------- */
+function mkSlot(id,kind,cls,ph){
+  const el=document.createElement('div');
+  el.className='slot '+cls; el.dataset.ph=ph;
+  const s={id:id,kind:kind,el:el,piece:null,cx:0,cy:0,w:0,h:0};
+  slots.push(s); slotMap[id]=s; return s;
+}
+function mkSpan(txt,cls,id){
+  const e=document.createElement('span'); e.className=cls; e.textContent=txt; if(id)e.id=id; return e;
+}
+function buildSlots(){
+  buildRow.innerHTML=''; slots=[]; slotMap={};
+  if(cur.mode==='formula'){
+    const s1=mkSlot('ion1','ion','ion','ion'), u1=mkSlot('sub1','num','sub','#');
+    const s2=mkSlot('ion2','ion','ion','ion'), u2=mkSlot('sub2','num','sub','#');
+    buildRow.append(mkSpan('(','paren off','pl1'),s1.el,mkSpan(')','paren off','pr1'),u1.el,
+                    mkSpan('(','paren off','pl2'),s2.el,mkSpan(')','paren off','pr2'),u2.el);
+    $('#caption').textContent='Leave a subscript slot empty if the subscript is 1.';
+  } else {
+    const n1=mkSlot('nameC','name','name','name'), r=mkSlot('roman','roman','roman','–'), n2=mkSlot('nameA','name','name','name');
+    buildRow.append(n1.el,mkSpan('(','paren','x'),r.el,mkSpan(')','paren','y'),n2.el);
+    $('#caption').textContent='The roman numeral slot is only for metals that can have more than one charge. Leave it empty if it is not needed.';
+  }
+}
+function updateParens(){
+  if(!cur||cur.mode!=='formula') return;
+  [1,2].forEach(k=>{
+    const ip=slotMap['ion'+k].piece, sp=slotMap['sub'+k].piece;
+    const sub=sp?sp.value:1;
+    const show=!!(ip&&ip.ion.poly&&sub>1);
+    $('#pl'+k).classList.toggle('off',!show);
+    $('#pr'+k).classList.toggle('off',!show);
+  });
+}
+function ionCharge(ion){
+  if(ion.isCat){
+    if(ion.charges.length>1 && cur && ion.id===cur.cat.id) return cur.c;
+    return ion.charges[0];
+  }
+  return -ion.charge;
+}
+function updateMeter(){
+  const m=$('#meter');
+  if(!cur||cur.mode!=='formula'||!cfg.meter){m.classList.add('hidden');return;}
+  m.classList.remove('hidden');
+  const i1=slotMap.ion1.piece,i2=slotMap.ion2.piece;
+  const v=$('#meterVal');
+  if(!i1||!i2){v.textContent='—';m.className='';return;}
+  const s1=slotMap.sub1.piece?slotMap.sub1.piece.value:1;
+  const s2=slotMap.sub2.piece?slotMap.sub2.piece.value:1;
+  const net=ionCharge(i1.ion)*s1+ionCharge(i2.ion)*s2;
+  v.textContent=(net>0?'+':net<0?'−':'')+Math.abs(net);
+  m.className=net===0?'zero':'nonzero';
+}
+function refreshSlotUI(){
+  slots.forEach(s=>{s.el.classList.toggle('filled',!!s.piece);});
+  updateParens(); updateMeter();
+  requestAnimationFrame(layout);
+}
+
+/* ---------- pieces ---------- */
+function ionPieceHTML(ion){
+  let h='<div>'+ion.sym+'</div>';
+  if(cfg.showCharges){
+    const t=ion.isCat?ion.charges.map(c=>c+'+').join(' or '):ion.charge+'−';
+    h+='<div class="chg">'+t+'</div>';
+  }
+  return h;
+}
+function createPiece(spec){
+  const el=document.createElement('div');
+  el.className='piece '+spec.kind;
+  el.innerHTML=spec.html;
+  stage.appendChild(el);
+  const p=Object.assign({},spec,{el:el,x:0,y:0,w:el.offsetWidth,h:el.offsetHeight,state:'float',slot:null,
+    ang:rand(0,Math.PI*2),turnRate:rand(-.8,.8),spd:SPEEDS[cfg.speed]*rand(.7,1.3),tx:0,ty:0});
+  p.x=rand(bounds.x0,Math.max(bounds.x0,bounds.x1-p.w));
+  p.y=rand(bounds.y0,Math.max(bounds.y0,bounds.y1-p.h));
+  el.addEventListener('pointerdown',e=>startDrag(e,p));
+  pieces.push(p);
+  return p;
+}
+function pick(list,excludeIds,k){
+  return shuffle(list.filter(x=>excludeIds.indexOf(x.id)<0)).slice(0,k);
+}
+function buildPieces(){
+  pieces.forEach(p=>p.el.remove()); pieces=[];
+  const specs=[];
+  const ex=[cur.cat.id,cur.an.id];
+  if(cur.mode==='formula'){
+    [cur.cat,cur.an].concat(pick(CATIONS,ex,3),pick(ANIONS,ex,3)).forEach(ion=>{
+      specs.push({kind:'ion',ion:ion,html:ionPieceHTML(ion)});
+    });
+    for(let n=1;n<=6;n++) specs.push({kind:'num',value:n,html:String(n)});
+  } else {
+    [cur.cat,cur.an].concat(pick(CATIONS,ex,3),pick(ANIONS,ex,3)).forEach(ion=>{
+      specs.push({kind:'name',ion:ion,html:ion.name});
+    });
+    for(let n=1;n<=4;n++) specs.push({kind:'roman',value:n,html:ROMAN[n]});
+  }
+  shuffle(specs).forEach(createPiece);
+}
+
+/* ---------- layout ---------- */
+function layout(){
+  const sr=stage.getBoundingClientRect();
+  bounds={x0:box.offsetLeft+8,y0:box.offsetTop+8,x1:box.offsetLeft+box.offsetWidth-8,y1:box.offsetTop+box.offsetHeight-8};
+  slots.forEach(s=>{
+    const r=s.el.getBoundingClientRect();
+    s.cx=r.left-sr.left+r.width/2; s.cy=r.top-sr.top+r.height/2; s.w=r.width; s.h=r.height;
+  });
+  pieces.forEach(p=>{
+    p.w=p.el.offsetWidth; p.h=p.el.offsetHeight;
+    if(p.state==='float'){
+      p.x=Math.min(Math.max(p.x,bounds.x0),Math.max(bounds.x0,bounds.x1-p.w));
+      p.y=Math.min(Math.max(p.y,bounds.y0),Math.max(bounds.y0,bounds.y1-p.h));
+    }
+  });
+}
+
+/* ---------- movement loop ---------- */
+let lastT=performance.now();
+function tick(ts){
+  const dt=Math.min(0.05,(ts-lastT)/1000||0.016); lastT=ts;
+  for(const p of pieces){
+    if(p.state==='float'){
+      p.turnRate+=(Math.random()-.5)*4*dt;
+      if(p.turnRate>1.1)p.turnRate=1.1; if(p.turnRate<-1.1)p.turnRate=-1.1;
+      p.ang+=p.turnRate*dt;
+      p.x+=Math.cos(p.ang)*p.spd*dt; p.y+=Math.sin(p.ang)*p.spd*dt;
+      if(p.x<bounds.x0){p.x=bounds.x0;p.ang=Math.PI-p.ang;}
+      else if(p.x>bounds.x1-p.w){p.x=Math.max(bounds.x0,bounds.x1-p.w);p.ang=Math.PI-p.ang;}
+      if(p.y<bounds.y0){p.y=bounds.y0;p.ang=-p.ang;}
+      else if(p.y>bounds.y1-p.h){p.y=Math.max(bounds.y0,bounds.y1-p.h);p.ang=-p.ang;}
+    } else if(p.state==='return'){
+      const k=Math.min(1,dt*7);
+      p.x+=(p.tx-p.x)*k; p.y+=(p.ty-p.y)*k;
+      if(Math.abs(p.tx-p.x)+Math.abs(p.ty-p.y)<4){p.state='float';p.ang=rand(0,Math.PI*2);}
+    } else if(p.state==='slot'){
+      const s=p.slot,k=Math.min(1,dt*16);
+      p.x+=(s.cx-p.w/2-p.x)*k; p.y+=(s.cy-p.h/2-p.y)*k;
+    }
+    p.el.style.transform='translate('+p.x.toFixed(1)+'px,'+p.y.toFixed(1)+'px)';
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------- dragging ---------- */
+function releaseSlot(p){
+  if(p.slot){p.slot.piece=null;p.slot.el.classList.remove('good');p.slot=null;}
+}
+function returnToBox(p){
+  p.state='return';
+  p.tx=rand(bounds.x0,Math.max(bounds.x0,bounds.x1-p.w));
+  p.ty=rand(bounds.y0,Math.max(bounds.y0,bounds.y1-p.h));
+}
+function startDrag(e,p){
+  if(locked||dragging) return;
+  e.preventDefault();
+  layout();
+  const sr=stage.getBoundingClientRect();
+  if(p.state==='slot'){releaseSlot(p);refreshSlotUI();}
+  p.state='drag'; p.el.classList.add('dragging'); p.el.style.zIndex=++zTop;
+  dragging={p:p,dx:e.clientX-sr.left-p.x,dy:e.clientY-sr.top-p.y,id:e.pointerId};
+  try{p.el.setPointerCapture(e.pointerId);}catch(_){}
+}
+function slotAt(p){
+  const cx=p.x+p.w/2, cy=p.y+p.h/2;
+  let best=null,bd=1e9;
+  slots.forEach(s=>{
+    if(s.kind!==p.kind) return;
+    const m=14;
+    if(Math.abs(cx-s.cx)<=s.w/2+m && Math.abs(cy-s.cy)<=s.h/2+m){
+      const d=Math.hypot(cx-s.cx,cy-s.cy);
+      if(d<bd){bd=d;best=s;}
+    }
+  });
+  return best;
+}
+window.addEventListener('pointermove',e=>{
+  if(!dragging||e.pointerId!==dragging.id) return;
+  const p=dragging.p, sr=stage.getBoundingClientRect();
+  p.x=Math.min(Math.max(e.clientX-sr.left-dragging.dx,-10),sr.width-p.w+10);
+  p.y=Math.min(Math.max(e.clientY-sr.top-dragging.dy,-10),sr.height-p.h+10);
+  const hot=slotAt(p);
+  slots.forEach(s=>s.el.classList.toggle('hot',s===hot));
+});
+function endDrag(e){
+  if(!dragging||e.pointerId!==dragging.id) return;
+  const p=dragging.p; dragging=null;
+  p.el.classList.remove('dragging');
+  slots.forEach(s=>s.el.classList.remove('hot'));
+  const s=slotAt(p);
+  if(s){
+    if(s.piece){const old=s.piece;releaseSlot(old);returnToBox(old);}
+    s.piece=p; p.slot=s; p.state='slot';
+  } else {
+    const cx=p.x+p.w/2, cy=p.y+p.h/2;
+    if(cx>bounds.x0&&cx<bounds.x1&&cy>bounds.y0&&cy<bounds.y1){p.state='float';p.ang=rand(0,Math.PI*2);}
+    else returnToBox(p);
+  }
+  setFeedback('','info');
+  refreshSlotUI();
+}
+window.addEventListener('pointerup',endDrag);
+window.addEventListener('pointercancel',endDrag);
+
+/* ---------- checking ---------- */
+function ok(){return {status:'ok'};}
+function bad(msg){return {status:'bad',msg:msg};}
+function incomplete(msg){return {status:'incomplete',msg:msg};}
+function checkFormula(){
+  const i1=slotMap.ion1.piece,i2=slotMap.ion2.piece;
+  if(!i1||!i2) return incomplete('Place an ion in both ion slots first.');
+  const n1=slotMap.sub1.piece?slotMap.sub1.piece.value:1;
+  const n2=slotMap.sub2.piece?slotMap.sub2.piece.value:1;
+  if(i1.ion.id===cur.cat.id&&i2.ion.id===cur.an.id){
+    if(n1===cur.catSub&&n2===cur.anSub) return ok();
+    const net=cur.c*n1-cur.a*n2;
+    if(net!==0) return bad('The net charge is '+(net>0?'+':'−')+Math.abs(net)+', not 0. Adjust the subscripts.');
+    return bad('The charges balance, but the subscripts are not in the simplest whole-number ratio.');
+  }
+  if(i1.ion.id===cur.an.id&&i2.ion.id===cur.cat.id) return bad('The positive ion (cation) is written first.');
+  return bad('At least one ion does not match the name. Re-read the compound name.');
+}
+function checkNaming(){
+  const c=slotMap.nameC.piece,a=slotMap.nameA.piece,r=slotMap.roman.piece;
+  if(!c||!a) return incomplete('Place a name in both name slots first.');
+  if(c.ion.id!==cur.cat.id||a.ion.id!==cur.an.id){
+    if(c.ion.id===cur.an.id&&a.ion.id===cur.cat.id) return bad('Name the positive ion (cation) first.');
+    return bad('At least one name does not match the formula.');
+  }
+  if(cur.multi){
+    if(!r) return bad(cur.cat.name+' can form more than one charge, so it needs a roman numeral.');
+    if(r.value!==cur.c) return bad('The roman numeral does not match the metal’s charge. Use the charge of the anion to work out the charge on the metal.');
+  } else if(r){
+    return bad(cur.cat.name+' only forms one kind of ion, so no roman numeral is needed.');
+  }
+  return ok();
+}
+let wrongHere=0;
+function setFeedback(msg,cls){const f=$('#feedback');f.textContent=msg;f.className=cls||'info';}
+function returnAll(){
+  slots.forEach(s=>{if(s.piece){const p=s.piece;releaseSlot(p);returnToBox(p);}});
+  refreshSlotUI();
+}
+function onCheck(){
+  if(locked||!cur) return;
+  const res=cur.mode==='formula'?checkFormula():checkNaming();
+  if(res.status==='incomplete'){setFeedback(res.msg,'info');return;}
+  totalChecks++;
+  if(res.status==='ok'){
+    locked=true;
+    if(wrongHere===0) firstTry++;
+    correctCount++;
+    slots.forEach(s=>{if(s.piece)s.el.classList.add('good');});
+    setFeedback('Correct! ✔','good');
+    setTube(correctCount/cfg.n);
+    setTimeout(()=>{
+      if(correctCount>=cfg.n) showEnd(); else nextProblem();
+    },1500);
+  } else {
+    wrongHere++;
+    locked=true;
+    setFeedback(res.msg,'bad');
+    buildRow.classList.remove('shake'); void buildRow.offsetWidth; buildRow.classList.add('shake');
+    setTimeout(()=>{returnAll();locked=false;},650);
+  }
+}
+
+/* ---------- tube ---------- */
+function setTube(level){
+  level=Math.max(0,Math.min(1,level));
+  $('#liqGroup').style.transform='translateY('+((1-level)*264)+'px)';
+  $('#bubbles').style.setProperty('--rise',(level*225)+'px');
+  $('#bubbles').style.opacity=level>0?1:0;
+  $('#count').textContent=correctCount+' / '+cfg.n;
+  const t=$('#tube'); t.classList.remove('pop'); void t.getBoundingClientRect(); if(level>0) t.classList.add('pop');
+}
+
+/* ---------- flow ---------- */
+function nextProblem(){
+  idx++; cur=problems[idx]; wrongHere=0; locked=false;
+  $('#promptLabel').textContent=cur.mode==='formula'?'Build the formula for':'Name this compound';
+  $('#promptMain').innerHTML=cur.mode==='formula'?cur.nameText:cur.formulaHTML;
+  setFeedback('','info');
+  buildSlots();
+  layout();
+  buildPieces();
+  refreshSlotUI();
+  setTimeout(layout,60);
+}
+function startGame(){
+  cfg.n=parseInt($('#nRange').value,10);
+  cfg.speed=$('#speedSel').value;
+  cfg.showCharges=$('#chgChk').checked;
+  cfg.meter=$('#meterChk').checked;
+  problems=buildProblemList(cfg.n); idx=-1;
+  correctCount=0; firstTry=0; totalChecks=0; startTime=performance.now();
+  $('#start').classList.add('hidden'); $('#end').classList.add('hidden');
+  $('#game').classList.remove('hidden'); $('#quitBtn').classList.remove('hidden');
+  setTube(0); $('#count').textContent='0 / '+cfg.n;
+  nextProblem();
+}
+function showEnd(){
+  locked=true;
+  $('#stProb').textContent=cfg.n;
+  $('#stFirst').textContent=firstTry;
+  $('#stChecks').textContent=totalChecks;
+  $('#stTime').textContent=fmtTime((performance.now()-startTime)/1000);
+  $('#end').classList.remove('hidden');
+}
+function toSettings(){
+  pieces.forEach(p=>p.el.remove()); pieces=[]; slots=[]; slotMap={}; cur=null; locked=false; dragging=null;
+  $('#end').classList.add('hidden'); $('#game').classList.add('hidden'); $('#quitBtn').classList.add('hidden');
+  $('#start').classList.remove('hidden');
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mode').forEach(x=>x.classList.remove('sel'));
+  b.classList.add('sel'); cfg.mode=b.dataset.mode;
+}));
+$('#nRange').addEventListener('input',e=>{$('#nOut').textContent=e.target.value;});
+$('#startBtn').addEventListener('click',startGame);
+$('#checkBtn').addEventListener('click',onCheck);
+$('#clearBtn').addEventListener('click',()=>{if(!locked)returnAll();});
+$('#quitBtn').addEventListener('click',toSettings);
+$('#againBtn').addEventListener('click',startGame);
+$('#settingsBtn').addEventListener('click',toSettings);
+window.addEventListener('resize',layout);
+if('ResizeObserver' in window) new ResizeObserver(layout).observe(stage);
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
