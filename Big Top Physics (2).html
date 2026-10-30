@@ -1,0 +1,607 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Big Top Physics</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: striped tent-top header, three tabbed rides; each ride is canvas stage + control rail, then readouts, math, and a predict-and-test card. */
+:root{
+  --bg:#f1eff6; --panel:#ffffff; --ink:#231a33; --muted:#675d7c; --line:#d8d1e6;
+  --red:#d1342b; --gold:#d9930a; --teal:#12806f; --blue:#2a5fd0; --sky:#e4ecfb; --ground:#cfc6df;
+  --font-display:"Bungee","Impact",sans-serif; --font-body:"DM Sans",system-ui,sans-serif; --font-mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#150f1d; --panel:#21182e; --ink:#f1ebf8; --muted:#a99bc0; --line:#3b2e4f;
+  --red:#ff6a5c; --gold:#f5bb3a; --teal:#4fd1b8; --blue:#82a9ff; --sky:#1c2542; --ground:#3a2f4d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#150f1d; --panel:#21182e; --ink:#f1ebf8; --muted:#a99bc0; --line:#3b2e4f;
+  --red:#ff6a5c; --gold:#f5bb3a; --teal:#4fd1b8; --blue:#82a9ff; --sky:#1c2542; --ground:#3a2f4d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+.wrap{max-width:1080px;margin:0 auto}
+.bunting{height:14px;margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));
+  background:repeating-linear-gradient(90deg,var(--red) 0 28px,var(--panel) 28px 56px)}
+header{padding:18px 0 8px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+h1{font:400 clamp(28px,5vw,40px)/1.05 var(--font-display);margin:0;letter-spacing:.01em;text-wrap:balance}
+header p{margin:0;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px;border-bottom:2px solid var(--line)}
+.tab{font:400 15px var(--font-display);letter-spacing:.03em;background:none;border:0;color:var(--muted);padding:10px 14px;cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--red)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.panel[hidden]{display:none}
+.intro{margin:0 0 14px;color:var(--muted);max-width:70ch}
+.sim{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+.stage{position:relative;background:var(--sky);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+canvas{display:block;width:100%;aspect-ratio:16/10}
+.verdict{position:absolute;left:10px;top:10px;font:400 13px var(--font-display);letter-spacing:.04em;padding:6px 10px;border-radius:6px;background:var(--panel);border:2px solid var(--line);max-width:calc(100% - 20px)}
+.verdict.ok{border-color:var(--teal);color:var(--teal)} .verdict.warn{border-color:var(--gold);color:var(--gold)} .verdict.bad{border-color:var(--red);color:var(--red)}
+.rail{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.rail h2,.card h2{font:400 14px var(--font-display);letter-spacing:.05em;margin:0;text-transform:uppercase}
+.ctl{display:flex;flex-direction:column;gap:2px;font-size:14px}
+.ctl>span{display:flex;justify-content:space-between}
+.ctl b{font:700 14px var(--font-mono);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--red)}
+select{font:inherit;padding:7px 8px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;font:500 13px var(--font-body);padding:8px 4px;border:0;background:var(--bg);color:var(--ink);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{font:700 14px var(--font-body);padding:9px 14px;border-radius:8px;border:2px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.stat small{display:block;color:var(--muted);font-size:12px}
+.stat b{font:700 19px var(--font-mono);font-variant-numeric:tabular-nums}
+.stat b i{font:400 12px var(--font-body);font-style:normal;color:var(--muted)}
+.lower{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+pre.math{margin:0;font:500 13px/1.7 var(--font-mono);white-space:pre-wrap;overflow-x:auto;color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line)}
+.tblwrap{overflow-x:auto}
+.fb{min-height:1.5em;font-weight:700}
+.fb.good{color:var(--teal)} .fb.miss{color:var(--red)}
+.ch{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ch input[type=number]{font:500 15px var(--font-mono);padding:7px 8px;width:110px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.note{color:var(--muted);font-size:13px;margin:0}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}
+@media (max-width:860px){.sim{grid-template-columns:minmax(0,1fr)}canvas{aspect-ratio:4/3}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+<div class="bunting"></div>
+<div class="wrap">
+<header><h1>Big Top Physics</h1><p>Circular motion and centripetal force, one ride at a time.</p></header>
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" id="t-ferris" aria-selected="true" data-p="ferris">Ferris Wheel</button>
+  <button class="tab" role="tab" id="t-coaster" aria-selected="false" data-p="coaster">Loop Coaster</button>
+  <button class="tab" role="tab" id="t-kart" aria-selected="false" data-p="kart">Go-Karts</button>
+</div>
+
+<!-- FERRIS -->
+<section class="panel" id="p-ferris">
+<p class="intro">The wheel turns at constant speed, so the net force on a rider always points to the center. The seat has to supply whatever is left after gravity does its part. Change the speed and see how heavy the rider feels at the top and at the bottom.</p>
+<div class="sim">
+  <div class="stage"><canvas id="f-canvas"></canvas><div class="verdict ok" id="f-verdict"></div></div>
+  <div class="rail">
+    <h2>Wheel controls</h2>
+    <label class="ctl"><span>Wheel radius <b id="f-R-o"></b></span><input type="range" id="f-R" min="5" max="30" step="0.5" value="12"></label>
+    <label class="ctl"><span>Time for one turn <b id="f-T-o"></b></span><input type="range" id="f-T" min="3" max="40" step="0.5" value="12"></label>
+    <label class="ctl"><span>Rider mass <b id="f-m-o"></b></span><input type="range" id="f-m" min="20" max="120" step="1" value="60"></label>
+    <div class="ctl"><span>Watch the rider at</span></div>
+    <div class="seg" id="f-pos"><button data-pos="live" aria-pressed="true">Live</button><button data-pos="top" aria-pressed="false">Top</button><button data-pos="side" aria-pressed="false">Side</button><button data-pos="bottom" aria-pressed="false">Bottom</button></div>
+    <button class="btn" id="f-pause">Pause</button>
+    <div class="legend"><span><i style="background:var(--red)"></i>weight mg</span><span><i style="background:var(--blue)"></i>seat force</span><span><i style="background:var(--gold)"></i>net force</span></div>
+  </div>
+</div>
+<div class="stats">
+  <div class="stat"><small>Speed v</small><b id="f-v"></b></div>
+  <div class="stat"><small>Centripetal accel. a<sub>c</sub></small><b id="f-ac"></b></div>
+  <div class="stat"><small>Net force F<sub>c</sub></small><b id="f-Fc"></b></div>
+  <div class="stat"><small>Seat force (up) now</small><b id="f-N"></b></div>
+  <div class="stat"><small>Feels like</small><b id="f-app"></b></div>
+</div>
+<div class="lower">
+  <div class="card"><h2>Seat force at each spot</h2><div class="tblwrap"><table><thead><tr><th>Spot</th><th>Seat force</th><th>Feels like</th></tr></thead><tbody id="f-table"></tbody></table></div>
+    <h2>Show the math</h2><pre class="math" id="f-math"></pre></div>
+  <div class="card"><h2>Predict and test</h2>
+    <p class="note" id="f-ch-text"></p>
+    <div class="ch"><input type="number" id="f-ch-in" step="any" aria-label="Your answer in newtons"><span>N</span><button class="btn primary" id="f-ch-check">Check</button><button class="btn" id="f-ch-new">New challenge</button></div>
+    <div class="fb" id="f-ch-fb" aria-live="polite"></div><p class="note" id="f-ch-score"></p></div>
+</div>
+</section>
+
+<!-- COASTER -->
+<section class="panel" id="p-coaster" hidden>
+<p class="intro">A coaster car enters an inverted loop. At the top, both gravity and the track push the car toward the center. If the track would have to pull instead of push, the car leaves the rails. Find out whether this loop is safe.</p>
+<div class="sim">
+  <div class="stage"><canvas id="c-canvas"></canvas><div class="verdict ok" id="c-verdict"></div></div>
+  <div class="rail">
+    <h2>Coaster controls</h2>
+    <div class="ctl"><span>The speed you set is the speed at the</span></div>
+    <div class="seg" id="c-mode"><button data-mode="top" aria-pressed="true">Top of loop</button><button data-mode="bottom" aria-pressed="false">Bottom (entry)</button></div>
+    <label class="ctl"><span id="c-v-lab">Speed at top <b id="c-v-o"></b></span><input type="range" id="c-v" min="0" max="25" step="0.1" value="12"></label>
+    <label class="ctl"><span>Loop radius <b id="c-R-o"></b></span><input type="range" id="c-R" min="4" max="20" step="0.5" value="10"></label>
+    <label class="ctl"><span>Car and riders mass <b id="c-m-o"></b></span><input type="range" id="c-m" min="200" max="1500" step="10" value="800"></label>
+    <div class="row"><button class="btn primary" id="c-launch">Launch car</button><button class="btn" id="c-pause">Pause</button><button class="btn" id="c-reset">Reset</button></div>
+    <p class="note">Bottom mode uses energy conservation (no friction) to get the speed at the top.</p>
+  </div>
+</div>
+<div class="stats">
+  <div class="stat"><small>Speed at bottom</small><b id="c-vb"></b></div>
+  <div class="stat"><small>Speed at top</small><b id="c-vt"></b></div>
+  <div class="stat"><small>Track force, bottom</small><b id="c-Nb"></b></div>
+  <div class="stat"><small>Track force, top</small><b id="c-Nt"></b></div>
+  <div class="stat"><small>Riders feel, bottom</small><b id="c-gb"></b></div>
+  <div class="stat"><small>Riders feel, top</small><b id="c-gt"></b></div>
+</div>
+<div class="lower">
+  <div class="card"><h2>Show the math</h2><pre class="math" id="c-math"></pre></div>
+  <div class="card"><h2>Predict and test</h2>
+    <p class="note" id="c-ch-text">Will the car stay on the track at the top of the loop?</p>
+    <div class="row"><button class="btn" id="c-pred-safe">Safe</button><button class="btn" id="c-pred-unsafe">Unsafe</button><button class="btn" id="c-new">Random setup</button></div>
+    <div class="fb" id="c-fb" aria-live="polite"></div><p class="note" id="c-score"></p></div>
+</div>
+</section>
+
+<!-- KART -->
+<section class="panel" id="p-kart" hidden>
+<p class="intro">On a flat turn, friction between the tires and the road is the only sideways force. It must equal m v&sup2;/r. If the road cannot supply that much, the kart keeps going straight. Pick a kart, a driver, and a throttle setting, then decide: make it or crash?</p>
+<div class="sim">
+  <div class="stage"><canvas id="k-canvas"></canvas><div class="verdict ok" id="k-verdict" hidden style="left:auto;right:10px">Ready</div></div>
+  <div class="rail">
+    <h2>Pit stop</h2>
+    <label class="ctl"><span>Corner</span><select id="k-corner"></select></label>
+    <label class="ctl"><span>Tires</span><select id="k-tire"></select></label>
+    <label class="ctl"><span>Engine</span><select id="k-engine"></select></label>
+    <label class="ctl"><span>Driver</span><select id="k-driver"></select></label>
+    <label class="ctl"><span>Throttle <b id="k-thr-o"></b></span><input type="range" id="k-thr" min="30" max="100" step="1" value="80"></label>
+    <label class="ctl"><span>Kart and driver mass <b id="k-m-o"></b></span><input type="range" id="k-m" min="120" max="300" step="5" value="180"></label>
+    <div class="row"><button class="btn primary" id="k-go">Go!</button><button class="btn" id="k-reset">Reset</button></div>
+    <div class="seg" id="k-speed"><button data-s="1" aria-pressed="false">Real time</button><button data-s="0.5" aria-pressed="true">Half speed</button><button data-s="0.25" aria-pressed="false">Quarter</button></div>
+  </div>
+</div>
+<div class="stats">
+  <div class="stat"><small>Kart speed v</small><b id="k-v"></b></div>
+  <div class="stat"><small>Path radius r</small><b id="k-r"></b></div>
+  <div class="stat"><small>Friction coeff. &mu;</small><b id="k-mu"></b></div>
+  <div class="stat"><small>Friction needed</small><b id="k-need"></b></div>
+  <div class="stat"><small>Friction available</small><b id="k-have"></b></div>
+  <div class="stat"><small>Top safe speed</small><b id="k-vmax"></b></div>
+</div>
+<div class="lower">
+  <div class="card"><h2>Show the math</h2><pre class="math" id="k-math"></pre>
+    <p class="note">Mass appears on both sides, so it cancels. A heavier kart needs more friction, but the road also gives more.</p></div>
+  <div class="card"><h2>Predict and test</h2>
+    <p class="note">Before you press Go, decide what happens to this kart on this corner.</p>
+    <div class="row"><button class="btn" id="k-pred-make">Makes the turn</button><button class="btn" id="k-pred-crash">Crashes out</button><button class="btn" id="k-new">Random setup</button></div>
+    <div class="fb" id="k-fb" aria-live="polite"></div><p class="note" id="k-score"></p></div>
+</div>
+</section>
+</div>
+<script>
+const G=9.8, TAU=Math.PI*2;
+const $=id=>document.getElementById(id);
+const f0=x=>Math.round(x).toLocaleString('en-US');
+const f1=(x,d=1)=>x.toFixed(d);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=(a,b,s=1)=>a+s*Math.floor(Math.random()*((b-a)/s+1));
+const setH=(id,h)=>{const e=$(id);if(e.innerHTML!==h)e.innerHTML=h;};
+const COL={};
+function readColors(){const s=getComputedStyle(document.documentElement);
+  ['bg','panel','ink','muted','line','red','gold','teal','blue','sky','ground'].forEach(k=>COL[k]=s.getPropertyValue('--'+k).trim());}
+function fit(cv){const r=cv.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);
+  const w=Math.max(1,Math.round(r.width*d)),h=Math.max(1,Math.round(r.height*d));
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
+  const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);return{x,w:r.width,h:r.height};}
+function arrow(x,x1,y1,x2,y2,col,lw=3){const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy);if(L<3)return;
+  const ux=dx/L,uy=dy/L,hl=Math.min(8+lw*2,L*.6);x.strokeStyle=col;x.fillStyle=col;x.lineWidth=lw;x.lineCap='round';
+  x.beginPath();x.moveTo(x1,y1);x.lineTo(x2-ux*hl*.7,y2-uy*hl*.7);x.stroke();
+  x.beginPath();x.moveTo(x2,y2);x.lineTo(x2-ux*hl-uy*hl*.5,y2-uy*hl+ux*hl*.5);x.lineTo(x2-ux*hl+uy*hl*.5,y2-uy*hl-ux*hl*.5);x.closePath();x.fill();}
+function slider(id,fmt,cb){const el=$(id),o=$(id+'-o');
+  const u=()=>{o.textContent=fmt(+el.value);cb&&cb();};el.addEventListener('input',u);u();return u;}
+function segment(id,attr,cb){const box=$(id);box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  box.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));cb(b.dataset[attr]);});}
+function setSeg(id,attr,val){$(id).querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset[attr]===String(val)));}
+function setVerdict(id,cls,text){const e=$(id);e.className='verdict '+cls;if(e.textContent!==text)e.textContent=text;}
+function chip(ctx,x,y,txt,col,sz=11,al='left'){ctx.font='700 '+sz+'px "JetBrains Mono",monospace';ctx.fillStyle=col;ctx.textAlign=al;ctx.fillText(txt,x,y);}
+
+const sims={};
+let active='ferris';
+
+/* ================= FERRIS WHEEL ================= */
+const F={theta:0,pos:'live',ans:null,score:[0,0]};
+const fp=()=>{const R=+$('f-R').value,T=+$('f-T').value,m=+$('f-m').value;
+  const v=TAU*R/T,ac=v*v/R;return{R,T,m,v,ac,Fc:m*ac,w:TAU/T,W:m*G};};
+const fForce=(p,th)=>({Ny:p.m*(G-p.ac*Math.cos(th)),Fx:-p.m*p.ac*Math.sin(th)});
+const feels=(Ny,W)=>Ny<=0?'Lifts off seat':f0(Ny/W*100)+'% of weight';
+
+function fStatic(){
+  const p=fp();
+  setH('f-v',f1(p.v,2)+' <i>m/s</i>');setH('f-ac',f1(p.ac,2)+' <i>m/s&sup2; ('+f1(p.ac/G,2)+' g)</i>');
+  setH('f-Fc',f0(p.Fc)+' <i>N</i>');
+  const rows=[['Top',0],['Side',Math.PI/2],['Bottom',Math.PI]].map(([n,th])=>{
+    const f=fForce(p,th);
+    const seat=n==='Side'?f0(f.Ny)+' N up + '+f0(-f.Fx)+' N inward':(f.Ny<=0?'0 N (needs '+f0(f.Ny)+')':f0(f.Ny)+' N up');
+    return '<tr><td>'+n+'</td><td>'+seat+'</td><td>'+feels(f.Ny,p.W)+'</td></tr>';}).join('');
+  setH('f-table',rows);
+  const top=fForce(p,0).Ny/p.W,bot=fForce(p,Math.PI).Ny/p.W;
+  if(top<=0)setVerdict('f-verdict','bad','Rider leaves the seat at the top');
+  else if(top<.5)setVerdict('f-verdict','warn','Very light at the top');
+  else if(bot>2)setVerdict('f-verdict','warn','Heavy squeeze at the bottom');
+  else setVerdict('f-verdict','ok','Smooth ride');
+  const L=[];
+  L.push('v   = 2πR/T = 2π('+p.R+')/('+p.T+') = '+f1(p.v,2)+' m/s');
+  L.push('a_c = v²/R = '+f1(p.v,2)+'²/'+p.R+' = '+f1(p.ac,2)+' m/s²');
+  L.push('F_c = m·a_c = '+p.m+' × '+f1(p.ac,2)+' = '+f0(p.Fc)+' N, toward center');
+  L.push('mg  = '+p.m+' × 9.8 = '+f0(p.W)+' N');
+  const topL=['TOP: F_c = mg − N','     N = '+f0(p.W)+' − '+f0(p.Fc)+' = '+f0(p.W-p.Fc)+' N'];
+  const botL=['BOTTOM: F_c = N − mg','     N = '+f0(p.Fc)+' + '+f0(p.W)+' = '+f0(p.W+p.Fc)+' N'];
+  const sideL=['SIDE: N up = mg = '+f0(p.W)+' N','      seat back pushes inward = F_c = '+f0(p.Fc)+' N'];
+  L.push('');
+  if(F.pos==='top')L.push(...topL);else if(F.pos==='bottom')L.push(...botL);else if(F.pos==='side')L.push(...sideL);
+  else L.push(...topL,'',...botL);
+  $('f-math').textContent=L.join('\n');
+}
+function fLive(){const p=fp(),f=fForce(p,F.theta);
+  setH('f-N',f0(f.Ny)+' <i>N</i>');setH('f-app',f.Ny<=0?'Floating':f0(f.Ny/p.W*100)+'<i>% weight</i>');}
+
+sims.ferris={frame(dt){
+  const p=fp();
+  if(F.pos==='live'){if(!F.paused)F.theta=(F.theta+p.w*Math.min(dt,.05))%TAU;}
+  else F.theta={top:0,side:Math.PI/2,bottom:Math.PI}[F.pos];
+  fLive();
+  const {x,w,h}=fit($('f-canvas'));x.clearRect(0,0,w,h);
+  const gy=h-22;x.fillStyle=COL.ground;x.fillRect(0,gy,w,h-gy);
+  const bw=clamp(w*.3,132,205),bh=Math.min(h*.62,215);
+  const sc=Math.min((h-64)/(2*p.R+3.6),(w-bw-30)/(2*p.R+2)),cx=(w-bw-10)/2,cy=gy-(p.R+1.8)*sc,rr=p.R*sc;
+  x.strokeStyle=COL.muted;x.lineWidth=4;x.lineJoin='round';x.beginPath();x.moveTo(cx-rr*.45,gy);x.lineTo(cx,cy);x.lineTo(cx+rr*.45,gy);x.stroke();
+  x.strokeStyle=COL.ink;x.lineWidth=3;x.beginPath();x.arc(cx,cy,rr,0,TAU);x.stroke();
+  const n=8;x.lineWidth=1.5;
+  for(let i=0;i<n;i++){const a=F.theta+i*TAU/n;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+rr*Math.sin(a),cy-rr*Math.cos(a));x.stroke();}
+  x.fillStyle=COL.ink;x.beginPath();x.arc(cx,cy,5,0,TAU);x.fill();
+  x.setLineDash([5,4]);x.strokeStyle=COL.muted;x.lineWidth=1.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx-rr,cy);x.stroke();x.setLineDash([]);
+  chip(x,cx-rr+6,cy-6,'R = '+p.R+' m',COL.muted);
+  const gs=clamp(sc*1.2,9,20);
+  for(let i=n-1;i>=0;i--){const a=F.theta+i*TAU/n,gx=cx+rr*Math.sin(a),gyy=cy-rr*Math.cos(a),me=i===0;
+    x.fillStyle=me?COL.gold:COL.panel;x.strokeStyle=COL.ink;x.lineWidth=me?2.5:1.5;
+    x.beginPath();x.roundRect(gx-gs/2,gyy,gs,gs*.9,3);x.fill();x.stroke();
+    if(me){x.fillStyle=COL.ink;x.beginPath();x.arc(gx,gyy+gs*.3,gs*.17,0,TAU);x.fill();}}
+  const th=F.theta,rx=cx+rr*Math.sin(th),ry=cy-rr*Math.cos(th)+gs*.45;
+  const vl=Math.min(clamp(p.v*25,150,500),w*.45),nl=Math.min(clamp(450*p.ac/G,150,500),rr*.92);
+  arrow(x,rx,ry,rx+vl*Math.cos(th),ry+vl*Math.sin(th),COL.ink,5);
+  arrow(x,rx,ry,rx-nl*Math.sin(th),ry+nl*Math.cos(th),COL.gold,6);
+  chip(x,rx+vl*Math.cos(th)+6,ry+vl*Math.sin(th)-6,'v '+f1(p.v,1)+' m/s',COL.ink,13);
+  chip(x,rx-nl*Math.sin(th)+6,ry+nl*Math.cos(th)+16,'net '+f0(p.Fc)+' N',COL.gold,13);
+  chip(x,12,h-6,F.pos==='live'?'dark arrow = velocity, gold arrow = net force (toward center)':'Wheel paused to study this spot',COL.muted);
+  // free-body diagram
+  const f=fForce(p,th),bx=w-bw-10,by=10;
+  x.fillStyle=COL.panel;x.strokeStyle=COL.line;x.lineWidth=1.5;x.beginPath();x.roundRect(bx,by,bw,bh,8);x.fill();x.stroke();
+  x.font='700 11px "DM Sans",sans-serif';x.fillStyle=COL.muted;x.textAlign='center';x.fillText('Free-body diagram',bx+bw/2,by+15);
+  const ox=bx+bw/2,oy=by+bh*.36,k=Math.min(bw,bh)*.3,cap=Math.min(bw*.42,bh*.32);
+  const L=v=>clamp(v/p.W*k,-cap,cap);
+  arrow(x,ox,oy,ox,oy+L(p.W),COL.red,5);
+  if(Math.abs(f.Ny)>1)arrow(x,ox,oy,ox,oy-L(f.Ny),COL.blue,5);
+  if(Math.abs(f.Fx)>1)arrow(x,ox,oy,ox+L(f.Fx),oy,COL.blue,5);
+  arrow(x,ox+2,oy+2,ox+2+L(f.Fx),oy+2-L(f.Ny-p.W),COL.gold,4);
+  x.fillStyle=COL.ink;x.beginPath();x.arc(ox,oy,6,0,TAU);x.fill();
+  const ty=by+bh*.66;
+  chip(x,bx+10,ty,'mg    '+f0(p.W)+' N',COL.red,13);
+  chip(x,bx+10,ty+16,'seat↑ '+f0(f.Ny)+' N',COL.blue,13);
+  if(Math.abs(f.Fx)>1)chip(x,bx+10,ty+32,'seat'+(f.Fx<0?'←':'→')+' '+f0(Math.abs(f.Fx))+' N',COL.blue,13);
+  chip(x,bx+10,ty+(Math.abs(f.Fx)>1?48:32),'net   '+f0(p.Fc)+' N',COL.gold,13);
+}};
+
+function fChallenge(){
+  let p,pos;
+  for(let i=0;i<60;i++){p={R:rnd(6,25),T:rnd(6,30),m:rnd(40,100,5)};pos=Math.random()<.5?'top':'bottom';
+    const v=TAU*p.R/p.T,ratio=1-v*v/p.R/G;if(pos==='bottom'||(ratio>.1&&ratio<.9))break;}
+  $('f-R').value=p.R;$('f-T').value=p.T;$('f-m').value=p.m;
+  ['f-R','f-T','f-m'].forEach(id=>$(id).dispatchEvent(new Event('input')));
+  F.pos=pos;setSeg('f-pos','pos',pos);fStatic();
+  const v=TAU*p.R/p.T,ac=v*v/p.R;
+  F.ans=pos==='top'?p.m*(G-ac):p.m*(G+ac);
+  $('f-ch-text').textContent='Challenge: a '+p.m+' kg rider is at the '+pos.toUpperCase()+' of a wheel with radius '+p.R+' m that turns once every '+p.T+' s. How hard does the seat push on the rider? Work it out on paper, then check.';
+  $('f-ch-in').value='';$('f-ch-fb').textContent='';$('f-ch-fb').className='fb';
+}
+function fCheck(){
+  if(F.ans===null)return;const v=parseFloat($('f-ch-in').value);if(isNaN(v)){$('f-ch-fb').textContent='Enter a number in newtons first.';return;}
+  const ok=Math.abs(v-F.ans)<=Math.max(5,Math.abs(F.ans)*.04);F.score[1]++;if(ok)F.score[0]++;
+  $('f-ch-fb').className='fb '+(ok?'good':'miss');
+  $('f-ch-fb').textContent=ok?'Correct. The seat force is about '+f0(F.ans)+' N.':'Not quite. Compare with the math panel: the answer is about '+f0(F.ans)+' N.';
+  $('f-ch-score').textContent='Score: '+F.score[0]+' of '+F.score[1];
+  F.ans=null;
+}
+
+/* ================= LOOP COASTER ================= */
+const C={mode:'top',run:null,pred:null,done:false,d0:25,score:[0,0]};
+function cp(){
+  const R=+$('c-R').value,m=+$('c-m').value,s=+$('c-v').value;
+  let vb,vt2;
+  if(C.mode==='top'){vt2=s*s;vb=Math.sqrt(vt2+4*G*R);}else{vb=s;vt2=vb*vb-4*G*R;}
+  const reach=vt2>=0,vt=reach?Math.sqrt(vt2):NaN;
+  const Nb=m*(vb*vb/R+G),Nt=reach?m*(vt2/R-G):NaN;
+  const gb=Nb/(m*G),gt=reach?Nt/(m*G):NaN;
+  let state='ok';
+  if(vt2<G*R)state=vb*vb<2*G*R?'back':'leave';
+  else if(gt<.5)state='marginal';
+  else if(gb>=6)state='intense';
+  return{R,m,vb,vt2,vt,reach,Nb,Nt,gb,gt,state,vmin:Math.sqrt(G*R),vbmin:Math.sqrt(5*G*R)};
+}
+function cVerdict(){
+  const p=cp(),e=$('c-verdict');e.hidden=(C.pred!==null&&!C.done);
+  const map={back:['bad','UNSAFE: car rolls back down'],leave:['bad','UNSAFE: car leaves the track'],
+    marginal:['warn','Marginal: nearly weightless at the top'],intense:['warn','Safe, but very intense (6 g or more)'],ok:['ok','Safe ride']};
+  setVerdict('c-verdict',map[p.state][0],map[p.state][1]);
+}
+function cStatic(reset=true){
+  if(reset){C.run=null;C.done=false;}
+  const p=cp();
+  setH('c-vb',f1(p.vb,1)+' <i>m/s</i>');
+  setH('c-vt',p.reach?f1(p.vt,1)+' <i>m/s</i>':'<i>never gets there</i>');
+  setH('c-Nb',f0(p.Nb)+' <i>N</i>');
+  setH('c-Nt',p.reach?(p.Nt<0?f0(p.Nt)+' <i>N (track can’t pull)</i>':f0(p.Nt)+' <i>N</i>'):'<i>n/a</i>');
+  setH('c-gb',f1(p.gb,1)+' <i>g</i>');
+  setH('c-gt',p.reach?f1(p.gt,1)+' <i>g</i>':'<i>n/a</i>');
+  const mg=p.m*G,L=[];
+  L.push('Energy (no friction): ½mv_b² = ½mv_t² + mg(2R)','  v_t² = v_b² − 4gR = '+f1(p.vb*p.vb,1)+' − '+f1(4*G*p.R,1)+' = '+f1(p.vt2,1));
+  L.push('','BOTTOM: track pushes up, gravity pulls down.','  N − mg = m·v_b²/R','  N = '+f0(mg)+' + '+f0(p.m*p.vb*p.vb/p.R)+' = '+f0(p.Nb)+' N');
+  L.push('','TOP: track pushes down, gravity pulls down.','  Both point toward the center.','  N + mg = m·v_t²/R');
+  L.push(p.reach?'  N = '+f0(p.m*p.vt2/p.R)+' − '+f0(mg)+' = '+f0(p.Nt)+' N':'  (car never reaches the top)');
+  L.push('','Lowest safe speed at top: N = 0','  v_min = √(gR) = √('+f1(G,1)+' × '+p.R+') = '+f1(p.vmin,2)+' m/s','  Matching entry speed: √(5gR) = '+f1(p.vbmin,2)+' m/s');
+  $('c-math').textContent=L.join('\n');
+  cVerdict();
+}
+
+function cStart(){const p=cp();C.done=false;C.run={ph:'approach',d:-C.d0,th:0,w:p.vb/p.R,p,t:0,res:'',px:0,py:0,vx:0,vy:0,vback:0};}
+function cStepLoop(r,dt){
+  const R=r.p.R,n=24,h=dt/n;
+  for(let i=0;i<n&&r.ph==='loop';i++){
+    r.w+=-(G/R)*Math.sin(r.th)*h;r.th+=r.w*h;
+    const v=r.w*R,N=r.p.m*(v*v/R+G*Math.cos(r.th));
+    if(r.th>=TAU){r.ph='exit';r.d=0;r.res='ok';}
+    else if(r.th<=0&&r.w<0){r.ph='back';r.d=0;r.res='back';r.vback=-r.p.vb;}
+    else if(N<-1e-3*r.p.m*G){r.ph='free';r.t=0;r.px=R*Math.sin(r.th);r.py=R*Math.cos(r.th);r.vx=v*Math.cos(r.th);r.vy=-v*Math.sin(r.th);}
+  }
+}
+function cStepFree(r,dt){
+  const R=r.p.R,n=12,h=dt/n;
+  for(let i=0;i<n&&r.ph==='free';i++){
+    r.px+=r.vx*h;r.py+=r.vy*h;r.vy+=G*h;r.t+=h;
+    if((r.t>.1&&Math.hypot(r.px,r.py)>=R)||r.py>=R){r.ph='done';r.res='crash';}
+  }
+}
+function cFinish(r){
+  C.done=true;cVerdict();
+  const p=r.p,unsafe=p.vt2<G*p.R;
+  if(C.pred===null)return;
+  const ok=(C.pred==='unsafe')===unsafe;C.score[1]++;if(ok)C.score[0]++;
+  const why=unsafe?'At the top it needs at least '+f1(p.vmin,1)+' m/s. Yours is '+(p.reach?f1(p.vt,1)+' m/s.':'zero because it never gets there.')
+    :'At the top it needs at least '+f1(p.vmin,1)+' m/s and has '+f1(p.vt,1)+' m/s, so the track keeps pushing on the car.';
+  $('c-fb').className='fb '+(ok?'good':'miss');
+  $('c-fb').textContent=(ok?'Correct. ':'Not this time. ')+(unsafe?'This loop is unsafe. ':'This loop is safe. ')+why;
+  $('c-score').textContent='Score: '+C.score[0]+' of '+C.score[1];
+  C.pred=null;setPred();
+}
+function setPred(){$('c-pred-safe').classList.toggle('primary',C.pred==='safe');$('c-pred-unsafe').classList.toggle('primary',C.pred==='unsafe');}
+
+function cart(x,len,hgt){
+  x.fillStyle=COL.red;x.strokeStyle=COL.ink;x.lineWidth=2;x.beginPath();x.roundRect(-len/2,-hgt/2,len,hgt,4);x.fill();x.stroke();
+  x.fillStyle=COL.ink;x.beginPath();x.arc(-len*.18,-hgt*.2,hgt*.2,0,TAU);x.arc(len*.18,-hgt*.2,hgt*.2,0,TAU);x.fill();
+}
+sims.coaster={frame(dt){
+  const r=C.run,p=cp(),R=p.R;
+  if(r&&!C.paused){const s=Math.min(dt,.05)*.5;
+    if(r.ph==='approach'){r.d+=p.vb*s;if(r.d>=0){r.d=0;r.ph='loop';}}
+    else if(r.ph==='loop')cStepLoop(r,s);
+    else if(r.ph==='free')cStepFree(r,s);
+    else if(r.ph==='exit'){r.d+=p.vb*s;if(r.d>=C.d0){r.ph='done';}}
+    else if(r.ph==='back'){r.d+=r.vback*s;if(r.d<=-C.d0)r.ph='done';}
+    if(r.ph==='done'&&!C.done)cFinish(r);
+  }
+  const {x,w,h}=fit($('c-canvas'));x.clearRect(0,0,w,h);
+  const gy=h-18,sc=(h-60)/(2*R+3),cx=w/2,by=gy-6,cy=by-R*sc,rr=R*sc;C.d0=(w/2-26)/sc;
+  x.fillStyle=COL.ground;x.fillRect(0,gy,w,h-gy);
+  x.strokeStyle=COL.muted;x.lineWidth=3;
+  for(let px=14;px<w;px+=44){if(Math.abs(px-cx)<rr*.9)continue;x.beginPath();x.moveTo(px,by);x.lineTo(px,gy);x.stroke();}
+  x.lineCap='round';
+  [[COL.ink,8],[COL.panel,3]].forEach(([c,lw])=>{x.strokeStyle=c;x.lineWidth=lw;x.beginPath();x.moveTo(0,by);x.lineTo(w,by);x.stroke();x.beginPath();x.arc(cx,cy,rr,0,TAU);x.stroke();});
+  x.setLineDash([5,4]);x.strokeStyle=COL.muted;x.lineWidth=1.5;x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+rr*.7071,cy-rr*.7071);x.stroke();x.setLineDash([]);
+  chip(x,cx+rr*.35+4,cy-rr*.35-6,'R = '+R+' m',COL.muted);
+  chip(x,cx-34,cy-rr-8,'TOP '+(p.reach?f1(p.vt,1)+' m/s':'unreached'),COL.ink);
+  // car
+  let ang=0,pos,th=0,flat=true;
+  const len=clamp(sc*2.4,18,46),hg=len*.5;
+  if(!r||r.ph==='approach'||r.ph==='back'||r.ph==='exit'||r.ph==='done'&&r.res!=='crash'){
+    const d=r?r.d:-C.d0;pos=[cx+d*sc,by-hg/2-2];
+    if(r&&r.ph==='done'&&r.res==='ok')pos=[cx+C.d0*sc,by-hg/2-2];
+    if(r&&r.ph==='done'&&r.res==='back')pos=[cx-C.d0*sc,by-hg/2-2];
+  }else if(r.ph==='loop'){th=r.th;flat=false;ang=-th;const inward=hg/2+2;pos=[cx+rr*Math.sin(th)-inward*Math.sin(th),cy+rr*Math.cos(th)-inward*Math.cos(th)];}
+  else{pos=[cx+r.px*sc,cy+r.py*sc];ang=r.t*5;flat=false;th=0;}
+  x.save();x.translate(pos[0],pos[1]);x.rotate(ang);cart(x,len,hg);x.restore();
+  // forces on the car
+  if(r&&(r.ph==='loop'||r.ph==='approach'||r.ph==='exit'||r.ph==='back')){
+    const v=r.ph==='loop'?r.w*R:p.vb,t=r.ph==='loop'?r.th:0;
+    const N=r.ph==='loop'?p.m*(v*v/R+G*Math.cos(t)):p.m*G;
+    const nl=clamp(N/(p.m*G)*38,0,150),wl=38;
+    arrow(x,pos[0]+8,pos[1],pos[0]+8,pos[1]+wl,COL.ink,5);
+    arrow(x,pos[0]-8,pos[1],pos[0]-8-nl*Math.sin(t),pos[1]-nl*Math.cos(t),COL.blue,5);
+    chip(x,pos[0]+18,pos[1]+wl+4,'weight '+f0(p.m*G)+' N',COL.ink,14);
+    chip(x,pos[0]-18,pos[1]-nl*Math.cos(t)-6,'track '+f0(Math.max(N,0))+' N',COL.blue,14,'right');
+  }
+  if(r&&r.ph==='free'){chip(x,pos[0]+14,pos[1]-8,'Track force is zero. Falling!',COL.red);}
+  const msg=r&&r.ph==='done'?{ok:'Completed the loop',back:'Rolled back down the hill',crash:'CRASH: left the track'}[r.res]:'';
+  if(msg){x.font='400 20px Bungee,Impact,sans-serif';x.textAlign='center';x.fillStyle=r.res==='ok'?COL.teal:COL.red;x.fillText(msg,w/2,Math.max(48,cy-rr*.2));}
+  chip(x,12,h-5,'Animation at half speed. Dark arrow = weight, blue arrow = track force.',COL.muted);
+}};
+
+/* ================= GO-KARTS ================= */
+const CORNERS=[{n:'Tight bend',rin:8,w:6},{n:'Medium bend',rin:14,w:7},{n:'Wide sweeper',rin:24,w:8}];
+const TIRES=[{n:'Worn street tires',mu:.55},{n:'Standard tires',mu:.8},{n:'Racing slicks',mu:1.05},{n:'Racing slicks in the rain',mu:.35}];
+const ENGINES=[{n:'Eco 5 hp',top:11},{n:'Sport 9 hp',top:15},{n:'Turbo 13 hp',top:19}];
+const DRIVERS=[{n:'Rookie Riley: hugs the inside',f:(c)=>c.rin+.8,d:'inner edge + 0.8 m'},
+  {n:'Casual Cam: drives the center',f:(c)=>c.rin+c.w/2,d:'inner edge + half the road'},
+  {n:'Pro Pat: wide racing line',f:(c)=>c.rin+.8*c.w,d:'inner edge + 0.8 of the road'}];
+const K={run:null,pred:null,done:false,speed:.5,score:[0,0],L1:22,L2:30};
+function kfill(id,arr,fn){$(id).innerHTML=arr.map((a,i)=>'<option value="'+i+'">'+fn(a)+'</option>').join('');}
+function kp(){
+  const c=CORNERS[+$('k-corner').value],t=TIRES[+$('k-tire').value],e=ENGINES[+$('k-engine').value],d=DRIVERS[+$('k-driver').value];
+  const thr=+$('k-thr').value,m=+$('k-m').value,r=d.f(c),v=thr/100*e.top,mu=t.mu;
+  const vmax=Math.sqrt(mu*G*r),need=m*v*v/r,have=mu*m*G;
+  return{c,t,e,d,thr,m,r,v,mu,vmax,need,have,rout:c.rin+c.w,make:v<=vmax};
+}
+function kVerdict(){
+  const p=kp(),el=$('k-verdict');el.hidden=true;
+  if(!p.make)setVerdict('k-verdict','bad','Needs more grip than the tires have');
+  else if(p.v>.9*p.vmax)setVerdict('k-verdict','warn','Makes it, barely');
+  else setVerdict('k-verdict','ok','Holds the turn');
+}
+function kStatic(reset=true){
+  if(reset){K.run=null;K.done=false;}
+  const p=kp();
+  setH('k-v',f1(p.v,1)+' <i>m/s</i>');setH('k-r',f1(p.r,1)+' <i>m</i>');setH('k-mu',p.mu.toFixed(2));
+  setH('k-need',f0(p.need)+' <i>N</i>');setH('k-have',f0(p.have)+' <i>N max</i>');setH('k-vmax',f1(p.vmax,1)+' <i>m/s</i>');
+  const L=[];
+  L.push('Path radius: '+p.d.d+' → r = '+f1(p.r,1)+' m');
+  L.push('Speed: v = '+p.thr+'% × '+p.e.top+' m/s = '+f1(p.v,1)+' m/s','');
+  L.push('Friction needed to turn:','  f = m·v²/r = '+p.m+' × '+f1(p.v,1)+'² / '+f1(p.r,1)+' = '+f0(p.need)+' N');
+  L.push('Most friction the tires give:','  f_max = μ·m·g = '+p.mu.toFixed(2)+' × '+p.m+' × 9.8 = '+f0(p.have)+' N');
+  L.push('Needed '+(p.need>p.have?'>':'≤')+' available, so the kart '+(p.make?'makes the turn.':'goes straight into the wall.'),'');
+  L.push('Top safe speed: μmg = mv²/r','  v_max = √(μ·g·r) = √('+p.mu.toFixed(2)+' × 9.8 × '+f1(p.r,1)+') = '+f1(p.vmax,1)+' m/s');
+  $('k-math').textContent=L.join('\n');
+  kVerdict();
+}
+function kStart(){const p=kp();K.done=false;K.run={ph:'in',x:p.r,y:K.L1,phi:0,hx:0,hy:-1,p,res:'',t:0,sx:0,sy:0};}
+function kFinish(r){
+  K.done=true;kVerdict();
+  if(K.pred===null)return;
+  const p=r.p,ok=(K.pred==='make')===p.make;K.score[1]++;if(ok)K.score[0]++;
+  $('k-fb').className='fb '+(ok?'good':'miss');
+  $('k-fb').textContent=(ok?'Correct. ':'Not this time. ')+'The kart needs '+f0(p.need)+' N of friction and the tires can give '+f0(p.have)+' N, so it '+(p.make?'makes the turn.':'crashes out.');
+  $('k-score').textContent='Score: '+K.score[0]+' of '+K.score[1];
+  K.pred=null;kPred();
+}
+function kPred(){$('k-pred-make').classList.toggle('primary',K.pred==='make');$('k-pred-crash').classList.toggle('primary',K.pred==='crash');}
+function star(x,cx,cy,R1,R2,n){x.beginPath();for(let i=0;i<n*2;i++){const a=i*Math.PI/n,rr=i%2?R2:R1;x[i?'lineTo':'moveTo'](cx+rr*Math.cos(a),cy+rr*Math.sin(a));}x.closePath();}
+
+sims.kart={frame(dt){
+  const r=K.run,p=kp();
+  if(r){const s=Math.min(dt,.05)*K.speed,v=p.v;
+    if(r.ph==='in'){r.y-=v*s;r.hx=0;r.hy=-1;if(r.y<=0){r.y=0;r.ph=p.make?'arc':'skid';r.sx=r.x;r.sy=0;}}
+    else if(r.ph==='arc'){r.phi+=v/p.r*s;if(r.phi>=Math.PI/2){r.phi=Math.PI/2;r.ph='out';}
+      r.x=p.r*Math.cos(r.phi);r.y=-p.r*Math.sin(r.phi);r.hx=-Math.sin(r.phi);r.hy=-Math.cos(r.phi);}
+    else if(r.ph==='out'){r.x-=v*s;r.y=-p.r;r.hx=-1;r.hy=0;if(r.x<=-K.L2){r.ph='done';r.res='ok';}}
+    else if(r.ph==='skid'){r.y-=v*s;r.hx=0;r.hy=-1;if(Math.hypot(r.x,r.y)>=p.rout-.5){r.ph='done';r.res='crash';}}
+    if(r.ph==='done'&&!K.done)kFinish(r);
+  }
+  const {x,w,h}=fit($('k-canvas'));x.clearRect(0,0,w,h);
+  const ro=p.rout,sc=Math.min(w/(K.L2+ro+6),h/(ro+K.L1+6));
+  const ox=(w-sc*(K.L2+ro))/2+K.L2*sc,oy=(h-sc*(ro+K.L1))/2+ro*sc;
+  const X=a=>ox+a*sc,Y=a=>oy+a*sc;
+  x.fillStyle=COL.ground;x.fillRect(0,0,w,h);
+  const path=(rad)=>{x.beginPath();x.moveTo(X(rad),Y(K.L1));x.lineTo(X(rad),Y(0));x.arc(X(0),Y(0),rad*sc,0,-Math.PI/2,true);x.lineTo(X(-K.L2),Y(-rad));};
+  const rc=p.c.rin+p.c.w/2;x.lineCap='butt';x.lineJoin='round';
+  path(rc);x.strokeStyle=COL.ink;x.lineWidth=p.c.w*sc+6;x.stroke();
+  path(rc);x.strokeStyle=COL.panel;x.lineWidth=p.c.w*sc;x.stroke();
+  x.setLineDash([10,10]);path(rc);x.strokeStyle=COL.line;x.lineWidth=2;x.stroke();
+  path(ro);x.strokeStyle=COL.red;x.lineWidth=5;x.setLineDash([]);x.stroke();
+  x.setLineDash([9,9]);path(ro);x.strokeStyle=COL.panel;x.lineWidth=5;x.stroke();x.setLineDash([]);
+  // geometry labels
+  x.setLineDash([4,4]);x.strokeStyle=COL.muted;x.lineWidth=1.5;x.beginPath();x.moveTo(X(0),Y(0));x.lineTo(X(p.r*.7071),Y(-p.r*.7071));x.stroke();x.setLineDash([]);
+  x.fillStyle=COL.ink;x.beginPath();x.arc(X(0),Y(0),4,0,TAU);x.fill();
+  chip(x,X(p.r*.35)+4,Y(-p.r*.35)-6,'r = '+f1(p.r,1)+' m',COL.ink);
+  x.setLineDash([2,6]);x.strokeStyle=COL.blue;x.lineWidth=2;x.beginPath();x.moveTo(X(p.r),Y(K.L1));x.lineTo(X(p.r),Y(0));x.arc(X(0),Y(0),p.r*sc,0,-Math.PI/2,true);x.lineTo(X(-K.L2),Y(-p.r));x.stroke();x.setLineDash([]);
+  // kart
+  const kx=r?r.x:p.r,ky=r?r.y:K.L1,hx=r?r.hx:0,hy=r?r.hy:-1;
+  if(r&&(r.ph==='skid'||(r.ph==='done'&&r.res==='crash'))){x.strokeStyle=COL.ink;x.globalAlpha=.55;x.lineWidth=4;x.setLineDash([3,3]);x.beginPath();x.moveTo(X(r.sx),Y(r.sy));x.lineTo(X(kx),Y(ky));x.stroke();x.setLineDash([]);x.globalAlpha=1;}
+  const crashed=r&&r.ph==='done'&&r.res==='crash',kl=clamp(sc*2.4,16,44),kw=kl*.55;
+  x.save();x.translate(X(kx),Y(ky));x.rotate(Math.atan2(hy,hx)+(crashed?.5:0));
+  x.fillStyle=COL.red;x.strokeStyle=COL.ink;x.lineWidth=2;x.beginPath();x.roundRect(-kl/2,-kw/2,kl,kw,4);x.fill();x.stroke();
+  x.fillStyle=COL.ink;[[-.3,-1],[-.3,1],[.3,-1],[.3,1]].forEach(([a,b])=>x.fillRect(kl*a-kl*.09,b*kw/2-kw*.12,kl*.18,kw*.24));
+  x.fillStyle=COL.gold;x.beginPath();x.arc(-kl*.05,0,kw*.24,0,TAU);x.fill();x.stroke();x.restore();
+  // friction arrow during the turn
+  if(r&&r.ph==='arc'){const L=clamp(p.need/p.have*40,10,90),ux=-r.x/p.r,uy=-r.y/p.r;arrow(x,X(r.x),Y(r.y),X(r.x)+ux*L,Y(r.y)+uy*L,COL.blue,3.5);chip(x,X(r.x)+ux*L+6,Y(r.y)+uy*L+14,'friction',COL.blue);}
+  if(crashed){x.fillStyle=COL.gold;x.strokeStyle=COL.red;x.lineWidth=3;star(x,X(kx),Y(ky)-6,kl*.9,kl*.5,9);x.fill();x.stroke();}
+  // result text and grip meter
+  const hide=K.pred!==null&&!K.done;
+  if(r&&r.ph==='done'){x.font='400 20px Bungee,Impact,sans-serif';x.textAlign='center';x.fillStyle=r.res==='ok'?COL.teal:COL.red;x.fillText(r.res==='ok'?'Made the turn':'CRASH',X(-3)-sc*ro*.5,Y(0)+sc*ro*.55);}
+  if(!hide){const bw=clamp(w*.3,110,190),bx=12,by=h-34,f=p.need/p.have;
+    chip(x,bx,by-6,'GRIP USED  '+Math.round(f*100)+'%',f>1?COL.red:COL.ink);
+    x.fillStyle=COL.panel;x.strokeStyle=COL.ink;x.lineWidth=1.5;x.fillRect(bx,by,bw,12);x.strokeRect(bx,by,bw,12);
+    x.fillStyle=f>1?COL.red:COL.teal;x.fillRect(bx,by,Math.min(f,1.5)/1.5*bw,12);
+    x.fillStyle=COL.ink;x.fillRect(bx+bw/1.5-1,by-3,2,18);}
+  chip(x,12,h-8,'Dotted blue line = the path the driver is aiming for.',COL.ink);
+}};
+function kRandom(){
+  $('k-corner').value=rnd(0,CORNERS.length-1);$('k-tire').value=rnd(0,TIRES.length-1);
+  $('k-engine').value=rnd(0,ENGINES.length-1);$('k-driver').value=rnd(0,DRIVERS.length-1);
+  $('k-thr').value=rnd(40,100);$('k-m').value=rnd(140,260,5);
+  K.pred=null;kPred();$('k-fb').textContent='';$('k-fb').className='fb';
+  ['k-thr','k-m'].forEach(id=>$(id).dispatchEvent(new Event('input')));kStatic();
+}
+
+/* ================= WIRING ================= */
+function cRandom(){
+  const R=rnd(5,18,.5),m=rnd(400,1400,50);
+  C.mode='top';setSeg('c-mode','mode','top');
+  const v=$('c-v');v.min=0;v.max=25;$('c-v-lab').firstChild.nodeValue='Speed at top ';
+  const vmin=Math.sqrt(G*R),f=.6+Math.random()*.9;
+  $('c-R').value=R;$('c-m').value=m;v.value=clamp(Math.round(f*vmin*10)/10,0,25);
+  ['c-R','c-m','c-v'].forEach(id=>$(id).dispatchEvent(new Event('input')));
+  C.pred=null;setPred();$('c-fb').textContent='';$('c-fb').className='fb';cStatic();
+}
+function cSetMode(m){
+  const p=cp(),v=$('c-v');
+  C.mode=m;
+  if(m==='top'){v.min=0;v.max=25;v.value=clamp(Math.sqrt(Math.max(0,p.vt2)),0,25).toFixed(1);$('c-v-lab').firstChild.nodeValue='Speed at top ';}
+  else{v.min=5;v.max=45;v.value=clamp(p.vb,5,45).toFixed(1);$('c-v-lab').firstChild.nodeValue='Speed at bottom ';}
+  v.dispatchEvent(new Event('input'));
+}
+// Ferris
+slider('f-R',v=>f1(v)+' m',fStatic);slider('f-T',v=>f1(v)+' s',fStatic);slider('f-m',v=>f0(v)+' kg',fStatic);
+segment('f-pos','pos',v=>{F.pos=v;fStatic();});
+$('f-ch-new').onclick=fChallenge;$('f-ch-check').onclick=fCheck;
+$('f-ch-in').addEventListener('keydown',e=>{if(e.key==='Enter')fCheck();});
+fChallenge();F.pos='live';setSeg('f-pos','pos','live');fStatic();
+// Coaster
+slider('c-v',v=>f1(v)+' m/s',()=>cStatic());slider('c-R',v=>f1(v)+' m',()=>cStatic());slider('c-m',v=>f0(v)+' kg',()=>cStatic());
+segment('c-mode','mode',cSetMode);
+function setPause(btn,on){btn.textContent=on?'Play':'Pause';btn.classList.toggle('primary',on);}
+$('f-pause').onclick=()=>{F.paused=!F.paused;setPause($('f-pause'),F.paused);};
+$('c-pause').onclick=()=>{C.paused=!C.paused;setPause($('c-pause'),C.paused);};
+$('c-launch').onclick=()=>{C.paused=false;setPause($('c-pause'),false);cStatic();cStart();};
+$('c-reset').onclick=()=>{C.paused=false;setPause($('c-pause'),false);cStatic();};
+$('c-pred-safe').onclick=()=>{C.pred='safe';setPred();cStatic();$('c-fb').textContent='';};
+$('c-pred-unsafe').onclick=()=>{C.pred='unsafe';setPred();cStatic();$('c-fb').textContent='';};
+$('c-new').onclick=cRandom;
+// Karts
+kfill('k-corner',CORNERS,c=>c.n+' (inner radius '+c.rin+' m, road '+c.w+' m wide)');
+kfill('k-tire',TIRES,t=>t.n+' (μ = '+t.mu.toFixed(2)+')');
+kfill('k-engine',ENGINES,e=>e.n+' (top speed '+e.top+' m/s)');
+kfill('k-driver',DRIVERS,d=>d.n);
+$('k-corner').value=1;$('k-tire').value=1;$('k-engine').value=1;$('k-driver').value=1;
+['k-corner','k-tire','k-engine','k-driver'].forEach(id=>$(id).addEventListener('change',()=>kStatic()));
+slider('k-thr',v=>v+'%',()=>kStatic());slider('k-m',v=>v+' kg',()=>kStatic());
+segment('k-speed','s',v=>{K.speed=+v;});
+$('k-go').onclick=()=>{kStatic();kStart();};
+$('k-reset').onclick=()=>kStatic();
+$('k-pred-make').onclick=()=>{K.pred='make';kPred();kStatic();$('k-fb').textContent='';};
+$('k-pred-crash').onclick=()=>{K.pred='crash';kPred();kStatic();$('k-fb').textContent='';};
+$('k-new').onclick=kRandom;
+// Tabs
+function showTab(n){if(!sims[n])n='ferris';active=n;
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.p===n));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.id!=='p-'+n);}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{showTab(t.dataset.p);try{history.replaceState(null,'','#'+t.dataset.p);}catch(e){}}));
+window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
+showTab(location.hash.slice(1));
+// Loop
+let last=performance.now(),fc=0;
+function tick(t){const dt=(t-last)/1000;last=t;if(fc++%30===0)readColors();sims[active].frame(dt);requestAnimationFrame(tick);}
+readColors();requestAnimationFrame(tick);
+</script>
+
+</body></html>
