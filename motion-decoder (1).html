@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion Decoder: 1D Kinematics Word Problems</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#1c2333;--muted:#5f6b85;--line:#d7dcea;--accent:#3b5bdb;--good:#2b8a3e;--bad:#c92a2a;
+--c-v0:#1971c2;--b-v0:#d0ebff;--c-v:#2b8a3e;--b-v:#d3f9d8;--c-vc:#0b7285;--b-vc:#c5f6fa;--c-a:#d9480f;--b-a:#ffe8cc;--c-x:#6741d9;--b-x:#e5dbff;--c-t:#c2255c;--b-t:#ffdeeb}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:920px;margin:0 auto;padding:14px}
+.top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.brand{font-weight:800;font-size:1.1rem}
+.tier{color:var(--muted);font-size:.9rem;margin-left:8px}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dot{width:14px;height:14px;border-radius:50%;background:#dfe3ef}
+.dot.done{background:var(--good)}
+.dot.cur{background:var(--accent);box-shadow:0 0 0 3px #c5d0ff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+.card h3{margin:0 0 8px;font-size:1rem}
+.small{font-size:.85rem;color:var(--muted)}
+.steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.step{display:flex;align-items:center;gap:7px;font-size:.88rem;color:var(--muted);padding:4px 10px 4px 5px;border-radius:99px;background:#e9ecf6}
+.step i{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#cfd5e8;color:#fff;font-weight:700;font-size:.8rem}
+.step.cur{background:#dbe4ff;color:#1c2f8f;font-weight:600}.step.cur i{background:var(--accent)}
+.step.done i{background:var(--good)}
+.ptext{font-size:1.28rem;line-height:2.5;user-select:none;-webkit-user-select:none;touch-action:none;cursor:text;padding:4px 0}
+.w,.sp{border-radius:5px;padding:3px 0}
+.w{padding:3px 1px}
+.w:not([class*="k-"]):hover{background:#eef2ff}
+.k-v0{background:var(--b-v0);--c:var(--c-v0)}.k-v{background:var(--b-v);--c:var(--c-v)}.k-vc{background:var(--b-vc);--c:var(--c-vc)}
+.k-a{background:var(--b-a);--c:var(--c-a)}.k-x{background:var(--b-x);--c:var(--c-x)}.k-t{background:var(--b-t);--c:var(--c-t)}
+[class*="k-find_"]{background:#fff3bf;--c:#946200;box-shadow:inset 0 -3px 0 #f59f00}
+.k-skip{background:#e9ecef;--c:#868e96;color:#868e96;text-decoration:line-through;text-decoration-color:#adb5bd}
+.w[data-badge]::after{content:attr(data-badge);font-size:.62em;font-weight:800;margin:0 4px 0 3px;vertical-align:sub;color:var(--c);letter-spacing:.2px}
+.w.sel,.sp.sel{background:#ffd43b!important;box-shadow:none}
+.posChip{display:inline-block;margin-left:8px;background:#edf2ff;color:#364fc7;border-radius:99px;padding:1px 10px;font-size:.82rem;font-weight:600}
+#selinfo{min-height:26px;margin-bottom:8px;font-weight:600}
+.pal{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:6px}
+.palh{font-size:.8rem;color:var(--muted);margin:8px 0 5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+button{font:inherit;cursor:pointer}
+.lbtn{border:2px solid var(--line);border-radius:10px;padding:6px 10px;color:var(--ink);background:#fff}
+.lbtn b{margin-right:5px}
+.lbtn:disabled{opacity:.45;cursor:not-allowed}
+.lbtn:not(:disabled):hover{transform:translateY(-1px);filter:brightness(.97)}
+.lbtn[class*="k-"]{border-color:var(--c)}
+.lbtn.k-skip{text-decoration:none;color:var(--ink)}
+.fb{margin-top:8px;padding:8px 12px;border-radius:9px;font-size:.95rem}
+.fb:empty{display:none}
+.fb.good{background:#ebfbee;color:#1b5e20;border:1px solid #b2e6bb}
+.fb.bad{background:#fff0f0;color:#8f1d1d;border:1px solid #f5c2c2}
+.fb.info{background:#edf2ff;color:#24348f;border:1px solid #c9d4ff}
+.vrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.vrow:last-child{border-bottom:0}
+.vrow .sym{font-weight:800;font-size:1.1rem;min-width:34px;color:var(--c,#555)}
+.vrow .eqs{font-weight:700}
+.vrow .vname{color:var(--muted);font-size:.9rem}
+.vrow.skip{opacity:.65;text-decoration:line-through}
+.vrow.find{background:#fff9db;border-radius:8px;padding:7px 8px}
+.vin{width:110px;padding:5px 8px;border:2px solid var(--line);border-radius:8px;font:inherit}
+.vin:focus{outline:none;border-color:var(--accent)}
+.vin.ok{border-color:var(--good);background:#f1fbf3}
+.chk,.primary,.next{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:6px 14px;font-weight:600}
+.primary,.next{padding:10px 22px;font-size:1.05rem}
+.ghost{background:#fff;color:var(--accent);border:2px solid var(--accent);border-radius:9px;padding:8px 16px;font-weight:600}
+.rowfb{flex-basis:100%;font-size:.88rem;padding-left:44px}
+.rowfb.bad{color:var(--bad)}.rowfb.good{color:var(--good)}
+.rowfb:empty{display:none}
+.eqlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px}
+.eqbtn{background:#fff;border:2px solid var(--line);border-radius:11px;padding:12px;font-size:1.12rem;font-weight:600;text-align:center}
+.eqbtn small{display:block;font-size:.72rem;color:var(--muted);font-weight:500}
+.eqbtn:not(:disabled):hover{border-color:var(--accent);background:#f5f7ff}
+.eqbtn.wrong{border-color:#f1b0b0;background:#fff5f5;color:#b66;text-decoration:line-through;cursor:not-allowed}
+.eqbtn.right{border-color:var(--good);background:#ebfbee}
+.ansrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.ansrow select{font:inherit;padding:6px;border:2px solid var(--line);border-radius:8px}
+.setup{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f1f3f9;border-radius:8px;padding:8px 12px;margin-top:8px;font-size:.95rem;overflow-x:auto}
+.foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;margin:6px 0 30px}
+.foot select{font:inherit;padding:4px}
+.hero h1{margin:.1em 0}
+.how li{margin-bottom:8px}
+.nm{display:block;margin:14px 0}
+.nm input{display:block;margin-top:4px;padding:8px 10px;width:100%;max-width:340px;border:2px solid var(--line);border-radius:8px;font:inherit}
+table.res{border-collapse:collapse;width:100%;font-size:.92rem}
+table.res th,table.res td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center}
+table.res th:first-child,table.res td:first-child{text-align:left}
+.zero{color:var(--good);font-weight:700}
+textarea.copy{width:100%;height:150px;font:12px ui-monospace,Menlo,Consolas,monospace;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ======================= LOGIC =======================
+const GRAV={m:9.8,ft:32};
+const VAR={
+  v0:{sym:'v₀',name:'initial velocity',kind:'vel'},
+  v:{sym:'v',name:'final velocity',kind:'vel'},
+  vc:{sym:'v\u0304',name:'constant velocity',kind:'vel'},
+  a:{sym:'a',name:'acceleration',kind:'acc'},
+  x:{sym:'Δx',name:'displacement',kind:'len'},
+  t:{sym:'t',name:'time',kind:'time'}
+};
+const UNITS={m:{len:'m',vel:'m/s',acc:'m/s²',time:'s'},ft:{len:'ft',vel:'ft/s',acc:'ft/s²',time:'s'}};
+const EQS=[
+  {id:1,text:'v = v₀ + at',vars:['v','v0','a','t']},
+  {id:2,text:'Δx = v₀t + ½at²',vars:['x','v0','t','a']},
+  {id:3,text:'v² = v₀² + 2aΔx',vars:['v','v0','a','x']},
+  {id:4,text:'Δx = ½(v₀ + v)t',vars:['x','v0','v','t']},
+  {id:5,text:'v\u0304 = Δx / t',vars:['vc','x','t'],note:'constant velocity only'}
+];
+const TIERS=['Constant velocity','Speeding up from rest','Braking & hidden clues','Free fall','Throwing up & down'];
+const DGOOD={v0:'That’s the starting velocity, v₀.',v:'That’s the final velocity, v.',vc:'That’s a constant velocity, v\u0304.',a:'That’s the acceleration, a.',x:'That’s the displacement (distance), Δx.',t:'That’s the time, t.',
+  find_v0:'This is the question: you’re solving for the initial velocity, v₀.',find_v:'This is the question: you’re solving for the final velocity, v.',find_a:'This is the question: you’re solving for the acceleration, a.',find_x:'This is the question: you’re solving for the displacement, Δx.',find_t:'This is the question: you’re solving for the time, t.'};
+const DHINT={v0:'Think about how the object is moving at the very START.',v:'Think about how the object is moving at the very END.',vc:'A steady velocity that never changes.',a:'How quickly the velocity is changing.',x:'How far the object moved (a length).',t:'How long the motion takes.',
+  find_v0:'This is the question. What is it asking you to find?',find_v:'This is the question. What is it asking you to find?',find_a:'This is the question. What is it asking you to find?',find_x:'This is the question. What is it asking you to find?',find_t:'This is the question. What is it asking you to find?',
+  skip:'Could you ever use this in a kinematic equation? Does it change the motion?'};
+
+const R2=n=>Math.round(n*100)/100;
+const rand=a=>a[Math.floor(Math.random()*a.length)];
+const K=(t,key,mag,dir,o)=>Object.assign({_ph:true,t:t,key:key,mag:mag,dir:dir},o||{});
+const SKIP=(t,why)=>({_ph:true,t:t,key:'skip',why:why,mag:0,dir:'+'});
+const V0Z=(t,vh)=>K(t,'v0',0,'+',{hidden:true,good:'“'+t+'” hides a number: the object starts with no velocity, so v₀ = 0.',vh:vh,hint:'It isn’t a number, but it tells you how fast the object is moving at the very START.'});
+const VZ=(t,vh)=>K(t,'v',0,'+',{hidden:true,good:'“'+t+'” hides a number: the final velocity is zero, so v = 0.',vh:vh,hint:'It isn’t a number, but it tells you how fast the object is moving at the very END.'});
+const GR=(t,s)=>K(t,'a',GRAV[s],'down',{hidden:true,good:'Free fall! The acceleration is g = '+GRAV[s]+' '+UNITS[s].acc+', pointing down.',vh:'No number is written, but this means only gravity acts. What is g in '+UNITS[s].acc+', and does it point the same way as your positive direction?',hint:'It isn’t a number. What acceleration do falling objects have when only gravity acts?'});
+const mk=(tier,system,vertical,parts)=>({tier:tier,system:system,vertical:vertical,parts:parts});
+
+const GENS=[
+// ---- Tier 1: constant velocity ----
+()=>{const nm=rand([['Mr. Berry','he'],['Ms. Ortiz','she'],['Coach Kim','she']]);
+  const v=rand([3,4,5,6,7,8]),t=rand([20,30,40,50,60]),n=rand([12,14,18,25]),x=v*t;
+  return mk(1,'m',false,[nm[0]+' jogs along a straight trail at a constant ',
+    K(v+' m/s','vc',v,'+',{good:'A steady speed in one direction is a constant velocity.',hint:'The speed never changes. What kind of velocity is that?'}),
+    '. The trail has ',SKIP(n+' benches','The number of benches has no effect on how far '+nm[0]+' goes.'),
+    ' along it. ',K('How far does '+nm[1]+' travel','find_x',x,'+'),' in ',K(t+' s','t',t,'+'),'?']);},
+()=>{const kmh=rand([18,36,54,72]),v=kmh/3.6,t=rand([20,30,40,50]),x=v*t,g=rand([18,21,24]);
+  return mk(1,'m',false,['A cyclist rides at a constant ',
+    K(kmh+' km/h','vc',v,'+',{conv:true,raw:kmh,good:'A constant velocity, but it is in km/h and the equations need m/s. Convert it next.',vh:'The equations need consistent units. Convert km/h to m/s (divide by 3.6).',hint:'A steady speed that never changes.'}),
+    ' along a straight, flat road. Her bike has ',SKIP(g+' gears','Gears don’t change how fast she travels.'),
+    '. ',K('How long does it take her','find_t',R2(t),'+'),' to travel ',K(x+' m','x',x,'+'),'?']);},
+// ---- Tier 2: speeding up from rest ----
+()=>{const a=rand([3,4,5,6]),t=rand([3.5,4,5.5,6]),v=a*t,m=rand([2200,2500,2800]);
+  return mk(2,'m',false,['A Toyota Tundra starts ',V0Z('from rest','“From rest” never gives a number. How fast is the truck moving when it starts from rest?'),
+    ' and speeds up in a straight line at ',K(a+' m/s²','a',a,'+'),'. The truck has a mass of ',SKIP(m+' kg','Mass doesn’t appear in any kinematic equation.'),
+    '. ',K('What is its speed','find_v',R2(v),'+'),' after ',K(t+' s','t',t,'+'),'?']);},
+()=>{const v=rand([8,9,10,11]),t=rand([2.5,3,4,5]),x=v*t/2,age=rand([34,41,52]);
+  return mk(2,'m',false,['A sprinter starts ',V0Z('from rest','“From rest” never gives a number. How fast is she moving when she starts from rest?'),
+    ' and reaches a speed of ',K(v+' m/s','v',v,'+'),' in ',K(t+' s','t',t,'+'),'. Her coach is ',SKIP(age+' years old','The coach’s age has nothing to do with the sprint.'),
+    '. ',K('How far does she run','find_x',x,'+'),' in that time?']);},
+()=>{const a=rand([2,3,4,5]),vt=rand([10,12,15,20,24,30]),x=Math.round(vt*vt/(2*a)*10)/10,v=Math.sqrt(2*a*x);
+  return mk(2,'m',false,['A motorcycle ',V0Z('starts from rest','“Starts from rest” never gives a number. How fast is the motorcycle moving when it starts from rest?'),
+    ' at a stoplight and accelerates at ',K(a+' m/s²','a',a,'+'),' over a distance of ',K(x+' m','x',x,'+'),'. The rider wears a helmet with ',SKIP('3 red stripes','The helmet’s stripes don’t affect the motion.'),
+    '. ',K('How fast is it moving','find_v',v,'+'),' at the end of that distance?']);},
+()=>{const a=rand([2,2.5,4,5]),v=rand([12,16,20,24,30]),t=v/a,d=rand([2,4]);
+  return mk(2,'m',false,['A car ',V0Z('starts from rest','“Starts from rest” never gives a number. How fast is the car moving when it starts from rest?'),
+    ' and accelerates at ',K(a+' m/s²','a',a,'+'),' until it reaches a speed of ',K(v+' m/s','v',v,'+'),'. It is a sedan with ',SKIP(d+' doors','The number of doors is irrelevant.'),
+    '. ',K('How long does this take','find_t',t,'+'),'?']);},
+// ---- Tier 3: braking & hidden clues ----
+()=>{const v0=rand([60,66,88]),x=rand([100,120,150]),a=v0*v0/(2*x);
+  return mk(3,'ft',false,['A 1990 Miata is traveling at ',K(v0+' ft/s','v0',v0,'+'),' when the driver slams on the brakes and the car ',
+    VZ('comes to a stop','“Comes to a stop” never gives a number. How fast is the car moving once it has stopped?'),' in ',K(x+' ft','x',x,'+'),
+    '. The license plate reads ',SKIP('4Z7-902','A license plate number has nothing to do with the motion.'),
+    '. ',K('What is the car’s acceleration','find_a',a,'-'),'?']);},
+()=>{const kmh=rand([36,54,72,90]),v0=kmh/3.6,a=rand([2,2.5,4,5]),t=v0/a,kg=rand([2400,3100,4000]);
+  return mk(3,'m',false,['A truck is traveling at ',K(kmh+' km/h','v0',v0,'+',{conv:true,raw:kmh,vh:'The equations need consistent units. Convert km/h to m/s (divide by 3.6).'}),
+    ' when the driver sees a red light and brakes, decelerating at ',K(a+' m/s²','a',a,'-',{hidden:true,good:'“Decelerating” means slowing down, so the acceleration is NEGATIVE here.',vh:'“Decelerating” means the truck is slowing down. Is the acceleration positive or negative?',hint:'How quickly the velocity is changing. Watch the sign!'}),
+    ' until the truck ',VZ('is stopped','“Is stopped” never gives a number. How fast is the truck moving when it is stopped?'),
+    '. It carries ',SKIP(kg+' kg','Cargo mass doesn’t appear in any kinematic equation.'),' of cargo. ',K('How long does it take the truck to stop','find_t',t,'+'),'?']);},
+()=>{const v0=rand([8,10,12,15]),t=rand([4,5,6,8]),x=v0*t/2,d=rand([24,26,29]);
+  return mk(3,'m',false,['A cyclist riding at ',K(v0+' m/s','v0',v0,'+'),' squeezes the brakes and ',VZ('comes to rest','“Comes to rest” never gives a number. How fast is the cyclist moving once at rest?'),
+    ' in ',K(t+' s','t',t,'+'),'. The bike has ',SKIP(d+'-inch wheels','Wheel size doesn’t matter for the motion.'),
+    '. ',K('How far does the cyclist travel','find_x',x,'+'),' while braking?']);},
+// ---- Tier 4: free fall ----
+()=>{const t=rand([1.0,1.2,1.4,1.5,1.8,2.0]),h=0.5*9.8*t*t,n=rand([2,3,5]);
+  return mk(4,'m',true,['Aaron ',V0Z('drops','“Drops” means released, not thrown. How fast is the pencil moving at the instant it is let go?'),
+    ' a pencil from a second-floor window of the science wing. ',GR('Ignoring air resistance','m'),', the pencil hits the ground ',K(t+' s','t',t,'+'),' later. The pencil has ',SKIP(n+' cm','The length of the pencil doesn’t matter.'),
+    ' of eraser left. ',K('How high was the pencil when it was released','find_x',h,'down',{acceptMag:true}),'?']);},
+()=>{const h=rand([20,45,80,125,180]),v=Math.sqrt(2*9.8*h);
+  return mk(4,'m',true,['A penny is ',V0Z('dropped','“Dropped” means released, not thrown. How fast is the penny moving at the instant it is let go?'),
+    ' from the top of a building that is ',K(h+' m','x',h,'down'),' tall. ',GR('Assume there is no air resistance','m'),'. The penny has a ',SKIP('mass of 2.5 g','The penny’s mass doesn’t affect how it falls.'),
+    '. ',K('How fast is the penny moving','find_v',v,'down',{acceptMag:true}),' just before it lands?']);},
+()=>{const t=rand([2.0,2.5,3.0,3.2,3.5]),v=9.8*t,w=rand([12,15,20]);
+  return mk(4,'m',true,['A friend ',V0Z('steps off','“Steps off” means no push at the start, so how fast is she moving the instant she leaves the bridge?'),
+    ' a bridge and splashes into the river ',K(t+' s','t',t,'+'),' later. The river is ',SKIP(w+' m wide','The river’s width has nothing to do with the fall.'),
+    '. ',GR('Ignoring air resistance','m'),', ',K('how fast is she moving','find_v',v,'down',{acceptMag:true}),' just before she hits the water?']);},
+// ---- Tier 5: throwing ----
+()=>{const v0=rand([3,4,5,6]),x=rand([1.0,1.2,1.5,2.0,2.5,3.0]),v=Math.sqrt(v0*v0+2*9.8*x),ml=rand([500,600,750]);
+  return mk(5,'m',true,['You see a spider on the floor ',K(x+' m','x',x,'down'),' below you. You throw a water bottle straight down at ',
+    K(v0+' m/s','v0',v0,'down',{vh:'The bottle is thrown straight DOWN. Is that the same direction as your positive direction? Include the sign.'}),
+    '. The bottle holds ',SKIP(ml+' mL','The amount of water doesn’t change the motion.'),' of water. ',GR('Ignoring air resistance','m'),', ',
+    K('how fast is the bottle moving','find_v',v,'down',{acceptMag:true}),' when it reaches the spider?']);},
+()=>{const h=rand([10,15,20,25,30]),v0=Math.sqrt(2*9.8*h),d=rand([22,24,25]);
+  return mk(5,'m',true,['A kite is stuck in a tree ',K(h+' m','x',h,'up'),' above you. You throw a basketball straight up so that it ',
+    VZ('just barely reaches','At the very top of its flight, the ball stops for an instant. What is its velocity there?'),' the kite. The basketball has a diameter of ',SKIP(d+' cm','The ball’s size doesn’t matter here.'),
+    '. ',GR('Ignoring air resistance','m'),', ',K('how fast must the ball be moving','find_v0',v0,'up',{acceptMag:true}),' when it leaves your hand?']);},
+()=>{const v0=rand([3,3.5,4,4.5]),t=v0/9.8,hgt=rand([1.88,1.93,1.98]);
+  return mk(5,'m',true,['A basketball player leaves the floor moving upward at ',K(v0+' m/s','v0',v0,'up'),'. He is ',SKIP(hgt+' m tall','His height doesn’t change how long his jump takes.'),
+    '. ',GR('Ignoring air resistance','m'),', ',K('how long does it take him','find_t',t,'+'),' to reach ',VZ('the peak of his jump','At the peak, he stops moving upward for an instant. What is his velocity there?'),'?']);}
+];
+
+function buildWords(prob){
+  let full='';const ranges=[];
+  prob.parts.forEach(p=>{if(typeof p==='string')full+=p;else{ranges.push({p:p,s:full.length,e:full.length+p.t.length});full+=p.t;}});
+  const words=[];const re=/\S+/g;let m;
+  while((m=re.exec(full)))words.push({t:m[0],s:m.index,e:m.index+m[0].length,ph:-1});
+  prob.phrases=ranges.map(r=>r.p);
+  ranges.forEach((r,pi)=>{r.p.words=[];words.forEach((w,wi)=>{if(Math.min(w.e,r.e)-Math.max(w.s,r.s)>0){w.ph=pi;r.p.words.push(wi);}});});
+  prob.words=words;prob.full=full;
+}
+function sval(p,pos){if(!p.mag)return 0;if(p.dir==='up'||p.dir==='down')return p.dir===pos?p.mag:-p.mag;return p.dir==='-'?-p.mag:p.mag;}
+function needsTyped(p,prob){
+  if(!VAR[p.key])return false;
+  if(p.conv||p.hidden||p.dir==='-'||p.mag===0)return true;
+  return prob.vertical&&p.key!=='t';
+}
+function near(n,exp){return Math.abs(n-exp)<=Math.max(0.03*Math.abs(exp),0.02);}
+function parseNum(s){return parseFloat(String(s).replace(/−/g,'-').replace(/,/g,''));}
+function fmtV(n){const s=String(+n.toFixed(3));return n<0?'('+s+')':s;}
+function residual(id,o){const v0=o.v0,v=o.v,a=o.a,x=o.x,t=o.t,vc=o.vc;
+  switch(id){case 1:return v-(v0+a*t);case 2:return x-(v0*t+0.5*a*t*t);case 3:return v*v-(v0*v0+2*a*x);case 4:return x-0.5*(v0+v)*t;case 5:return vc-x/t;}}
+function unkOf(prob){return prob.phrases.find(p=>p.key.indexOf('find_')===0);}
+function needSet(prob){const s=new Set();prob.phrases.forEach(p=>{if(VAR[p.key])s.add(p.key);});s.add(unkOf(prob).key.slice(5));return s;}
+function correctEq(prob){const need=needSet(prob);return EQS.filter(e=>e.vars.length===need.size&&e.vars.every(v=>need.has(v)));}
+function setupText(prob,eq,pos){
+  const vals={};prob.phrases.forEach(p=>{if(VAR[p.key])vals[p.key]=sval(p,pos);});
+  const uk=unkOf(prob).key.slice(5);
+  const f=k=>k===uk?VAR[k].sym:fmtV(vals[k]);
+  const sq=k=>k===uk?VAR[k].sym+'²':fmtV(vals[k])+'²';
+  switch(eq.id){
+    case 1:return f('v')+' = '+f('v0')+' + '+f('a')+'·'+f('t');
+    case 2:return f('x')+' = '+f('v0')+'·'+f('t')+' + ½·'+f('a')+'·'+sq('t');
+    case 3:return sq('v')+' = '+sq('v0')+' + 2·'+f('a')+'·'+f('x');
+    case 4:return f('x')+' = ½·('+f('v0')+' + '+f('v')+')·'+f('t');
+    case 5:return f('vc')+' = '+f('x')+' / '+f('t');
+  }
+}
+function mismatchMsg(L,key){
+  const vel=['v0','v','vc'];
+  if(key==='skip')return 'That detail doesn’t affect the motion. Could you ever use it in a kinematic equation?';
+  if(L==='skip')return 'This one matters. It will go into your solution.';
+  const Lf=L.indexOf('find_')===0,kf=key.indexOf('find_')===0;
+  if(kf&&!Lf)return 'This is the question being asked. What is it asking you to find?';
+  if(!kf&&Lf)return 'That’s information the problem gives you, not what you’re solving for.';
+  if(kf&&Lf)return 'You’re solving for something else. What quantity does this question want?';
+  if(vel.indexOf(L)>=0&&vel.indexOf(key)>=0)return 'It’s a velocity, but which one: at the start, at the end, or steady the whole time?';
+  return 'Not quite. Check what kind of quantity this is.';
+}
+/*UI*/
+// ======================= UI =======================
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const S={name:'',idx:0,results:[],prob:null,phase:'tag',pos:null,sel:null,miss:null,hints:0,practice:false,ansTries:0,hintLevel:{tag:0,eq:0,ans:0},wEls:[],sEls:[]};
+let drag=false;
+const BADGE={v0:'v₀',v:'v',vc:'v\u0304',a:'a',x:'Δx',t:'t',skip:'✕',find_v0:'find v₀',find_v:'find v',find_a:'find a',find_x:'find Δx',find_t:'find t'};
+const PAL=[['v0','v₀','initial velocity'],['v','v','final velocity'],['vc','v\u0304','constant velocity'],['a','a','acceleration'],['x','Δx','displacement / distance'],['t','t','time'],['skip','✕','not needed']];
+const FPAL=[['find_v0','v₀','initial velocity'],['find_v','v','final velocity'],['find_a','a','acceleration'],['find_x','Δx','displacement / distance'],['find_t','t','time']];
+const unitOf=(p,key)=>UNITS[S.prob.system][VAR[key||p.key].kind];
+
+function say(el,msg,type){el.className=(el.classList.contains('rowfb')?'rowfb ':'fb ')+type;el.textContent=msg;}
+
+function showStart(){
+  $('#app').innerHTML='<div class="wrap"><div class="card hero"><h1>Motion Decoder</h1><p>Before you can solve a motion problem, you have to <b>decode</b> it. In each of these '+GENS.length+' problems you will:</p>'+
+  '<ol class="how"><li><b>Highlight</b> the important pieces (drag across them with your mouse or finger) and <b>label</b> each one: starting velocity, final velocity, acceleration, displacement, time, or the thing you’re solving for.</li>'+
+  '<li>Catch the <b>hidden clues</b>. Phrases like “from rest,” “dropped,” and “comes to a stop” hide a number. Type what each one means.</li>'+
+  '<li>Spot the details that are <b>not needed</b> (optional, but great practice).</li>'+
+  '<li>Choose the <b>kinematic equation</b> that fits what you know and what you want.</li>'+
+  '<li><b>Solve</b> it and check your answer.</li></ol>'+
+  '<p class="small">Use g = 9.8 m/s² (or 32 ft/s²). Answers within about 3% are accepted. Do your math on paper.</p>'+
+  '<label class="nm">Your name<input id="nm" placeholder="First and last name" autocomplete="name"></label><button class="primary" id="go">Start</button></div></div>';
+  $('#go').onclick=()=>{S.name=$('#nm').value.trim();S.results=[];loadProblem(0,false);};
+}
+
+function loadProblem(i,practice){
+  S.idx=i;S.practice=!!practice;
+  const prob=GENS[i]();buildWords(prob);S.prob=prob;
+  S.miss={tag:0,val:0,eq:0,ans:0};S.hints=0;S.sel=null;S.ansTries=0;S.hintLevel={tag:0,eq:0,ans:0};
+  prob.phrases.forEach(p=>{p.done=false;p.valDone=false;p.miss=0;p.vmiss=0;p.typed=needsTyped(p,prob);});
+  S.pos=prob.vertical?null:'+';
+  S.phase=prob.vertical?'conv':'tag';
+  renderProblem();
+}
+
+function renderProblem(){
+  const P=S.prob;
+  const done=S.results.filter(Boolean).length;
+  $('#app').innerHTML='<div class="wrap">'+
+  '<div class="top"><div><span class="brand">Motion Decoder</span><span class="tier">Tier '+P.tier+': '+TIERS[P.tier-1]+(S.practice?' · practice':'')+'</span></div>'+
+  '<div class="dots">'+GENS.map((_,i)=>'<span class="dot'+(S.results[i]?' done':'')+(i===S.idx?' cur':'')+'"></span>').join('')+'</div></div>'+
+  '<div class="steps" id="steps"></div>'+
+  '<section class="card" id="probcard"><div class="small">Problem '+(S.idx+1)+' of '+GENS.length+'<span id="posChip"></span></div><div id="ptext" class="ptext"></div></section>'+
+  '<section class="card" id="conv" hidden><h3>First: which direction is positive?</h3><p>This is vertical motion, so you have to decide. Either choice works. Just stay consistent, because the signs of your velocities, displacements and g all depend on it.</p><div class="pal"><button class="ghost" data-pos="up">⬆ Up is positive</button><button class="ghost" data-pos="down">⬇ Down is positive</button></div></section>'+
+  '<section class="card" id="lab"><div id="selinfo"></div>'+
+  '<div class="palh">This tells me…</div><div class="pal">'+PAL.map(l=>'<button class="lbtn k-'+l[0]+'" data-l="'+l[0]+'" disabled><b>'+l[1]+'</b>'+l[2]+'</button>').join('')+'</div>'+
+  '<div class="palh">I’m solving for…</div><div class="pal">'+FPAL.map(l=>'<button class="lbtn k-'+l[0]+'" data-l="'+l[0]+'" disabled><b>'+l[1]+'</b>'+l[2]+'</button>').join('')+'</div>'+
+  '<div class="fb" id="fb" aria-live="polite"></div></section>'+
+  '<section class="card" id="vtab"><h3>Your variables</h3><div id="rows"><div class="small" id="rowsEmpty">Labeled pieces will show up here.</div></div></section>'+
+  '<section class="card" id="eqs" hidden><h3>Choose the equation</h3><p class="small">Which equation contains everything you know and the unknown, and nothing else?</p><div class="eqlist" id="eqlist"></div><div class="fb" id="fbEq" aria-live="polite"></div></section>'+
+  '<section class="card" id="ans" hidden><h3 id="ansH"></h3><p class="small">Rearrange for the unknown, plug in your values (with signs), and calculate. Then enter your result.</p>'+
+  '<div class="ansrow"><input class="vin" id="ansIn" inputmode="decimal" placeholder="answer"><select id="ansUnit"></select><button class="chk" id="ansBtn">Check answer</button></div><div class="fb" id="fbAns" aria-live="polite"></div><div id="setup"></div><div id="nextRow" style="margin-top:12px" hidden></div></section>'+
+  '<div class="foot"><div><button class="ghost" id="hintBtn">💡 Hint</button> '+(done?'<button class="ghost" id="seeRes">See results</button>':'')+'</div>'+
+  '<label class="small">Jump to: <select id="jump">'+GENS.map((_,i)=>'<option value="'+i+'"'+(i===S.idx?' selected':'')+'>Problem '+(i+1)+'</option>').join('')+'</select></label></div></div>';
+
+  // words
+  const box=$('#ptext');S.wEls=[];S.sEls=[];
+  P.words.forEach((w,i)=>{const s=document.createElement('span');s.className='w';s.dataset.i=i;s.textContent=w.t;box.appendChild(s);S.wEls.push(s);
+    if(i<P.words.length-1){const sp=document.createElement('span');sp.className='sp';sp.textContent=' ';box.appendChild(sp);S.sEls.push(sp);}else S.sEls.push(null);});
+  box.addEventListener('pointerdown',e=>{
+    const w=e.target.closest('.w');
+    if(S.phase!=='tag'){return;}
+    if(!w){clearSel();return;}
+    e.preventDefault();drag=true;S.sel={a:+w.dataset.i,b:+w.dataset.i};paint();updatePalette();
+    try{box.setPointerCapture(e.pointerId);}catch(_){}
+  });
+  box.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    const el=document.elementFromPoint(e.clientX,e.clientY);const w=el&&el.closest?el.closest('.w'):null;
+    if(w&&+w.dataset.i!==S.sel.b){S.sel.b=+w.dataset.i;paint();}
+  });
+  const end=()=>{if(!drag)return;drag=false;finishSel();};
+  box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
+
+  document.querySelectorAll('.lbtn').forEach(b=>b.onclick=()=>applyLabel(b.dataset.l));
+  document.querySelectorAll('[data-pos]').forEach(b=>b.onclick=()=>choosePos(b.dataset.pos));
+  EQS.forEach(e=>{const b=document.createElement('button');b.className='eqbtn';b.innerHTML=esc(e.text)+(e.note?'<small>'+e.note+'</small>':'');b.onclick=()=>pickEq(e,b);$('#eqlist').appendChild(b);});
+  $('#ansBtn').onclick=checkAns;$('#ansIn').addEventListener('keydown',e=>{if(e.key==='Enter')checkAns();});
+  $('#hintBtn').onclick=giveHint;
+  $('#jump').onchange=e=>loadProblem(+e.target.value,false);
+  if($('#seeRes'))$('#seeRes').onclick=showResults;
+  setPhase(S.phase);paint();
+}
+
+function setPhase(ph){
+  S.phase=ph;
+  $('#conv').hidden=ph!=='conv';
+  $('#lab').hidden=ph==='conv';
+  $('#vtab').hidden=ph==='conv';
+  $('#eqs').hidden=!(ph==='eq'||ph==='ans'||ph==='done');
+  $('#ans').hidden=!(ph==='ans'||ph==='done');
+  if(S.pos&&S.prob.vertical)$('#posChip').innerHTML='<span class="posChip">positive direction: '+(S.pos==='up'?'⬆ up':'⬇ down')+'</span>';
+  updateSteps();updatePalette();
+  if(ph==='tag'&&!$('#fb').textContent)say($('#fb'),'Drag across a number with its unit, or a key phrase, then choose what it is. Highlight the question and every number or clue you’ll need. Labeling details that aren’t needed is optional, but good practice.','info');
+}
+function updateSteps(){
+  const P=S.prob;const order=P.vertical?['conv','tag','eq','ans']:['tag','eq','ans'];
+  const names={conv:'Choose direction',tag:'Highlight & label',eq:'Pick equation',ans:'Solve'};
+  const cur=S.phase==='done'?order.length:order.indexOf(S.phase);
+  $('#steps').innerHTML=order.map((k,i)=>'<span class="step '+(i<cur?'done':i===cur?'cur':'')+'"><i>'+(i<cur?'✓':i+1)+'</i>'+names[k]+'</span>').join('');
+}
+function choosePos(p){S.pos=p;setPhase('tag');}
+
+function inSel(i){if(!S.sel)return false;return i>=Math.min(S.sel.a,S.sel.b)&&i<=Math.max(S.sel.a,S.sel.b);}
+function paint(){
+  const P=S.prob;
+  P.words.forEach((w,i)=>{
+    const el=S.wEls[i];const p=w.ph>=0?P.phrases[w.ph]:null;const tg=p&&p.done;
+    el.className='w'+(tg?' k-'+p.key:'')+(inSel(i)?' sel':'');
+    el.removeAttribute('data-badge');
+    if(tg&&i===p.words[p.words.length-1])el.setAttribute('data-badge',BADGE[p.key]);
+    const sp=S.sEls[i];
+    if(sp){const same=tg&&P.words[i+1].ph===w.ph;sp.className='sp'+(same?' k-'+p.key:'')+((inSel(i)&&inSel(i+1))?' sel':'');}
+  });
+}
+function clearSel(){S.sel=null;drag=false;paint();updatePalette();}
+function finishSel(){
+  const P=S.prob;const lo=Math.min(S.sel.a,S.sel.b),hi=Math.max(S.sel.a,S.sel.b);
+  for(let i=lo;i<=hi;i++){const w=P.words[i];if(w.ph>=0&&P.phrases[w.ph].done){say($('#fb'),'Part of that is already labeled. Highlight something new.','info');clearSel();return;}}
+  updatePalette();
+}
+function updatePalette(){
+  const on=S.phase==='tag'&&S.sel&&!drag;
+  document.querySelectorAll('.lbtn').forEach(b=>b.disabled=!on);
+  const si=$('#selinfo');if(!si)return;
+  if(S.phase!=='tag'){si.textContent='';return;}
+  if(on){const lo=Math.min(S.sel.a,S.sel.b),hi=Math.max(S.sel.a,S.sel.b);si.textContent='You highlighted: “'+S.prob.words.slice(lo,hi+1).map(w=>w.t).join(' ')+'”. What is it?';}
+  else si.textContent='Highlight part of the problem above.';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.prob&&S.phase==='tag')clearSel();});
+
+function applyLabel(L){
+  if(S.phase!=='tag'||!S.sel)return;
+  const P=S.prob;const lo=Math.min(S.sel.a,S.sel.b),hi=Math.max(S.sel.a,S.sel.b);const f=$('#fb');
+  const hit=new Set();for(let i=lo;i<=hi;i++){if(P.words[i].ph>=0)hit.add(P.words[i].ph);}
+  if(hit.size===0){S.miss.tag++;say(f,'None of those words is a number or a motion clue. Try a number with its unit, or a key phrase that hides one.','bad');clearSel();return;}
+  if(hit.size>1){S.miss.tag++;say(f,'You highlighted more than one piece of information. Label them one at a time.','bad');clearSel();return;}
+  const p=P.phrases[[...hit][0]];
+  if(!p.words.every(w=>w>=lo&&w<=hi)){S.miss.tag++;say(f,'Your highlight is missing part of it. Include the whole piece: the number and its unit, or the whole key phrase.','bad');clearSel();return;}
+  if((hi-lo+1)-p.words.length>2){S.miss.tag++;say(f,'Too much is highlighted. Narrow it down to just that one piece.','bad');clearSel();return;}
+  if(L!==p.key){
+    S.miss.tag++;p.miss++;let m=mismatchMsg(L,p.key);
+    if(p.miss>=2)m+=' Hint: '+(p.hint||DHINT[p.key]);
+    say(f,m,'bad');return;
+  }
+  p.done=true;clearSel();
+  say(f,'✓ '+(p.key==='skip'?p.why:(p.good||DGOOD[p.key])),'good');
+  addRow(p);paint();maybeAdvance();
+}
+
+function addRow(p){
+  const P=S.prob;const rows=$('#rows');const e=$('#rowsEmpty');if(e)e.remove();
+  const row=document.createElement('div');p.rowEl=row;
+  if(p.key==='skip'){row.className='vrow skip';row.innerHTML='<div class="sym">✕</div><div class="vname">“'+esc(p.t)+'” — not needed</div>';rows.appendChild(row);return;}
+  if(p.key.indexOf('find_')===0){const k=p.key.slice(5);row.className='vrow find';
+    row.innerHTML='<div class="sym k-'+k+'" style="color:var(--c-'+k+')">'+VAR[k].sym+'</div><div><span class="eqs">= ?</span> <span class="unit">'+unitOf(p,k)+'</span></div><div class="vname">'+VAR[k].name+' (unknown)</div>';rows.appendChild(row);return;}
+  const k=p.key;row.className='vrow';
+  const sym='<div class="sym" style="color:var(--c-'+k+')">'+VAR[k].sym+'</div>';
+  if(!p.typed){p.valDone=true;row.innerHTML=sym+'<div><span class="eqs">= '+p.mag+'</span> <span class="unit">'+unitOf(p)+'</span></div><div class="vname">'+VAR[k].name+'</div>';}
+  else{row.innerHTML=sym+'<div><span class="eqs">=</span> <input class="vin" inputmode="decimal" placeholder="value"> <span class="unit">'+unitOf(p)+'</span> <button class="chk">Check</button></div><div class="vname">'+VAR[k].name+'</div><div class="rowfb"></div>';
+    const inp=row.querySelector('input');row.querySelector('.chk').onclick=()=>checkVal(p);inp.addEventListener('keydown',ev=>{if(ev.key==='Enter')checkVal(p);});setTimeout(()=>inp.focus(),30);}
+  rows.appendChild(row);
+}
+function checkVal(p){
+  if(p.valDone)return;
+  const inp=p.rowEl.querySelector('input'),fb=p.rowEl.querySelector('.rowfb');const n=parseNum(inp.value);
+  if(isNaN(n)){say(fb,'Type a number first.','bad');return;}
+  const exp=sval(p,S.pos);
+  if(near(n,exp)){p.valDone=true;inp.disabled=true;inp.classList.add('ok');p.rowEl.querySelector('.chk').remove();say(fb,'✓ Good.','good');maybeAdvance();return;}
+  S.miss.val++;p.vmiss++;
+  let m;
+  if(exp!==0&&near(n,-exp)){
+    m=S.prob.vertical?'Right size, wrong sign. You chose '+S.pos+' as positive, and this one points '+p.dir+'.':'Right size, but check the sign. Is this speeding the object up or slowing it down?';
+  }else if(p.conv&&p.raw&&near(n,p.raw)){m='That’s the number from the problem, but the equations need '+unitOf(p)+'. Convert it first.';}
+  else m=p.vh||(S.prob.vertical?'Which way does this point compared to your positive direction ('+S.pos+')? Include the sign, in '+unitOf(p)+'.':'Check the number, its sign, and that it is in '+unitOf(p)+'.');
+  say(fb,m,'bad');
+}
+function maybeAdvance(){
+  if(S.phase!=='tag')return;
+  const P=S.prob;
+  if(P.phrases.every(p=>p.key==='skip'||(p.done&&(!p.typed||p.valDone)))){
+    setPhase('eq');say($('#fb'),'Everything is identified. Now choose your equation.','good');
+    $('#eqs').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+}
+
+function listVars(arr){return arr.map(k=>VAR[k].sym+' ('+VAR[k].name+')').join(' and ');}
+function pickEq(e,btn){
+  if(S.phase!=='eq')return;
+  const P=S.prob;const need=needSet(P);const fb=$('#fbEq');
+  const ok=e.vars.length===need.size&&e.vars.every(v=>need.has(v));
+  if(ok){
+    btn.classList.add('right');document.querySelectorAll('.eqbtn').forEach(b=>b.disabled=true);
+    say(fb,'✓ That equation has every variable you have and the one you want, and nothing extra.','good');
+    const uk=unkOf(P).key.slice(5);
+    $('#ansH').textContent='Solve for '+VAR[uk].sym+' ('+VAR[uk].name+')';
+    const u=UNITS[P.system];$('#ansUnit').innerHTML='<option value="">unit?</option>'+['len','vel','acc','time'].map(k=>'<option value="'+u[k]+'">'+u[k]+'</option>').join('');
+    setPhase('ans');setTimeout(()=>$('#ansIn').focus(),50);$('#ans').scrollIntoView({behavior:'smooth',block:'nearest'});return;
+  }
+  S.miss.eq++;btn.classList.add('wrong');btn.disabled=true;
+  const extras=e.vars.filter(v=>!need.has(v)),missing=[...need].filter(v=>e.vars.indexOf(v)<0);
+  let m;
+  if(e.id===5&&!need.has('vc'))m='That one only works when velocity is constant. Here the velocity is changing.';
+  else if(need.has('vc')&&e.id!==5)m='Here the velocity never changes, so there’s no acceleration to deal with. Which equation connects velocity, displacement and time directly?';
+  else if(extras.length)m='That equation includes '+listVars(extras)+', which you don’t know and aren’t solving for.';
+  else m='That equation leaves out '+listVars(missing)+', but it’s part of this problem.';
+  say(fb,m,'bad');
+}
+
+function checkAns(){
+  if(S.phase!=='ans')return;
+  const P=S.prob;const unk=unkOf(P);const uk=unk.key.slice(5);const fb=$('#fbAns');
+  const n=parseNum($('#ansIn').value),u=$('#ansUnit').value;
+  if(isNaN(n)){say(fb,'Type a number first.','bad');return;}
+  const exp=sval(unk,S.pos),cu=UNITS[P.system][VAR[uk].kind];
+  let ok=near(n,exp),note='';
+  if(!ok&&unk.acceptMag&&near(Math.abs(n),Math.abs(exp)))ok=true;
+  if(ok&&unk.acceptMag&&exp<0&&n>0)note=' (Your equation gives '+R2(exp)+' because this points '+unk.dir+', opposite your positive direction. The question asks “how fast/high,” so the size is what counts.)';
+  if(ok&&!u){say(fb,'Pick a unit.','bad');return;}
+  if(ok&&u!==cu){S.miss.ans++;say(fb,'The number looks right, but check your units. This quantity is measured in '+(S.prob.system==='ft'?'feet':'metric units')+' of a different kind.','bad');return;}
+  if(ok){
+    S.phase='done';$('#ansIn').disabled=true;$('#ansUnit').disabled=true;$('#ansBtn').disabled=true;
+    say(fb,'✓ Correct! '+VAR[uk].sym+' = '+R2(exp)+' '+cu+'.'+note,'good');
+    const eq=correctEq(P)[0];$('#setup').innerHTML='<div class="small">Setup:</div><div class="setup">'+esc(eq.text)+'<br>'+esc(setupText(P,eq,S.pos))+'</div>';
+    if(!S.practice)S.results[S.idx]={tier:P.tier,tag:S.miss.tag,val:S.miss.val,eq:S.miss.eq,ans:S.miss.ans,hints:S.hints};
+    const nr=$('#nextRow');nr.hidden=false;
+    const last=S.idx>=GENS.length-1;
+    nr.innerHTML='<button class="next" id="nextBtn">'+(last?'See my results':'Next problem →')+'</button> <button class="ghost" id="againBtn">Try this type again with new numbers</button>';
+    $('#nextBtn').onclick=()=>last?showResults():loadProblem(S.idx+1,false);
+    $('#againBtn').onclick=()=>loadProblem(S.idx,true);
+    updateSteps();$('#nextBtn').scrollIntoView({behavior:'smooth',block:'nearest'});return;
+  }
+  S.miss.ans++;S.ansTries++;
+  let m;
+  if(!unk.acceptMag&&exp!==0&&near(n,-exp))m='Right size, wrong sign. Check the signs of your values and what the sign of your answer should mean.';
+  else m='Not quite. Recheck your algebra: isolate the unknown first, then substitute with signs.';
+  if(S.ansTries>=2){const eq=correctEq(P)[0];m+=' Setup to check against: '+setupText(P,eq,S.pos);}
+  say(fb,m,'bad');
+}
+
+function giveHint(){
+  const P=S.prob;S.hints++;
+  if(S.phase==='conv'){say($('#fb'),'Either choice works.','info');alert('Either choice works. Pick one and stay consistent: gravity and every vertical quantity get their signs from it.');return;}
+  if(S.phase==='tag'){
+    const g=P.phrases.filter(p=>!p.done&&VAR[p.key]).length,u=P.phrases.filter(p=>!p.done&&p.key.indexOf('find_')===0).length,s=P.phrases.filter(p=>!p.done&&p.key==='skip').length;
+    const pend=P.phrases.filter(p=>p.done&&p.typed&&!p.valDone).length;
+    let m='Still to find: '+g+' given piece'+(g===1?'':'s')+' and '+u+' thing you’re solving for.'+(s?' (Optional: '+s+' detail'+(s===1?'':'s')+' that aren’t needed.)':'');
+    if(pend)m+=' Also finish the values in the table.';
+    if(!g&&!u&&!pend)m='You’ve got everything. Check the table.';
+    say($('#fb'),m,'info');return;
+  }
+  if(S.phase==='eq'){
+    const need=needSet(P);const miss=Object.keys(VAR).filter(k=>k!=='vc'&&!need.has(k));
+    say($('#fbEq'),need.has('vc')?'Constant velocity: only one equation connects velocity, displacement and time.':'The variable you neither know nor want is '+listVars(miss)+'. Pick the equation that doesn’t contain it.','info');return;
+  }
+  if(S.phase==='ans'){
+    S.hintLevel.ans++;const eq=correctEq(P)[0];
+    say($('#fbAns'),S.hintLevel.ans===1?'Solve the equation for the unknown first, then substitute.':'Setup: '+setupText(P,eq,S.pos),'info');
+  }
+}
+
+const CATS=[['tag','Highlighting & labeling'],['val','Hidden values, signs & units'],['eq','Choosing the equation'],['ans','Calculating the answer']];
+const ADVICE={tag:'Slow down on the first read. Underline every number with its unit, then ask “start, end, or something else?” for each one.',val:'Practice turning phrases like “from rest” and “comes to a stop” into numbers, and check which way each quantity points.',eq:'List what you know and what you want. The variable you neither know nor want tells you which equation to use.',ans:'Rearrange the equation for the unknown BEFORE plugging in numbers, and watch units and signs.'};
+function showResults(){
+  const rs=S.results;const tot={tag:0,val:0,eq:0,ans:0,hints:0};let cnt=0;
+  rs.forEach(r=>{if(!r)return;cnt++;CATS.forEach(c=>tot[c[0]]+=r[c[0]]);tot.hints+=r.hints;});
+  let worst=null,wv=0;CATS.forEach(c=>{if(tot[c[0]]>wv){wv=tot[c[0]];worst=c[0];}});
+  const cell=v=>v?v:'<span class="zero">✓</span>';
+  let rows='';rs.forEach((r,i)=>{if(r)rows+='<tr><td>'+(i+1)+'. '+TIERS[r.tier-1]+'</td><td>'+cell(r.tag)+'</td><td>'+cell(r.val)+'</td><td>'+cell(r.eq)+'</td><td>'+cell(r.ans)+'</td><td>'+(r.hints||'–')+'</td></tr>';});
+  let txt='Motion Decoder results'+(S.name?' for '+S.name:'')+'\nProblems completed: '+cnt+' of '+GENS.length+'\n';
+  rs.forEach((r,i)=>{if(r)txt+='\n'+(i+1)+'. '+TIERS[r.tier-1]+': label misses '+r.tag+', value misses '+r.val+', equation misses '+r.eq+', answer misses '+r.ans+', hints '+r.hints;});
+  txt+='\n\nTotals: labeling '+tot.tag+', values '+tot.val+', equation '+tot.eq+', answer '+tot.ans+', hints '+tot.hints;
+  $('#app').innerHTML='<div class="wrap"><div class="card hero"><h1>Results'+(S.name?': '+esc(S.name):'')+'</h1><p>You finished <b>'+cnt+'</b> of '+GENS.length+' problems. The numbers below count mistakes before getting each step right (✓ means none).</p>'+
+  '<table class="res"><tr><th>Problem</th><th>Labeling</th><th>Values</th><th>Equation</th><th>Answer</th><th>Hints</th></tr>'+rows+'<tr><th>Total</th><th>'+tot.tag+'</th><th>'+tot.val+'</th><th>'+tot.eq+'</th><th>'+tot.ans+'</th><th>'+tot.hints+'</th></tr></table>'+
+  '<div class="fb '+(worst?'info':'good')+'" style="margin-top:14px">'+(worst?'<b>Biggest area to work on: '+CATS.find(c=>c[0]===worst)[1]+'.</b> '+ADVICE[worst]:'<b>Clean sweep!</b> No missteps on any step.')+'</div>'+
+  '<details style="margin-top:12px"><summary>Text version to copy and submit</summary><textarea class="copy" readonly>'+esc(txt)+'</textarea></details>'+
+  '<p style="margin-top:14px"><button class="primary" id="again">Play again with new numbers</button></p></div></div>';
+  $('#again').onclick=()=>{S.results=[];loadProblem(0,false);};
+}
+showStart();
+</script>
+</body>
+</html>
