@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOL Energy Diagram Simulator</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#ffffff; --ink:#1d2433; --muted:#5d6678; --line:#d5d9e2;
+    --accent:#2f5bd3; --ok:#1f8a4c; --okbg:#e6f5ec; --bad:#b3362d; --badbg:#fbeceb;
+    --T:#e07b28; --Ug:#2f6fd6; --Us:#1f9a7a; --Eth:#c4413a; --W:#7d4fc9; --Ech:#8a6d3b; --Z:#5d6678;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  header{background:#1d2433;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:650}
+  header .prog{margin-left:auto;font-size:13px;opacity:.85}
+  .wrap{display:grid;grid-template-columns:230px 1fr;gap:16px;padding:16px;max-width:1400px;margin:0 auto}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+  nav.card{padding:8px;align-self:start;position:sticky;top:12px}
+  nav button{display:flex;width:100%;align-items:center;gap:8px;border:0;background:none;text-align:left;padding:7px 8px;border-radius:7px;cursor:pointer;font:inherit;color:var(--ink);font-size:14px}
+  nav button:hover{background:#eef1f7}
+  nav button.cur{background:#e3e9f9;font-weight:600}
+  nav .num{width:22px;color:var(--muted);font-variant-numeric:tabular-nums}
+  nav .ttl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dots{display:flex;gap:3px}
+  .dots i{width:7px;height:7px;border-radius:50%;background:#d5d9e2;display:block}
+  .dots i.on{background:var(--ok)}
+  main{display:flex;flex-direction:column;gap:14px;min-width:0}
+  .ptitle{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .ptitle h2{margin:0;font-size:19px}
+  .ptitle .tools{margin-left:auto;display:flex;gap:6px}
+  .ptext{line-height:1.55;margin:8px 0 6px;font-size:16px}
+  .sysline{background:#f0f3fa;border-left:4px solid var(--accent);padding:6px 10px;border-radius:4px;font-size:14px}
+  .note{font-size:13px;color:var(--muted);margin-top:6px}
+  .objword{background:#fff4d6;border-bottom:2px dashed #c99a1e;padding:0 2px;border-radius:3px;cursor:grab;touch-action:none;user-select:none}
+  .tray{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;padding:8px;border:2px dashed var(--line);border-radius:8px;margin-top:10px;align-items:center}
+  .tray .lbl{font-size:12px;color:var(--muted);margin-right:4px}
+  .chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #9aa3b5;border-radius:16px;padding:4px 10px;font-size:13.5px;cursor:grab;user-select:none;touch-action:none;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .chip.inside{border-color:var(--accent);background:#eef3ff}
+  .chip.flow-in,.chip.flow-out{border-color:var(--W)}
+  .btn{font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 11px;cursor:pointer;color:var(--ink)}
+  .btn:hover{background:#f0f2f6}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{background:#264bb3}
+  .btn.ghost{color:var(--muted)}
+  .diagram{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px}
+  @media (max-width:1100px){.diagram{grid-template-columns:1fr}}
+  .panel h3{margin:0 0 2px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#e3e9f9;color:var(--accent);font-size:12px;font-weight:700}
+  .step.done{background:var(--ok);color:#fff}
+  .sub{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .stage{position:relative;width:100%;aspect-ratio:4/3;background:#fafbfd;border:1px solid var(--line);border-radius:8px;overflow:hidden;touch-action:none}
+  .stage svg{position:absolute;inset:0;width:100%;height:100%}
+  .stage .chip{position:absolute;transform:translate(-50%,-50%)}
+  .stage.hot{outline:3px solid #9db7f5}
+  .tray.hot{border-color:#9db7f5;background:#f3f6ff}
+  /* bar graphs */
+  .graph{display:flex;gap:8px;align-items:flex-end;justify-content:center;padding:6px 4px 0}
+  .col{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .cells{display:flex;flex-direction:column-reverse;gap:2px;padding:3px;border:1.5px solid #b9c0ce;border-radius:5px;background:#fff;touch-action:none}
+  .cells.hot{outline:3px solid #9db7f5}
+  .cell{width:38px;height:22px;border-radius:3px;background:repeating-linear-gradient(0deg,#f4f5f8,#f4f5f8 21px,#e9ebf0 21px,#e9ebf0 22px);cursor:pointer}
+  .cell.f{cursor:grab;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+  .collbl{font-size:14px;font-weight:600}
+  .bin{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin:8px 0 2px;justify-content:center;flex-wrap:wrap}
+  .srcblock{width:38px;height:22px;border-radius:3px;background:#8b93a5;cursor:grab;touch-action:none;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+  .wwrap{display:flex;gap:14px;align-items:center;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .wcol{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .wcol .cells.out{flex-direction:column}
+  .wcol .zl{font-size:11.5px;color:var(--muted)}
+  .axis{width:52px;height:2px;background:#1d2433}
+  .feedback{margin-top:10px;border-radius:7px;padding:8px 10px;font-size:13.5px;line-height:1.45;display:none}
+  .feedback.show{display:block}
+  .feedback.ok{background:var(--okbg);color:#145c33}
+  .feedback.bad{background:var(--badbg);color:#7d231d}
+  .feedback ul{margin:4px 0 0 18px;padding:0}
+  .checkrow{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .legend>span{display:inline-flex;align-items:center;gap:5px}
+  .legend b{width:12px;height:12px;border-radius:2px;display:inline-block}
+  /* equation */
+  .eq{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin-top:6px}
+  .side{flex:1;min-width:220px;min-height:52px;border:2px dashed var(--line);border-radius:8px;padding:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;touch-action:none}
+  .side.hot{border-color:#9db7f5;background:#f3f6ff}
+  .side .ph{color:#9aa3b5;font-size:13px}
+  .equals{font-size:28px;font-weight:700;align-self:center;padding:0 4px}
+  .plus{font-weight:700;color:var(--muted)}
+  .term{display:inline-flex;align-items:center;justify-content:center;min-width:46px;padding:6px 10px;border-radius:7px;background:#fff;border:1.5px solid #9aa3b5;font-family:"Cambria Math","Times New Roman",serif;font-size:19px;font-style:italic;cursor:grab;user-select:none;touch-action:none}
+  .term sub{font-size:12px;font-style:normal}
+  .term.T{border-color:var(--T)} .term.Ug{border-color:var(--Ug)} .term.Us{border-color:var(--Us)} .term.Eth{border-color:var(--Eth)} .term.W{border-color:var(--W)} .term.Ech{border-color:var(--Ech)} .term.Z{border-color:var(--Z);font-style:normal}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;padding:8px;background:#f7f8fb;border-radius:8px}
+  .dragghost{position:fixed;pointer-events:none;z-index:1000;transform:translate(-50%,-50%) scale(1.06);opacity:.92}
+  .dragghost .cell{cursor:grabbing}
+  .nextbar{display:flex;justify-content:flex-end}
+  .modal{position:fixed;inset:0;background:rgba(20,25,40,.45);display:none;align-items:center;justify-content:center;z-index:2000}
+  .modal.show{display:flex}
+  .modal .card{max-width:420px}
+  .seg{display:flex;align-items:center;gap:0;font-size:13px;margin-left:auto}
+  .seg span{margin-right:8px;opacity:.85}
+  .seg button{font:inherit;font-size:13px;border:1px solid #56607a;background:transparent;color:#fff;padding:5px 10px;cursor:pointer}
+  .seg button:first-of-type{border-radius:6px 0 0 6px} .seg button:last-of-type{border-radius:0 6px 6px 0;border-left:0}
+  .seg button.on{background:#fff;color:#1d2433}
+  header .prog{margin-left:16px}
+  .sysline.open{border-left-color:#c99a1e;background:#fff8e6}
+</style>
+</head>
+<body>
+<header>
+  <h1>LOL Energy Diagram Simulator</h1>
+  <div class="seg" id="modeSeg"><span>System:</span><button data-mode="given">Given</button><button data-mode="open">Student chooses</button></div>
+  <span class="prog" id="prog"></span>
+</header>
+<div class="wrap">
+  <nav class="card" id="nav"></nav>
+  <main id="main"></main>
+</div>
+<div class="modal" id="modal"><div class="card"><p id="modalText" style="margin-top:0"></p><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" id="mNo">Cancel</button><button class="btn primary" id="mYes">Yes, reset</button></div></div></div>
+
+<script>
+/* =====================================================================
+   PROBLEM BANK. Teachers can edit or add problems here.
+   text     : wrap draggable objects as {id:words shown}
+   objects  : everything a student can place. noneWhy = feedback if the
+              object is outside the system and transfers no energy.
+   movers   : objects whose motion matters, with kinetic energy units
+              at the initial (Ti) and final (Tf) moments (counted only
+              when the mover is inside the system).
+   sys      : the system used in "Given" mode.
+   inter    : interactions that store or transfer energy:
+     gravity {a:'earth', b:mover, Ui, Uf}  -> U_g if both inside, else W
+     spring  {a:spring,  b:mover, Ui, Uf}  -> U_s if the spring is inside; W if only one is inside
+     friction / drag {a:surface, b:mover, E} -> E_th if both inside, else W out
+     applied {a:agent, b:mover, W, why}    -> agent must stay outside; W in
+   extra    : optional checks (bars, inSys) => true when OK
+   The checker works out the correct arrows, bars and equation for ANY
+   valid system the student picks, so open-system mode needs no extra data.
+   ===================================================================== */
+const PROBLEMS = [
+ {title:"Dropped ball",
+  text:"A student holds a {ball:ball} at rest above the floor and lets go. Analyze the moment it is released through the instant just before it hits the {floor:floor}. Air resistance is negligible.",
+  objects:[{id:"ball",label:"Ball",icon:"⚾"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"hand",label:"Hand",icon:"✋",noneWhy:"The hand lets go at the initial moment, so it does no work while the ball falls."},
+           {id:"floor",label:"Floor",icon:"▬",noneWhy:"The ball hasn't touched the floor yet."}],
+  movers:[{id:"ball",Ti:0,Tf:4}], sys:["ball","earth"],
+  inter:[{type:"gravity",a:"earth",b:"ball",Ui:4,Uf:0}]},
+ {title:"Halfway down",
+  text:"A {rock:rock} is dropped from rest off a ledge. Analyze from the moment of release to the moment it has fallen exactly halfway to the {ground:ground}. Air resistance is negligible.",
+  objects:[{id:"rock",label:"Rock",icon:"🪨"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"ground",label:"Ground",icon:"▬",noneWhy:"The rock hasn't reached the ground."}],
+  movers:[{id:"rock",Ti:0,Tf:2}], sys:["rock","earth"],
+  inter:[{type:"gravity",a:"earth",b:"rock",Ui:4,Uf:2}],
+  extra:[{test:(b,inSys)=>!(inSys.has("earth")&&inSys.has("rock"))||b.f.Ug===b.f.T,msg:"Halfway down, the rock has lost half of its gravitational energy. Your final U<sub>g</sub> and T bars should be the same height."}]},
+ {title:"Ball tossed upward",
+  text:"A {ball:ball} leaves a student's {hand:hand} moving straight up. Analyze from the instant it leaves the hand to the instant it reaches its highest point. Set U<sub>g</sub> = 0 at the release height.",
+  objects:[{id:"ball",label:"Ball",icon:"🏐"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"hand",label:"Hand",icon:"✋",noneWhy:"The ball has already left the hand at the initial moment."}],
+  movers:[{id:"ball",Ti:4,Tf:0}], sys:["ball","earth"],
+  inter:[{type:"gravity",a:"earth",b:"ball",Ui:0,Uf:4}]},
+ {title:"Pendulum swing",
+  text:"A pendulum {bob:bob} hangs from a {string:string}. It is pulled to the side and released from rest. Analyze from release to the instant it passes through its lowest point.",
+  objects:[{id:"bob",label:"Bob",icon:"⚫"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"string",label:"String",icon:"〰️",noneWhy:"The string's tension is always perpendicular to the bob's motion, so it does no work."}],
+  movers:[{id:"bob",Ti:0,Tf:3}], sys:["bob","earth"],
+  inter:[{type:"gravity",a:"earth",b:"bob",Ui:3,Uf:0}]},
+ {title:"Spring launches a cart",
+  text:"A {cart:cart} is pushed against a compressed {spring:spring} on a level, frictionless {track:track} and released from rest. Analyze from release to the moment the cart leaves the spring.",
+  objects:[{id:"cart",label:"Cart",icon:"🛒"},{id:"spring",label:"Spring",icon:"🌀"},
+           {id:"track",label:"Track",icon:"▬",noneWhy:"The level, frictionless track pushes perpendicular to the motion, so it does no work."},
+           {id:"earth",label:"Earth",icon:"🌎",noneWhy:"The track is level, so the cart's height doesn't change and gravity does no work."}],
+  movers:[{id:"cart",Ti:0,Tf:4}], sys:["cart","spring"],
+  inter:[{type:"spring",a:"spring",b:"cart",Ui:4,Uf:0}]},
+ {title:"Spring popper",
+  text:"A toy {ball:ball} sits on a compressed {spring:spring} at rest. The spring is released and the ball shoots straight up. Analyze from release to the ball's highest point. Set U<sub>g</sub> = 0 at the starting height.",
+  objects:[{id:"ball",label:"Ball",icon:"🔴"},{id:"spring",label:"Spring",icon:"🌀"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"air",label:"Air",icon:"💨",noneWhy:"Air resistance is negligible here."}],
+  movers:[{id:"ball",Ti:0,Tf:0}], sys:["ball","spring","earth"],
+  inter:[{type:"spring",a:"spring",b:"ball",Ui:5,Uf:0},{type:"gravity",a:"earth",b:"ball",Ui:0,Uf:5}]},
+ {title:"Ramp into a spring",
+  text:"A {cart:cart} is released from rest at the top of a frictionless {ramp:ramp}. At the bottom it runs into a {spring:spring}. Analyze from release to the instant the spring is at maximum compression.",
+  objects:[{id:"cart",label:"Cart",icon:"🛒"},{id:"spring",label:"Spring",icon:"🌀"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"ramp",label:"Ramp",icon:"◢",noneWhy:"The frictionless ramp pushes perpendicular to the motion, so it does no work."}],
+  movers:[{id:"cart",Ti:0,Tf:0}], sys:["cart","spring","earth"],
+  inter:[{type:"gravity",a:"earth",b:"cart",Ui:4,Uf:0},{type:"spring",a:"spring",b:"cart",Ui:0,Uf:4}]},
+ {title:"Bungee jump",
+  text:"A {jumper:jumper} steps off a {platform:platform} from rest, attached to a {cord:bungee cord}. Analyze from the moment they step off to the lowest point of the fall, where they are momentarily at rest. Air resistance is negligible.",
+  objects:[{id:"jumper",label:"Jumper",icon:"🧍"},{id:"cord",label:"Bungee cord",icon:"〰️"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"platform",label:"Platform",icon:"▬",noneWhy:"The jumper just steps off, so the platform does no work during the fall."}],
+  movers:[{id:"jumper",Ti:0,Tf:0}], sys:["jumper","cord","earth"],
+  inter:[{type:"gravity",a:"earth",b:"jumper",Ui:6,Uf:0},{type:"spring",a:"cord",b:"jumper",Ui:0,Uf:6}]},
+ {title:"Roller coaster",
+  text:"A roller coaster {car:car} moves slowly over the top of a hill, then rolls down a frictionless {track:track} to the bottom of the valley. Analyze from the top of the hill to the bottom. Set U<sub>g</sub> = 0 at the bottom.",
+  objects:[{id:"car",label:"Coaster car",icon:"🎢"},{id:"earth",label:"Earth",icon:"🌎"},
+           {id:"track",label:"Track",icon:"▬",noneWhy:"The frictionless track pushes perpendicular to the motion, so it does no work."}],
+  movers:[{id:"car",Ti:1,Tf:5}], sys:["car","earth"],
+  inter:[{type:"gravity",a:"earth",b:"car",Ui:4,Uf:0}]},
+ {title:"Pushing a box",
+  text:"A {hand:hand} pushes a {box:box} that starts at rest across a level, frictionless {floor:floor}. Analyze from rest until the box is moving quickly.",
+  objects:[{id:"box",label:"Box",icon:"📦"},{id:"hand",label:"Hand",icon:"✋"},
+           {id:"floor",label:"Floor",icon:"▬",noneWhy:"The floor is frictionless; its normal force is perpendicular to the motion, so it does no work."},
+           {id:"earth",label:"Earth",icon:"🌎",noneWhy:"The box moves horizontally, so gravity does no work on it."}],
+  movers:[{id:"box",Ti:0,Tf:3}], sys:["box"],
+  inter:[{type:"applied",a:"hand",b:"box",W:3,why:"The hand pushes the box in the direction it moves, so it does positive work and energy flows into the system."}]},
+ {title:"Lifting a box",
+  text:"A student's {hands:hands} lift a {box:box} from the floor to a high shelf. The box starts and ends at rest.",
+  objects:[{id:"box",label:"Box",icon:"📦"},{id:"earth",label:"Earth",icon:"🌎"},{id:"hands",label:"Hands",icon:"🙌"}],
+  movers:[{id:"box",Ti:0,Tf:0}], sys:["box","earth"],
+  inter:[{type:"applied",a:"hands",b:"box",W:4,why:"The hands push up while the box moves up, so they do positive work and energy flows in."},
+         {type:"gravity",a:"earth",b:"box",Ui:0,Uf:4}]},
+ {title:"Elevator ride",
+  text:"An {elevator:elevator} starts at rest on the ground floor. A {motor:motor} winds a cable that pulls it up, and at the 3rd floor it is still moving upward. Set U<sub>g</sub> = 0 at the ground floor.",
+  objects:[{id:"elevator",label:"Elevator",icon:"🛗"},{id:"earth",label:"Earth",icon:"🌎"},{id:"motor",label:"Motor & cable",icon:"⚙️"}],
+  movers:[{id:"elevator",Ti:0,Tf:1}], sys:["elevator","earth"],
+  inter:[{type:"applied",a:"motor",b:"elevator",W:5,why:"The motor's cable pulls up while the elevator moves up, so it does positive work and energy flows in."},
+         {type:"gravity",a:"earth",b:"elevator",Ui:0,Uf:4}]},
+ {title:"Sliding to a stop",
+  text:"A {box:box} slides across a rough {floor:floor} and gradually comes to a stop because of friction.",
+  objects:[{id:"box",label:"Box",icon:"📦"},{id:"floor",label:"Floor",icon:"▦"},
+           {id:"earth",label:"Earth",icon:"🌎",noneWhy:"The box moves horizontally, so gravity does no work on it."}],
+  movers:[{id:"box",Ti:4,Tf:0}], sys:["box","floor"],
+  inter:[{type:"friction",a:"floor",b:"box",E:4}]},
+ {title:"Skier with friction",
+  text:"A {skier:skier} starts from rest at the top of a hill and slides down. Friction with the {snow:snow} is not negligible. Analyze from the top to the bottom, where the skier is moving. Set U<sub>g</sub> = 0 at the bottom.",
+  objects:[{id:"skier",label:"Skier",icon:"⛷️"},{id:"snow",label:"Snow",icon:"❄️"},{id:"earth",label:"Earth",icon:"🌎"}],
+  movers:[{id:"skier",Ti:0,Tf:3}], sys:["skier","snow","earth"],
+  inter:[{type:"gravity",a:"earth",b:"skier",Ui:5,Uf:0},{type:"friction",a:"snow",b:"skier",E:2}]},
+ {title:"Falling with air resistance",
+  text:"A {ball:ball} is dropped from rest from a tall building. The {air:air} exerts a noticeable drag force on it. Analyze from release to just before it hits the {ground:ground}.",
+  objects:[{id:"ball",label:"Ball",icon:"⚽"},{id:"earth",label:"Earth",icon:"🌎"},{id:"air",label:"Air",icon:"💨"},
+           {id:"ground",label:"Ground",icon:"▬",noneWhy:"The ball hasn't touched the ground yet."}],
+  movers:[{id:"ball",Ti:0,Tf:3}], sys:["ball","earth"],
+  inter:[{type:"gravity",a:"earth",b:"ball",Ui:5,Uf:0},{type:"drag",a:"air",b:"ball",E:2}]}
+];
+
+const ALLSTORES = ["T","Ug","Us","Eth","Ech"];
+/* E_ch (chemical/internal energy of a person or motor) is shown only in "Student chooses" mode
+   for problems with a hand, person or motor, since only then can it end up inside the system. */
+function stores(){ return S.open && P().inter.some(x=>x.type==="applied") ? ALLSTORES : ALLSTORES.slice(0,4); }
+const SLABEL = {T:"T",Ug:"U<sub>g</sub>",Us:"U<sub>s</sub>",Eth:"E<sub>th</sub>",Ech:"E<sub>ch</sub>"};
+const SNAME = {T:"kinetic energy (T)",Ug:"gravitational energy (U<sub>g</sub>)",Us:"elastic energy (U<sub>s</sub>)",Eth:"thermal energy (E<sub>th</sub>)",Ech:"chemical/internal energy (E<sub>ch</sub>)"};
+const MAXH = 8, MAXW = 8, MAXWTILES = 3;
+const TERMS = {
+  Ti:{h:"T<sub>i</sub>",c:"T"}, Ugi:{h:"U<sub>g,i</sub>",c:"Ug"}, Usi:{h:"U<sub>s,i</sub>",c:"Us"},
+  Tf:{h:"T<sub>f</sub>",c:"T"}, Ugf:{h:"U<sub>g,f</sub>",c:"Ug"}, Usf:{h:"U<sub>s,f</sub>",c:"Us"},
+  dEth:{h:"ΔE<sub>th</sub>",c:"Eth"}, W:{h:"W",c:"W"},
+  Echi:{h:"E<sub>ch,i</sub>",c:"Ech"}, Echf:{h:"E<sub>ch,f</sub>",c:"Ech"}, Z:{h:"0",c:"Z"}
+};
+function termOrder(){ return stores().includes("Ech") ? ["Ti","Ugi","Usi","Echi","W","Tf","Ugf","Usf","Echf","dEth","Z"] : ["Ti","Ugi","Usi","W","Tf","Ugf","Usf","dEth","Z"]; }
+const STEPS = ["sys","arr","bars","eq"];
+
+/* ---------- physics engine: what the correct diagram is for a given system ---------- */
+function lc(p,id){ const o=p.objects.find(x=>x.id===id); return o.id==="earth"?"Earth":o.label.toLowerCase(); }
+function sysNames(p,ids){ const n=ids.map(id=>"the "+lc(p,id)); return n.length<3?n.join(" and "):n.slice(0,-1).join(", ")+", and "+n[n.length-1]; }
+
+function analyze(p,inSys){
+  const z=()=>({T:0,Ug:0,Us:0,Eth:0,Ech:0});
+  const r={i:z(),f:z(),flows:{},none:{}}, net={};
+  const add=(id,amt,why)=>{ if(!amt) return; net[id]=net[id]||{amt:0,whys:[]}; net[id].amt+=amt; net[id].whys.push(why); };
+  const noW=(id,why)=>{ if(!r.none[id]) r.none[id]=why; };
+  p.movers.forEach(m=>{ if(inSys.has(m.id)){ r.i.T+=m.Ti; r.f.T+=m.Tf; } });
+  p.inter.forEach(x=>{
+    const A=inSys.has(x.a), B=inSys.has(x.b), a=lc(p,x.a), b=lc(p,x.b);
+    if(!A&&!B) return;
+    if(x.type==="gravity"){
+      const w=x.Ui-x.Uf;
+      if(A&&B){ r.i.Ug+=x.Ui; r.f.Ug+=x.Uf; }
+      else if(B){
+        if(w>0) add(x.a,w,"With the Earth outside the system, gravity pulls the "+b+" in the direction it moves, so it does positive work and energy flows in.");
+        if(w<0) add(x.a,w,"With the Earth outside the system, gravity pulls the "+b+" opposite to its motion as it rises, so it does negative work and energy flows out.");
+      }
+      else noW(x.b,"The "+b+" pulls on the Earth, but the Earth barely moves, so no work is done on the system. (U<sub>g</sub> only exists when the Earth and the "+b+" are both in the system.)");
+    }
+    else if(x.type==="spring"){
+      const w=x.Ui-x.Uf;
+      if(A){ r.i.Us+=x.Ui; r.f.Us+=x.Uf; }
+      if(A&&!B){
+        if(w>0) add(x.b,-w,"The "+a+" is in the system and the "+b+" is outside. The "+a+" pushes the "+b+" along its motion, doing work on it, so energy flows out of the system.");
+        if(w<0) add(x.b,-w,"The "+a+" is in the system and the "+b+" is outside. The "+b+" stretches or compresses the "+a+", doing work on it, so energy flows into the system.");
+      }
+      if(B&&!A){
+        if(w>0) add(x.a,w,"With the "+a+" outside the system, it pushes the "+b+" along its motion, so it does positive work and energy flows in.");
+        if(w<0) add(x.a,w,"With the "+a+" outside the system, it pushes against the "+b+"'s motion, so it does negative work and energy flows out.");
+      }
+    }
+    else if(x.type==="friction"||x.type==="drag"){
+      const force=x.type==="drag"?"drag":"friction";
+      if(A&&B) r.f.Eth+=x.E;
+      else if(B) add(x.a,-x.E,"With the "+a+" outside the system, its "+force+" force opposes the "+b+"'s motion, so it does negative work and energy flows out.");
+      else { r.f.Eth+=x.E; add(x.b,x.E,"The "+a+" is in the system and the "+b+" is outside. Rubbing against the "+b+" warms the "+a+", so energy flows into the system. (Strictly, this transfer is heating, but it goes in the W bar here.)"); }
+    }
+    else if(x.type==="applied"){
+      if(A) r.i.Ech+=x.W;
+      if(B&&!A) add(x.a,x.W,x.why);
+      if(A&&!B) add(x.b,-x.W,"The "+a+" is in the system and pushes or pulls the "+b+" (outside) along its motion, doing work on it, so energy flows out of the system. That energy comes from the "+a+"'s chemical/internal energy (E<sub>ch</sub>).");
+    }
+  });
+  Object.entries(net).forEach(([id,v])=>{ if(v.amt) r.flows[id]={dir:v.amt>0?"in":"out",amt:Math.abs(v.amt),why:v.whys.join(" ")}; });
+  const fl=Object.values(r.flows);
+  r.Win=fl.filter(f=>f.dir==="in").reduce((t,f)=>t+f.amt,0);
+  r.Wout=fl.filter(f=>f.dir==="out").reduce((t,f)=>t+f.amt,0);
+  r.eqLeft=[]; r.eqRight=[]; r.optRight=[];
+  [["T","Ti"],["Ug","Ugi"],["Us","Usi"],["Ech","Echi"]].forEach(([k,t])=>{ if(r.i[k]) r.eqLeft.push(t); });
+  fl.filter(f=>f.dir==="in").forEach(()=>r.eqLeft.push("W"));
+  [["T","Tf"],["Ug","Ugf"],["Us","Usf"],["Eth","dEth"]].forEach(([k,t])=>{ if(r.f[k]) r.eqRight.push(t); });
+  fl.filter(f=>f.dir==="out").forEach(()=>r.eqRight.push("W"));
+  if(r.i.Ech) r.optRight.push("Echf");   // some E_ch may remain at the end
+  if(!r.eqLeft.length) r.eqLeft.push("Z");
+  if(!r.eqRight.length) r.eqRight.push("Z");
+  return r;
+}
+
+/* ---------- state (kept separately for each mode) ---------- */
+function blankState(){
+  return {pos:{},arrows:{},bars:{i:{T:0,Ug:0,Us:0,Eth:0,Ech:0},f:{T:0,Ug:0,Us:0,Eth:0,Ech:0},Win:0,Wout:0},
+          eq:{left:[],right:[]},done:{},tries:{},fb:{}};
+}
+let S = {cur:0, open:false, p:PROBLEMS.map(blankState), po:PROBLEMS.map(blankState)};
+try{ const raw=localStorage.getItem("lol-sim-v3"); if(raw){ const o=JSON.parse(raw); if(o&&o.p&&o.p.length===PROBLEMS.length&&o.po) S=o; } }catch(e){}
+const HASH=(location.hash||"").slice(1), LOCKED = HASH==="open-system"||HASH==="given-system";
+if(HASH==="open-system") S.open=true; if(HASH==="given-system") S.open=false;
+function save(){ try{ localStorage.setItem("lol-sim-v3",JSON.stringify(S)); }catch(e){} }
+const P = ()=>PROBLEMS[S.cur];
+const list = ()=>S.open?S.po:S.p;
+const st = ()=>list()[S.cur];
+
+/* ---------- geometry (stage uses a 400x300 coordinate box) ---------- */
+const CX=200, CY=150, R=105;
+function isInside(pos){ return Math.hypot(pos.x-CX,pos.y-CY) < R; }
+function placedSys(){ const s=st(); return new Set(P().objects.filter(o=>s.pos[o.id]&&isInside(s.pos[o.id])).map(o=>o.id)); }
+/* the system the checker grades against */
+function gradingSys(){ return S.open? placedSys() : new Set(P().sys); }
+function expected(){ return analyze(P(),gradingSys()); }
+
+/* ---------- drag system ---------- */
+let drag=null;
+function beginDrag(e, payload, ghostHTML){
+  if(e.button!==undefined && e.button!==0) return;
+  e.preventDefault();
+  drag={payload, ghostHTML, sx:e.clientX, sy:e.clientY, moved:false, ghost:null};
+}
+document.addEventListener("pointermove",e=>{
+  if(!drag) return;
+  if(!drag.moved && Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>5){
+    drag.moved=true;
+    const g=document.createElement("div"); g.className="dragghost"; g.innerHTML=drag.ghostHTML; document.body.appendChild(g); drag.ghost=g;
+  }
+  if(drag.ghost){
+    drag.ghost.style.left=e.clientX+"px"; drag.ghost.style.top=e.clientY+"px";
+    document.querySelectorAll(".hot").forEach(x=>x.classList.remove("hot"));
+    const t=dropTarget(drag.payload, document.elementFromPoint(e.clientX,e.clientY));
+    if(t) t.classList.add("hot");
+  }
+});
+document.addEventListener("pointerup",e=>{
+  if(!drag) return;
+  const d=drag; drag=null;
+  document.querySelectorAll(".hot").forEach(x=>x.classList.remove("hot"));
+  if(d.ghost) d.ghost.remove();
+  if(!d.moved){ if(d.payload.onClick) d.payload.onClick(); return; }
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  handleDrop(d.payload, dropTarget(d.payload,el), e);
+});
+document.addEventListener("pointercancel",()=>{ if(drag){ if(drag.ghost) drag.ghost.remove(); drag=null; } });
+
+function dropTarget(pl, el){
+  if(!el) return null;
+  if(pl.type==="obj") return el.closest("#stage") || el.closest("#tray");
+  if(pl.type==="block") return el.closest(".cells");
+  if(pl.type==="term") return el.closest(".side") || el.closest("#bank");
+  return null;
+}
+
+function handleDrop(pl, target, e){
+  const s=st();
+  if(pl.type==="obj"){
+    if(target && target.id==="stage"){
+      const r=target.getBoundingClientRect();
+      let x=(e.clientX-r.left)/r.width*400, y=(e.clientY-r.top)/r.height*300;
+      x=Math.max(45,Math.min(355,x)); y=Math.max(18,Math.min(282,y));
+      s.pos[pl.id]={x,y};
+      if(isInside(s.pos[pl.id])) delete s.arrows[pl.id];
+    } else if(pl.fromStage){ delete s.pos[pl.id]; delete s.arrows[pl.id]; }
+    invalidate(S.open?["sys","arr","bars","eq"]:["sys","arr"]);
+  }
+  else if(pl.type==="block"){
+    const src=pl.from;
+    if(target){
+      const dst=target.dataset.col;
+      if(src && src===dst) return render();
+      if(getCol(dst) >= colMax(dst)) return render();
+      setCol(dst,getCol(dst)+1);
+      if(src) setCol(src,getCol(src)-1);
+    } else if(src){ setCol(src,getCol(src)-1); }
+    invalidate(["bars"]);
+  }
+  else if(pl.type==="term"){
+    const eq=s.eq;
+    if(pl.from) eq[pl.from].splice(pl.idx,1);
+    if(target && target.classList.contains("side")){
+      const side=target.dataset.side;
+      if(pl.id==="Z"){ eq[side]=eq[side].filter(t=>t!=="Z"); }
+      else if(pl.id!=="W"){ eq.left=eq.left.filter(t=>t!==pl.id); eq.right=eq.right.filter(t=>t!==pl.id); }
+      else if(!pl.from && eq.left.concat(eq.right).filter(t=>t==="W").length>=MAXWTILES){ return render(); }
+      eq[side].push(pl.id);
+    }
+    invalidate(["eq"]);
+  }
+  save(); render();
+}
+
+/* bar column helpers: key like "i:T", "f:Eth", "w:in", "w:out" */
+function colMax(k){ return k.startsWith("w:")?MAXW:MAXH; }
+function getCol(k){ const b=st().bars; const [a,s]=k.split(":"); if(a==="w") return s==="in"?b.Win:b.Wout; return b[a][s]; }
+function setCol(k,v){ const b=st().bars; const [a,s]=k.split(":"); v=Math.max(0,Math.min(colMax(k),v));
+  if(a==="w"){ if(s==="in") b.Win=v; else b.Wout=v; } else b[a][s]=v; }
+
+function invalidate(steps){ const s=st(); steps.forEach(k=>{ delete s.done[k]; delete s.fb[k]; }); }
+
+/* ---------- checking ---------- */
+function setFb(step, ok, html){
+  const s=st(); s.fb[step]={ok,html};
+  if(ok) s.done[step]=true; else { delete s.done[step]; s.tries[step]=(s.tries[step]||0)+1; }
+  save(); render();
+}
+function ul(items){ return "<ul>"+items.map(x=>"<li>"+x+"</li>").join("")+"</ul>"; }
+function needSys(step){
+  if(S.open && !st().done.sys){ setFb(step,false,"Check your system first (step 1). In this mode, everything else is graded against the system <i>you</i> chose."); return true; }
+  return false;
+}
+
+function checkSys(){
+  const p=P(), s=st(), msgs=[];
+  const unplaced=p.objects.filter(o=>!s.pos[o.id]);
+  if(unplaced.length) msgs.push("Place every object either inside the O or outside it. Still to place: "+unplaced.map(o=>o.label).join(", ")+".");
+  if(S.open){
+    const inSys=placedSys();
+    if(!unplaced.length && !inSys.size) msgs.push("Your system is empty. Drag at least one object inside the O.");
+    if(msgs.length) return setFb("sys",false,"Not quite:"+ul(msgs));
+    const ids=p.objects.filter(o=>inSys.has(o.id)).map(o=>o.id);
+        return setFb("sys",true,"✓ That's a valid system: "+sysNames(p,ids)+". The rest of your diagram will be checked against this choice. For each object outside, ask: does it do work on the system?");
+  }
+  const want=new Set(p.sys);
+  p.objects.forEach(o=>{
+    if(!s.pos[o.id]) return;
+    const inn=isInside(s.pos[o.id]);
+    if(inn && !want.has(o.id)) msgs.push("<b>"+o.label+"</b> should be <b>outside</b> the system. The system is "+sysNames(p,p.sys)+".");
+    if(!inn && want.has(o.id)) msgs.push("<b>"+o.label+"</b> belongs <b>inside</b> the system ("+sysNames(p,p.sys)+").");
+  });
+  if(msgs.length) setFb("sys",false,"Not quite:"+ul(msgs));
+  else setFb("sys",true,"✓ System is correct. Objects inside the O are in the system; everything else is in the surroundings.");
+}
+function checkArr(){
+  const p=P(), s=st();
+  if(!s.done.sys) return setFb("arr",false,"Get the system right first (step 1). Arrows go between the O and objects <i>outside</i> it.");
+  const r=expected(), inSys=gradingSys(), msgs=[];
+  p.objects.filter(o=>!inSys.has(o.id)).forEach(o=>{
+    const a=s.arrows[o.id]||"none", f=r.flows[o.id], want=f?f.dir:"none";
+    if(a===want) return;
+    if(want==="none") msgs.push("<b>"+o.label+"</b>: there should be <b>no arrow</b>. "+(r.none[o.id]||o.noneWhy||"With this system, the "+lc(p,o.id)+" transfers no energy across the boundary."));
+    else if(a==="none") msgs.push("<b>"+o.label+"</b>: does this object transfer energy to or from the system? Compare the direction of its force with the direction of motion.");
+    else msgs.push("<b>"+o.label+"</b>: your arrow points the wrong way. "+f.why);
+  });
+  if(msgs.length) return setFb("arr",false,"Check your energy-flow arrows:"+ul(msgs));
+  const fl=Object.values(r.flows);
+  setFb("arr",true,"✓ Energy flow is correct. "+(fl.length?fl.map(f=>f.why).join(" "):"Nothing outside the system does work on it, so the system's energy is conserved (no W)."));
+}
+function moment(m){ return m==="i"?"initial":"final"; }
+function storeHint(store,m){
+  const when=moment(m);
+  if(store==="T") return "Is anything in the system moving at the "+when+" moment?";
+  if(store==="Ug") return "U<sub>g</sub> is stored only if the Earth is in the system. Is the object above the height where U<sub>g</sub> = 0 at the "+when+" moment?";
+  if(store==="Us") return "U<sub>s</sub> is stored only if the spring or cord is in the system. Is it stretched or compressed at the "+when+" moment?";
+  if(store==="Ech") return m==="i"?"E<sub>ch</sub> is stored only if the person or motor providing the force is in the system.":"Some chemical/internal energy may be left over at the end, but it must be less than at the start.";
+  if(store==="Eth") return m==="i"?"Start E<sub>th</sub> at zero. We only track the <i>increase</i> in thermal energy.":"Thermal energy is stored when there's friction or drag between two objects that are <i>both</i> in the system.";
+}
+function checkBars(){
+  if(needSys("bars")) return;
+  const p=P(), b=st().bars, a=expected(), msgs=[];
+  const ST=stores();
+  ["i","f"].forEach(m=>ST.forEach(sk=>{
+    const want=a[m][sk]>0, have=(b[m][sk]||0)>0;
+    if(m==="f"&&sk==="Ech"&&a.i.Ech>0){ if((b.f.Ech||0)>=(b.i.Ech||0)&&have) msgs.push("Your final E<sub>ch</sub> must be smaller than your initial E<sub>ch</sub>. Chemical/internal energy is being used up."); return; }
+    if(want&&!have) msgs.push("Your "+moment(m)+" graph is missing "+SNAME[sk]+". "+storeHint(sk,m));
+    if(!want&&have) msgs.push("Your "+moment(m)+" graph shouldn't have "+SNAME[sk]+". "+storeHint(sk,m));
+  }));
+  if(a.Win&&!b.Win) msgs.push("Energy flows <b>into</b> the system here. Show it with blocks in the W (in) bar.");
+  if(!a.Win&&b.Win) msgs.push("Nothing outside the system adds energy, so the W (in) bar should be empty.");
+  if(a.Wout&&!b.Wout) msgs.push("Energy flows <b>out of</b> the system here. Show it with blocks in the W (out) bar.");
+  if(!a.Wout&&b.Wout) msgs.push("No energy leaves the system, so the W (out) bar should be empty.");
+  const li=ST.reduce((t,k)=>t+(b.i[k]||0),0)+b.Win, rf=ST.reduce((t,k)=>t+(b.f[k]||0),0)+b.Wout;
+  if(!msgs.length && li!==rf) msgs.push("Energy isn't balanced. Initial energy + W in = <b>"+li+"</b> units, but final energy + W out = <b>"+rf+"</b> units. These must be equal.");
+  if(!msgs.length && p.extra) p.extra.forEach(x=>{ if(!x.test(b,gradingSys())) msgs.push(x.msg); });
+  if(msgs.length) setFb("bars",false,"Not quite:"+ul(msgs));
+  else setFb("bars",true,"✓ Bar graphs are correct and energy is conserved: "+li+" units = "+rf+" units.");
+}
+function counts(arr){ const c={}; arr.forEach(t=>c[t]=(c[t]||0)+1); return c; }
+function checkEq(){
+  if(needSys("eq")) return;
+  const a=expected(), eq=st().eq, msgs=[];
+  if(!eq.left.length||!eq.right.length) return setFb("eq",false,"Put at least one term on each side of the equals sign. If a side has no energy at all, use the 0 tile.");
+  if(eq.left.concat(eq.right).includes("Echf")&&eq.right.includes("Echf")&&!(st().bars.f.Ech>0)) msgs.push("You included E<sub>ch,f</sub>, but your final bar graph has no E<sub>ch</sub>. Make them match.");
+  const have={left:counts(eq.left),right:counts(eq.right)}, want={left:counts(a.eqLeft),right:counts(a.eqRight)}, other={left:"right",right:"left"};
+  ["left","right"].forEach(sd=>{
+    const o=other[sd]; let missing=0;
+    Object.keys(TERMS).forEach(t=>{
+      const h=have[sd][t]||0, w=(want[sd][t]||0)+(sd==="right"&&a.optRight.includes(t)&&h?h:0);
+      if(h>w){
+        if((want[o][t]||0)>(have[o][t]||0)) msgs.push(TERMS[t].h+" belongs on the <b>"+o+"</b> side.");
+        else if(t==="W") msgs.push(w? "Too many W terms on the "+sd+" side. Use one W for each energy-flow arrow "+(sd==="left"?"into":"out of")+" the system." : "W doesn't belong on the "+sd+" side. "+(sd==="left"?"No energy flows into the system.":"No energy flows out of the system."));
+        else if(t==="Z") msgs.push("Only use 0 when a side has no other terms.");
+        else msgs.push(TERMS[t].h+" doesn't belong in this equation. That energy store is zero here.");
+      }
+      if(w>h && !((have[o][t]||0)>(want[o][t]||0))) missing+=w-h;
+    });
+    if(missing) msgs.push("The <b>"+sd+"</b> side is missing "+(missing>1?missing+" terms":"a term")+". Compare it with your "+(sd==="left"?"initial bar graph and any energy flowing in":"final bar graph and any energy flowing out")+".");
+  });
+  if(msgs.length) setFb("eq",false,"Not quite:"+ul(msgs));
+  else setFb("eq",true,"✓ Correct! "+eqString(eq.left)+" = "+eqString(eq.right)+". The equation matches your LOL diagram.");
+}
+function eqString(arr){ return arr.map(t=>"<i>"+TERMS[t].h+"</i>").join(" + "); }
+
+/* ---------- show me (after 3 tries) ---------- */
+function layout(inSet){
+  const p=P(), s=st(), ins=p.objects.filter(o=>inSet.has(o.id)), outs=p.objects.filter(o=>!inSet.has(o.id));
+  s.pos={};
+  ins.forEach((o,k)=>{ const ang=(k/ins.length)*2*Math.PI - Math.PI/2; const rr=ins.length>1?52:0;
+    s.pos[o.id]={x:CX+rr*Math.cos(ang)*1.3,y:CY+rr*Math.sin(ang)}; });
+  outs.forEach((o,k)=>{ const ang=Math.PI + (k+0.5)/outs.length*Math.PI*2;
+    s.pos[o.id]={x:Math.max(48,Math.min(352,CX+160*Math.cos(ang))),y:Math.max(20,Math.min(280,CY+132*Math.sin(ang)))}; });
+}
+function reveal(step){
+  const p=P(), s=st();
+  if(step==="sys"){ layout(new Set(p.sys)); s.arrows={}; invalidate(["arr","bars","eq"]); checkSys(); return; }
+  const r=expected();
+  if(step==="arr"){ s.arrows={}; Object.entries(r.flows).forEach(([id,f])=>s.arrows[id]=f.dir); checkArr(); }
+  if(step==="bars"){ s.bars={i:{...r.i},f:{...r.f},Win:r.Win,Wout:r.Wout}; checkBars(); }
+  if(step==="eq"){ s.eq={left:[...r.eqLeft],right:[...r.eqRight]}; checkEq(); }
+}
+
+/* ---------- rendering ---------- */
+function chipHTML(o,cls){ return '<span class="chip '+(cls||"")+'">'+o.icon+" "+o.label+"</span>"; }
+function stepBadge(n,k){ return '<span class="step '+(st().done[k]?"done":"")+'">'+(st().done[k]?"✓":n)+"</span>"; }
+function fbHTML(k){ const f=st().fb[k]; if(!f) return '<div class="feedback"></div>';
+  return '<div class="feedback show '+(f.ok?"ok":"bad")+'">'+f.html+"</div>"; }
+function checkRow(k,label){
+  const tries=st().tries[k]||0, showMe=!st().done[k]&&tries>=3;
+  return '<div class="checkrow"><button class="btn primary" data-check="'+k+'">'+label+"</button>"+
+    (showMe?'<button class="btn ghost" data-reveal="'+k+'">Show me</button>':"")+"</div>";
+}
+
+function renderHeader(){
+  const seg=document.getElementById("modeSeg");
+  seg.style.display=LOCKED?"none":"flex";
+  seg.querySelectorAll("button").forEach(b=>{ b.classList.toggle("on",(b.dataset.mode==="open")===S.open);
+    b.onclick=()=>{ S.open=b.dataset.mode==="open"; save(); render(); }; });
+  const done=list().filter(x=>STEPS.every(k=>x.done[k])).length;
+  document.getElementById("prog").textContent=done+" of "+PROBLEMS.length+" problems complete";
+}
+function renderNav(){
+  document.getElementById("nav").innerHTML=PROBLEMS.map((p,i)=>
+    '<button data-go="'+i+'" class="'+(i===S.cur?"cur":"")+'"><span class="num">'+(i+1)+'</span><span class="ttl">'+p.title+'</span><span class="dots">'+
+    STEPS.map(k=>'<i class="'+(list()[i].done[k]?"on":"")+'"></i>').join("")+"</span></button>").join("");
+}
+
+function graphHTML(m){
+  const b=st().bars[m];
+  return '<div class="graph">'+stores().map(sk=>{
+    let cells="";
+    for(let k=0;k<MAXH;k++){ const f=k<(b[sk]||0); cells+='<div class="cell '+(f?"f":"")+'" data-lvl="'+k+'" style="'+(f?"background:var(--"+sk+")":"")+'"></div>'; }
+    return '<div class="col"><div class="cells" data-col="'+m+":"+sk+'">'+cells+'</div><div class="collbl" style="color:var(--'+sk+')">'+SLABEL[sk]+"</div></div>";
+  }).join("")+"</div>";
+}
+function wHTML(){
+  const b=st().bars; let inC="", outC="";
+  for(let k=0;k<MAXW;k++) inC+='<div class="cell '+(k<b.Win?"f":"")+'" data-lvl="'+k+'" style="'+(k<b.Win?"background:var(--W)":"")+'"></div>';
+  for(let k=0;k<MAXW;k++) outC+='<div class="cell '+(k<b.Wout?"f":"")+'" data-lvl="'+k+'" style="'+(k<b.Wout?"background:var(--W)":"")+'"></div>';
+  return '<div class="wwrap"><div class="wcol"><span class="zl">W in ↑</span><div class="cells" data-col="w:in">'+inC+
+    '</div><div class="axis"></div><div class="cells out" data-col="w:out">'+outC+'</div><span class="zl">W out ↓</span></div>'+
+    '<div class="bin" style="flex-direction:column"><div class="srcblock" data-src="1">+</div><span>Drag a block<br>to W in/out</span></div></div>';
+}
+
+function stageSVG(){
+  const p=P(), s=st();
+  let arrows="";
+  p.objects.forEach(o=>{
+    const pos=s.pos[o.id], a=s.arrows[o.id];
+    if(!pos||!a||isInside(pos)) return;
+    const dx=pos.x-CX, dy=pos.y-CY, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+    const ex=CX+ux*(R+4), ey=CY+uy*(R+4), sx=pos.x-ux*30, sy=pos.y-uy*20;
+    const [x1,y1,x2,y2]= a==="in"?[sx,sy,ex,ey]:[ex,ey,sx,sy];
+    const mx=(sx+ex)/2-uy*12, my=(sy+ey)/2+ux*12;
+    arrows+='<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#7d4fc9" stroke-width="3.5" marker-end="url(#ah)"/>'+
+      '<text x="'+mx+'" y="'+(my+5)+'" text-anchor="middle" font-size="15" font-style="italic" font-weight="700" fill="#7d4fc9">W</text>';
+  });
+  return '<svg viewBox="0 0 400 300" preserveAspectRatio="none"><defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7d4fc9"/></marker></defs>'+
+    '<circle cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="#eef3ff" stroke="#2f5bd3" stroke-width="2.5" vector-effect="non-scaling-stroke"/>'+
+    '<text x="'+CX+'" y="'+(CY-R+18)+'" text-anchor="middle" font-size="12" fill="#2f5bd3">SYSTEM</text>'+arrows+"</svg>";
+}
+
+function render(){
+  renderHeader(); renderNav();
+  const p=P(), s=st();
+  const text=p.text.replace(/\{(\w+):([^}]+)\}/g,(m,id,w)=>'<span class="objword" data-obj="'+id+'">'+w+"</span>");
+  const trayObjs=p.objects.filter(o=>!s.pos[o.id]);
+  const stageObjs=p.objects.filter(o=>s.pos[o.id]).map(o=>{
+    const pos=s.pos[o.id], inn=isInside(pos), a=s.arrows[o.id];
+    return '<span class="chip '+(inn?"inside":"")+(a?" flow-"+a:"")+'" data-stageobj="'+o.id+'" style="left:'+(pos.x/4)+"%;top:"+(pos.y/3)+'%">'+o.icon+" "+o.label+"</span>";
+  }).join("");
+  const allDone=STEPS.every(k=>s.done[k]);
+  const bank=termOrder().map(t=>'<span class="term '+TERMS[t].c+'" data-term="'+t+'">'+TERMS[t].h+"</span>").join("");
+  const side=sd=> s.eq[sd].length? s.eq[sd].map((t,i)=>'<span class="term '+TERMS[t].c+'" data-term="'+t+'" data-from="'+sd+'" data-idx="'+i+'">'+TERMS[t].h+"</span>").join('<span class="plus">+</span>')
+                  : '<span class="ph">Drag terms here</span>';
+  const sysline = S.open
+    ? '<div class="sysline open"><b>System:</b> your choice. Decide which objects belong in the system. Your arrows, bars, and equation will be checked against the system you pick.</div>'
+    : '<div class="sysline"><b>System:</b> '+sysNames(p,p.sys)+'</div>';
+
+  document.getElementById("main").innerHTML=
+  '<section class="card"><div class="ptitle"><h2>Problem '+(S.cur+1)+": "+p.title+'</h2><div class="tools"><button class="btn ghost" id="resetBtn">Reset problem</button></div></div>'+
+   '<p class="ptext">'+text+'</p>'+sysline+
+   '<div class="tray" id="tray"><span class="lbl">Objects (drag into or around the O):</span>'+trayObjs.map(o=>'<span class="chip" data-obj="'+o.id+'">'+o.icon+" "+o.label+"</span>").join("")+
+   (trayObjs.length?"":'<span class="lbl">All objects placed. Drag one back here to remove it.</span>')+'</div>'+
+   '<div class="note">You can also drag the highlighted words in the problem. Unless the problem says otherwise, U<sub>g</sub> = 0 at the lowest point in the motion.</div></section>'+
+
+  '<section class="diagram">'+
+   '<div class="card panel"><h3>L — Initial</h3><div class="sub">Stack blocks to show the energy stored at the start.</div>'+graphHTML("i")+
+     '<div class="bin"><div class="srcblock" data-src="1">+</div><span>Drag a block onto a bar. Drag a block off the graph to remove it, or click a level to set the height.</span></div></div>'+
+   '<div class="card panel"><h3>'+stepBadge(1,"sys")+stepBadge(2,"arr")+'O — System &amp; energy flow</h3>'+
+     '<div class="sub">1) Drag objects inside or outside the circle. 2) Click an object <b>outside</b> to add an energy-flow arrow (click again: reverse, again: remove).</div>'+
+     '<div class="stage" id="stage">'+stageSVG()+stageObjs+'</div>'+
+     fbHTML("sys")+checkRow("sys","Check system")+fbHTML("arr")+checkRow("arr","Check arrows")+
+     wHTML()+'</div>'+
+   '<div class="card panel"><h3>'+stepBadge(3,"bars")+'L — Final</h3><div class="sub">Stack blocks to show the energy stored at the end.</div>'+graphHTML("f")+
+     '<div class="bin"><div class="srcblock" data-src="1">+</div><span>Total initial + W in must equal total final + W out.</span></div>'+
+     fbHTML("bars")+checkRow("bars","Check bar graphs")+'</div>'+
+  '</section>'+
+  '<div class="card legend"><span><b style="background:var(--T)"></b><span>T kinetic</span></span><span><b style="background:var(--Ug)"></b><span>U<sub>g</sub> gravitational</span></span><span><b style="background:var(--Us)"></b><span>U<sub>s</sub> elastic (spring)</span></span><span><b style="background:var(--Eth)"></b><span>E<sub>th</sub> thermal</span></span>'+(stores().includes("Ech")?'<span><b style="background:var(--Ech)"></b><span>E<sub>ch</sub> chemical/internal</span></span>':'')+'<span><b style="background:var(--W)"></b><span>W work (energy transferred)</span></span></div>'+
+
+  '<section class="card"><h3 style="margin:0 0 4px;display:flex;gap:8px;align-items:center">'+stepBadge(4,"eq")+'Conservation of energy equation</h3>'+
+   '<div class="sub">Build the equation that matches your LOL diagram. Initial energy and energy flowing <b>in</b> go on the left. Final energy and energy flowing <b>out</b> go on the right. Use one W for each energy-flow arrow. Click or drag a term away to remove it.</div>'+
+   '<div class="eq"><div class="side" data-side="left">'+side("left")+'</div><div class="equals">=</div><div class="side" data-side="right">'+side("right")+'</div></div>'+
+   '<div class="bank" id="bank">'+bank+'</div>'+fbHTML("eq")+checkRow("eq","Check equation")+'</section>'+
+  (allDone?'<div class="nextbar"><button class="btn primary" id="nextBtn">'+(S.cur<PROBLEMS.length-1?"Next problem →":"All done! Back to problem 1")+'</button></div>':"");
+  wire();
+}
+
+function wire(){
+  const p=P(), s=st();
+  document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{ S.cur=+b.dataset.go; save(); render(); window.scrollTo(0,0); });
+  document.querySelectorAll("[data-obj]").forEach(el=>{
+    const o=p.objects.find(x=>x.id===el.dataset.obj); if(!o) return;
+    el.onpointerdown=e=>beginDrag(e,{type:"obj",id:o.id},chipHTML(o));
+  });
+  document.querySelectorAll("[data-stageobj]").forEach(el=>{
+    const o=p.objects.find(x=>x.id===el.dataset.stageobj);
+    el.onpointerdown=e=>beginDrag(e,{type:"obj",id:o.id,fromStage:true,onClick:()=>{
+      if(isInside(s.pos[o.id])) return;
+      const cur=s.arrows[o.id]; s.arrows[o.id]= !cur?"in":cur==="in"?"out":undefined;
+      if(!s.arrows[o.id]) delete s.arrows[o.id];
+      invalidate(["arr"]); save(); render();
+    }},chipHTML(o));
+  });
+  document.querySelectorAll("[data-src]").forEach(el=>el.onpointerdown=e=>beginDrag(e,{type:"block",from:null},'<div class="srcblock">+</div>'));
+  document.querySelectorAll(".cells").forEach(col=>{
+    const k=col.dataset.col;
+    col.querySelectorAll(".cell").forEach(cell=>{
+      cell.onpointerdown=e=>{
+        const lvl=+cell.dataset.lvl, h=getCol(k);
+        const onClick=()=>{ setCol(k, lvl+1===h? lvl : lvl+1); invalidate(["bars"]); save(); render(); };
+        const color=k.startsWith("w:")?"W":k.split(":")[1];
+        if(h>0) beginDrag(e,{type:"block",from:k,onClick},'<div class="cell" style="background:var(--'+color+')"></div>');
+        else { e.preventDefault(); onClick(); }
+      };
+    });
+  });
+  document.querySelectorAll("[data-term]").forEach(el=>{
+    const t=el.dataset.term, from=el.dataset.from||null, idx=+el.dataset.idx;
+    el.onpointerdown=e=>beginDrag(e,{type:"term",id:t,from,idx,onClick: from?()=>{ s.eq[from].splice(idx,1); invalidate(["eq"]); save(); render(); }:null},
+      '<span class="term '+TERMS[t].c+'">'+TERMS[t].h+"</span>");
+  });
+  document.querySelectorAll("[data-check]").forEach(b=>b.onclick=()=>({sys:checkSys,arr:checkArr,bars:checkBars,eq:checkEq})[b.dataset.check]());
+  document.querySelectorAll("[data-reveal]").forEach(b=>b.onclick=()=>reveal(b.dataset.reveal));
+  const nb=document.getElementById("nextBtn"); if(nb) nb.onclick=()=>{ S.cur=(S.cur+1)%PROBLEMS.length; save(); render(); window.scrollTo(0,0); };
+  document.getElementById("resetBtn").onclick=()=>{
+    document.getElementById("modalText").textContent="Clear all of your work on this problem?";
+    document.getElementById("modal").classList.add("show");
+  };
+}
+document.getElementById("mNo").onclick=()=>document.getElementById("modal").classList.remove("show");
+document.getElementById("mYes").onclick=()=>{ list()[S.cur]=blankState(); save(); document.getElementById("modal").classList.remove("show"); render(); };
+window.addEventListener("hashchange",()=>location.reload());
+
+render();
+</script>
+</body>
+</html>
