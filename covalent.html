@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Covalent Compound Lab</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:16px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#2c2c2a;background:#fff;line-height:1.5}
+#app{max-width:720px;margin:0 auto}
+h1{font-size:24px;font-weight:600;margin:0 0 12px}
+p.lead{font-size:14px;color:#5f5e5a;margin:0 0 14px}
+button{font:inherit;font-size:14px;padding:8px 16px;border:1px solid #b4b2a9;border-radius:8px;background:#fff;color:#2c2c2a;cursor:pointer}
+button:hover{background:#f5f4ef}
+button:active{transform:scale(.98)}
+button.primary{background:#185FA5;border-color:#185FA5;color:#fff}
+button.primary:hover{background:#0C447C}
+.seg{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.seg button.on{background:#E6F1FB;border-color:#378ADD;color:#0C447C}
+.label{font-size:14px;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px}
+.row label{min-width:150px;color:#5f5e5a}
+.card{background:#f5f4ef;border-radius:12px;padding:12px 16px;margin-bottom:12px}
+.small{font-size:12px;color:#5f5e5a;margin-bottom:4px}
+#kind{font-size:12px;color:#5f5e5a}
+#prompt{font-size:24px;font-weight:600;margin-top:2px}
+#mix{position:relative;height:210px;border:1px solid #d3d1c7;border-radius:12px;background:#f5f4ef;margin-bottom:12px}
+#build{min-height:64px;border:2px dashed #b4b2a9;border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.piece{position:absolute;padding:6px 12px;border-radius:8px;font-size:17px;font-weight:600;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;border:1px solid #b4b2a9;text-align:center;line-height:1.2;white-space:nowrap}
+.piece small{display:block;font-size:11px;font-weight:400}
+.piece.static{position:static}
+.el{background:#E6F1FB;color:#0C447C}
+.num{background:#FAEEDA;color:#633806}
+.pre{background:#EAF3DE;color:#27500A}
+.nm{background:#EEEDFE;color:#3C3489}
+#game{display:none}
+#game .layout{display:flex;gap:16px;align-items:stretch}
+#game .main{flex:1;min-width:0}
+.tubecol{width:84px;display:flex;flex-direction:column;align-items:center}
+#tube{position:relative;width:44px;height:240px;border:2px solid #888780;border-top:none;border-radius:0 0 22px 22px;overflow:hidden;background:#fff}
+#fill{position:absolute;left:0;right:0;bottom:0;height:0;background:#639922;transition:height .5s}
+#prog{font-size:14px;font-weight:600;margin-top:8px}
+.controls{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+#liveOut{font-size:14px;color:#5f5e5a}
+#msg{min-height:22px;margin-top:8px;font-size:14px}
+#msg.bad{color:#A32D2D}
+#msg.good{color:#3B6D11;font-weight:600}
+#done{display:none;text-align:center;padding:16px 0}
+#done h2{font-size:24px;margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}
+.stat{background:#f5f4ef;border-radius:8px;padding:12px}
+.stat .k{font-size:13px;color:#5f5e5a}
+.stat .v{font-size:24px;font-weight:600}
+@media(max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.row label{min-width:110px}}
+</style>
+</head>
+<body>
+<div id="app">
+<h1>⚗️ Covalent Compound Lab</h1>
+
+<div id="settings">
+  <p class="lead">Atoms and word pieces float around in the mix, so you will have to hunt for the ones you need. Drag them into the build area (or tap them), then press <b>Check</b>. Every correct answer fills the test tube. Fill it to finish!</p>
+  <div class="label">Mode</div>
+  <div class="seg" id="modeSeg">
+    <button class="on" data-v="n2f">Name → Formula</button>
+    <button data-v="f2n">Formula → Name</button>
+    <button data-v="mix">Mixed</button>
+  </div>
+  <div class="row"><label for="count">Problems per round</label><input type="range" id="count" min="5" max="20" step="1" value="12" style="flex:1"><span id="countOut" style="min-width:24px;font-weight:600">12</span></div>
+  <div class="label" style="margin-top:10px">Piece speed</div>
+  <div class="seg" id="speedSeg">
+    <button data-v="0.4">Slow</button>
+    <button class="on" data-v="0.9">Medium</button>
+    <button data-v="1.6">Fast</button>
+  </div>
+  <div class="row"><input type="checkbox" id="names" checked><span>Show element names on atom pieces (Name → Formula)</span></div>
+  <div class="row"><input type="checkbox" id="live" checked><span>Show live preview of what you've built</span></div>
+  <button class="primary" id="start" style="margin-top:12px">Start</button>
+</div>
+
+<div id="game">
+  <div class="layout">
+    <div class="main">
+      <div class="card">
+        <div id="kind"></div>
+        <div id="prompt"></div>
+      </div>
+      <div class="small">THE MIX</div>
+      <div id="mix"></div>
+      <div class="small">BUILD AREA</div>
+      <div id="build"></div>
+      <div class="controls">
+        <button class="primary" id="check">Check</button>
+        <button id="return">Return pieces</button>
+        <span id="liveOut"></span>
+      </div>
+      <div id="msg"></div>
+    </div>
+    <div class="tubecol">
+      <div class="small">Test tube</div>
+      <div id="tube"><div id="fill"></div></div>
+      <div id="prog">0 / 12</div>
+    </div>
+  </div>
+</div>
+
+<div id="done">
+  <h2>🎉 Test tube full!</h2>
+  <p style="color:#5f5e5a;font-size:14px">Nice work. You finished the round.</p>
+  <div class="stats">
+    <div class="stat"><div class="k">Problems solved</div><div class="v" id="s1">0</div></div>
+    <div class="stat"><div class="k">Right on first try</div><div class="v" id="s2">0</div></div>
+    <div class="stat"><div class="k">Total checks</div><div class="v" id="s3">0</div></div>
+    <div class="stat"><div class="k">Time</div><div class="v" id="s4">0:00</div></div>
+  </div>
+  <button class="primary" id="again">Play again</button>
+  <button id="change">Change settings</button>
+</div>
+</div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var EL={H:['hydrogen','hydride'],B:['boron','boride'],C:['carbon','carbide'],N:['nitrogen','nitride'],O:['oxygen','oxide'],F:['fluorine','fluoride'],Si:['silicon','silicide'],P:['phosphorus','phosphide'],S:['sulfur','sulfide'],Cl:['chlorine','chloride'],Br:['bromine','bromide'],I:['iodine','iodide']};
+var PRE=['','mono','di','tri','tetra','penta','hexa','hepta','octa','nona','deca'];
+var SUB=['','₁','₂','₃','₄','₅','₆','₇','₈','₉','₁₀'];
+var CMP=[
+[['C',1],['O',1]],[['C',1],['O',2]],[['C',1],['S',2]],[['C',1],['Cl',4]],[['C',1],['Br',4]],
+[['S',1],['O',2]],[['S',1],['O',3]],[['S',1],['F',6]],[['S',1],['Cl',2]],[['S',2],['Cl',2]],
+[['N',2],['O',1]],[['N',1],['O',1]],[['N',1],['O',2]],[['N',2],['O',3]],[['N',2],['O',4]],[['N',2],['O',5]],[['N',1],['F',3]],
+[['P',1],['Cl',3]],[['P',1],['Cl',5]],[['P',2],['O',5]],[['P',4],['O',10]],
+[['B',1],['F',3]],[['B',1],['Cl',3]],[['Si',1],['O',2]],[['Si',1],['Cl',4]],
+[['O',1],['F',2]],[['H',2],['O',1]],[['Cl',2],['O',7]],[['I',1],['F',7]],[['C',1],['F',4]]];
+var S={mode:'n2f',speed:0.9,total:12,done:0,idx:0,first:0,checks:0,t0:0,cur:null,pieces:[],raf:0,wrong:0,locked:false,queue:[]};
+
+function norm(s){return s.replace(/\s+/g,'').replace(/aoxide/g,'oxide').replace(/ooxide/g,'oxide')}
+function nameOf(c){var a=c[0],b=c[1];return norm((a[1]>1?PRE[a[1]]:'')+EL[a[0]][0]+PRE[b[1]]+EL[b[0]][1])}
+function nameDisp(c){var a=c[0],b=c[1];var n2=(PRE[b[1]]+EL[b[0]][1]).replace('aoxide','oxide').replace('ooxide','oxide');return (a[1]>1?PRE[a[1]]:'')+EL[a[0]][0]+' '+n2}
+function formDisp(c){return c.map(function(x){return x[0]+(x[1]>1?SUB[x[1]]:'')}).join('')}
+function rnd(n){return Math.floor(Math.random()*n)}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=rnd(i+1);var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+function seg(id,cb){
+  var b=$(id).querySelectorAll('button');
+  b.forEach(function(x){x.onclick=function(){
+    b.forEach(function(y){y.classList.remove('on')});
+    x.classList.add('on');cb(x.getAttribute('data-v'));
+  }});
+}
+seg('modeSeg',function(v){S.mode=v});
+seg('speedSeg',function(v){S.speed=parseFloat(v)});
+$('count').oninput=function(){S.total=parseInt(this.value,10);$('countOut').textContent=this.value};
+$('start').onclick=startRound;
+$('again').onclick=startRound;
+$('change').onclick=function(){show('settings')};
+
+function show(id){
+  ['settings','game','done'].forEach(function(x){$(x).style.display=x===id?'block':'none'});
+}
+function startRound(){
+  S.done=0;S.idx=0;S.first=0;S.checks=0;S.t0=Date.now();
+  var pool=shuffle(CMP.slice());S.queue=[];
+  for(var i=0;i<S.total;i++)S.queue.push(pool[i%pool.length]);
+  show('game');updateTube();
+  nextProblem();
+  cancelAnimationFrame(S.raf);loop();
+}
+function updateTube(){
+  $('fill').style.height=(S.done/S.total*100)+'%';
+  $('prog').textContent=S.done+' / '+S.total;
+}
+function nextProblem(){
+  S.locked=false;S.wrong=0;
+  var c=S.queue[S.idx];
+  var type=S.mode==='mix'?(Math.random()<.5?'n2f':'f2n'):S.mode;
+  S.cur={c:c,type:type};
+  $('msg').textContent='';$('msg').className='';
+  $('mix').innerHTML='';$('build').innerHTML='';S.pieces=[];
+  if(type==='n2f'){
+    $('kind').textContent='Name → Formula. Build the formula for:';
+    $('prompt').textContent=nameDisp(c);
+  }else{
+    $('kind').textContent='Formula → Name. Build the name for:';
+    $('prompt').textContent=formDisp(c);
+  }
+  var defs=[];
+  var showN=$('names').checked;
+  if(type==='n2f'){
+    c.forEach(function(x){defs.push(['el',x[0],showN?EL[x[0]][0]:''])});
+    c.forEach(function(x){if(x[1]>1)defs.push(['num',SUB[x[1]],''])});
+    var syms=Object.keys(EL).filter(function(s){return s!==c[0][0]&&s!==c[1][0]});
+    shuffle(syms).slice(0,3).forEach(function(s){defs.push(['el',s,showN?EL[s][0]:''])});
+    var ns=[];for(var k=2;k<=10;k++)ns.push(k);
+    shuffle(ns).slice(0,3).forEach(function(k){defs.push(['num',SUB[k],''])});
+  }else{
+    var a=c[0],b=c[1];
+    if(a[1]>1)defs.push(['pre',PRE[a[1]],'']);
+    defs.push(['nm',EL[a[0]][0],'']);
+    defs.push(['pre',PRE[b[1]],'']);
+    defs.push(['nm',EL[b[0]][1],'']);
+    var ps=[];for(var j=1;j<=10;j++)ps.push(j);
+    shuffle(ps).slice(0,3).forEach(function(k){defs.push(['pre',PRE[k],''])});
+    var other=Object.keys(EL).filter(function(s){return s!==a[0]&&s!==b[0]});
+    shuffle(other).slice(0,2).forEach(function(s){defs.push(['nm',EL[s][0],'']);defs.push(['nm',EL[s][1],''])});
+  }
+  shuffle(defs).forEach(addPiece);
+  livePreview();
+}
+function addPiece(d){
+  var el=document.createElement('div');
+  el.className='piece '+d[0];
+  el.innerHTML=d[1]+(d[2]?'<small>'+d[2]+'</small>':'');
+  var m=$('mix');var W=m.clientWidth||440,H=m.clientHeight;
+  var p={el:el,def:d,x:Math.random()*(W-90),y:Math.random()*(H-50),vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,drag:false,inBuild:false,moved:false,pending:false};
+  if(Math.abs(p.vx)<.3)p.vx=.5;
+  if(Math.abs(p.vy)<.3)p.vy=-.5;
+  m.appendChild(el);S.pieces.push(p);place(p);
+  el.addEventListener('pointerdown',function(e){down(p,e)});
+  el.addEventListener('pointermove',function(e){move(p,e)});
+  el.addEventListener('pointerup',function(e){up(p,e)});
+  el.addEventListener('pointercancel',function(e){up(p,e)});
+}
+function place(p){p.el.style.left=p.x+'px';p.el.style.top=p.y+'px'}
+function down(p,e){
+  if(S.locked)return;
+  p.moved=false;
+  if(p.inBuild){p.pending=true;return}
+  p.drag=true;p.sx=e.clientX;p.sy=e.clientY;p.ox=p.x;p.oy=p.y;
+  p.el.style.zIndex=10;p.el.style.cursor='grabbing';
+  p.el.setPointerCapture(e.pointerId);
+}
+function move(p,e){
+  if(!p.drag)return;
+  var dx=e.clientX-p.sx,dy=e.clientY-p.sy;
+  if(Math.abs(dx)+Math.abs(dy)>4)p.moved=true;
+  p.x=p.ox+dx;p.y=p.oy+dy;place(p);
+}
+function up(p){
+  if(p.inBuild){
+    if(p.pending){p.pending=false;if(!S.locked)toMix(p)}
+    return;
+  }
+  if(!p.drag)return;
+  p.drag=false;p.el.style.zIndex='';p.el.style.cursor='grab';
+  var r=p.el.getBoundingClientRect(),b=$('build').getBoundingClientRect();
+  var cx=r.left+r.width/2,cy=r.top+r.height/2;
+  var inside=cx>b.left&&cx<b.right&&cy>b.top-20&&cy<b.bottom+20;
+  if(!p.moved||inside){toBuild(p)}
+  else{
+    var m=$('mix');
+    p.x=Math.max(0,Math.min(m.clientWidth-r.width,p.x));
+    p.y=Math.max(0,Math.min(m.clientHeight-r.height,p.y));
+    place(p);
+  }
+}
+function toBuild(p){
+  p.inBuild=true;p.el.classList.add('static');
+  p.el.style.left='';p.el.style.top='';
+  $('build').appendChild(p.el);livePreview();
+}
+function toMix(p){
+  var m=$('mix');p.inBuild=false;p.el.classList.remove('static');
+  p.x=Math.random()*(m.clientWidth-90);p.y=Math.random()*(m.clientHeight-50);
+  m.appendChild(p.el);place(p);livePreview();
+}
+function built(){
+  var kids=Array.prototype.slice.call($('build').children);
+  return S.pieces.filter(function(p){return p.inBuild}).sort(function(a,b){return kids.indexOf(a.el)-kids.indexOf(b.el)});
+}
+function livePreview(){
+  var o=$('liveOut');
+  if(!$('live').checked){o.textContent='';return}
+  var b=built();
+  o.textContent=b.length?'You have: '+b.map(function(p){return p.def[1]}).join(''):'';
+}
+$('live').onchange=livePreview;
+$('return').onclick=function(){
+  if(S.locked)return;
+  built().forEach(toMix);
+  $('msg').textContent='';$('msg').className='';
+};
+$('check').onclick=function(){
+  if(S.locked)return;
+  var b=built();var msg=$('msg');
+  if(!b.length){msg.className='bad';msg.textContent='Add some pieces to the build area first.';return}
+  S.checks++;
+  var c=S.cur.c,ok=false,hint='';
+  if(S.cur.type==='n2f'){
+    var exp=[];
+    c.forEach(function(x){exp.push(x[0]);if(x[1]>1)exp.push(SUB[x[1]])});
+    var got=b.map(function(p){return p.def[1]});
+    ok=exp.join('|')===got.join('|');
+    if(!ok){
+      var ge=b.filter(function(p){return p.def[0]==='el'}).map(function(p){return p.def[1]}).join('|');
+      var ee=c.map(function(x){return x[0]}).join('|');
+      hint=ge!==ee?'Check which elements you picked and their order.':'The elements look right. Check your subscripts. The prefixes tell you how many atoms of each.';
+    }
+  }else{
+    var g=norm(b.map(function(p){return p.def[1]}).join(''));
+    ok=g===nameOf(c);
+    if(!ok)hint='Not quite. Check the prefixes. The first element skips "mono", and the second element ends in -ide.';
+  }
+  if(ok){
+    S.locked=true;
+    if(S.wrong===0)S.first++;
+    S.done++;S.idx++;updateTube();
+    msg.className='good';msg.textContent='Correct!';
+    if(S.done>=S.total){setTimeout(finish,900)}else{setTimeout(nextProblem,1000)}
+  }else{
+    S.wrong++;msg.className='bad';msg.textContent=hint;
+  }
+};
+function finish(){
+  cancelAnimationFrame(S.raf);
+  var t=Math.round((Date.now()-S.t0)/1000);
+  $('s1').textContent=S.done;$('s2').textContent=S.first;$('s3').textContent=S.checks;
+  $('s4').textContent=Math.floor(t/60)+':'+('0'+(t%60)).slice(-2);
+  show('done');
+}
+function loop(){
+  var m=$('mix');var W=m.clientWidth,H=m.clientHeight;
+  S.pieces.forEach(function(p){
+    if(p.drag||p.inBuild)return;
+    var w=p.el.offsetWidth,h=p.el.offsetHeight;
+    p.x+=p.vx*S.speed;p.y+=p.vy*S.speed;
+    if(p.x<0){p.x=0;p.vx=Math.abs(p.vx)}
+    if(p.x>W-w){p.x=W-w;p.vx=-Math.abs(p.vx)}
+    if(p.y<0){p.y=0;p.vy=Math.abs(p.vy)}
+    if(p.y>H-h){p.y=H-h;p.vy=-Math.abs(p.vy)}
+    place(p);
+  });
+  S.raf=requestAnimationFrame(loop);
+}
+})();
+</script>
+</body>
+</html>
