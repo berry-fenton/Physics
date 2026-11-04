@@ -22,10 +22,21 @@ button.primary:hover{background:#0C447C}
 .row label{min-width:150px;color:#5f5e5a}
 .card{background:#f5f4ef;border-radius:12px;padding:12px 16px;margin-bottom:12px}
 .small{font-size:12px;color:#5f5e5a;margin-bottom:4px}
+.topbar{display:flex;justify-content:flex-end;margin-bottom:10px}
 #kind{font-size:12px;color:#5f5e5a}
 #prompt{font-size:24px;font-weight:600;margin-top:2px}
 #mix{position:relative;height:210px;border:1px solid #d3d1c7;border-radius:12px;background:#f5f4ef;margin-bottom:12px}
-#build{min-height:64px;border:2px dashed #b4b2a9;border-radius:12px;padding:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#build{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;padding:14px 8px 22px}
+#build.f2n{align-items:center}
+#build.n2f{align-items:flex-end}
+.slot{display:flex;align-items:center;justify-content:center;padding:6px;border:2.5px dashed #9fb0c8;border-radius:16px;background:#f4f7fb;transition:background .15s,border-color .15s}
+.slot.w{min-width:150px;height:84px}
+.slot.s{min-width:84px;height:64px}
+#build.n2f .slot.s{transform:translateY(10px)}
+.slot .lbl{font-size:18px;font-weight:700;color:#aeb9cc;pointer-events:none}
+.slot.filled .lbl{display:none}
+.slot.filled{border-style:solid;border-color:#b9c6da}
+.slot.hot{background:#e1ecf8;border-color:#378ADD}
 .piece{position:absolute;padding:6px 12px;border-radius:8px;font-size:17px;font-weight:600;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;border:1px solid #b4b2a9;text-align:center;line-height:1.2;white-space:nowrap}
 .piece small{display:block;font-size:11px;font-weight:400}
 .piece.static{position:static}
@@ -51,7 +62,13 @@ button.primary:hover{background:#0C447C}
 .stat{background:#f5f4ef;border-radius:8px;padding:12px}
 .stat .k{font-size:13px;color:#5f5e5a}
 .stat .v{font-size:24px;font-weight:600}
-@media(max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.row label{min-width:110px}}
+@media(max-width:520px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row label{min-width:110px}
+  .slot.w{min-width:110px;height:72px}
+  .slot.s{min-width:68px;height:56px}
+  #build{gap:10px}
+}
 </style>
 </head>
 <body>
@@ -59,7 +76,7 @@ button.primary:hover{background:#0C447C}
 <h1>⚗️ Covalent Compound Lab</h1>
 
 <div id="settings">
-  <p class="lead">Atoms and word pieces float around in the mix, so you will have to hunt for the ones you need. Drag them into the build area (or tap them), then press <b>Check</b>. Every correct answer fills the test tube. Fill it to finish!</p>
+  <p class="lead">Atoms and word pieces float around in the mix, so you will have to hunt for the ones you need. Drag them into the matching slots (or tap them), then press <b>Check</b>. Every correct answer fills the test tube. Fill it to finish!</p>
   <div class="label">Mode</div>
   <div class="seg" id="modeSeg">
     <button class="on" data-v="n2f">Name → Formula</button>
@@ -79,6 +96,7 @@ button.primary:hover{background:#0C447C}
 </div>
 
 <div id="game">
+  <div class="topbar"><button id="settingsBtn">⚙ Settings</button></div>
   <div class="layout">
     <div class="main">
       <div class="card">
@@ -131,7 +149,7 @@ var CMP=[
 [['P',1],['Cl',3]],[['P',1],['Cl',5]],[['P',2],['O',5]],[['P',4],['O',10]],
 [['B',1],['F',3]],[['B',1],['Cl',3]],[['Si',1],['O',2]],[['Si',1],['Cl',4]],
 [['O',1],['F',2]],[['H',2],['O',1]],[['Cl',2],['O',7]],[['I',1],['F',7]],[['C',1],['F',4]]];
-var S={mode:'n2f',speed:0.9,total:12,done:0,idx:0,first:0,checks:0,t0:0,cur:null,pieces:[],raf:0,wrong:0,locked:false,queue:[]};
+var S={mode:'n2f',speed:0.9,total:12,done:0,idx:0,first:0,checks:0,t0:0,cur:null,pieces:[],slots:[],raf:0,wrong:0,locked:false,queue:[]};
 
 function norm(s){return s.replace(/\s+/g,'').replace(/aoxide/g,'oxide').replace(/ooxide/g,'oxide')}
 function nameOf(c){var a=c[0],b=c[1];return norm((a[1]>1?PRE[a[1]]:'')+EL[a[0]][0]+PRE[b[1]]+EL[b[0]][1])}
@@ -153,6 +171,7 @@ $('count').oninput=function(){S.total=parseInt(this.value,10);$('countOut').text
 $('start').onclick=startRound;
 $('again').onclick=startRound;
 $('change').onclick=function(){show('settings')};
+$('settingsBtn').onclick=function(){cancelAnimationFrame(S.raf);show('settings')};
 
 function show(id){
   ['settings','game','done'].forEach(function(x){$(x).style.display=x===id?'block':'none'});
@@ -169,13 +188,27 @@ function updateTube(){
   $('fill').style.height=(S.done/S.total*100)+'%';
   $('prog').textContent=S.done+' / '+S.total;
 }
+function buildSlots(type){
+  var b=$('build');b.innerHTML='';b.className=type;S.slots=[];
+  var defs=type==='n2f'
+    ?[['el','element','w'],['num','#','s'],['el','element','w'],['num','#','s']]
+    :[['pre','prefix','s'],['nm1','element','w'],['pre','prefix','s'],['nm2','-ide','w']];
+  defs.forEach(function(d){
+    var el=document.createElement('div');
+    el.className='slot '+d[2];
+    el.innerHTML='<span class="lbl">'+d[1]+'</span>';
+    b.appendChild(el);
+    S.slots.push({el:el,kind:d[0],piece:null});
+  });
+}
 function nextProblem(){
   S.locked=false;S.wrong=0;
   var c=S.queue[S.idx];
   var type=S.mode==='mix'?(Math.random()<.5?'n2f':'f2n'):S.mode;
   S.cur={c:c,type:type};
   $('msg').textContent='';$('msg').className='';
-  $('mix').innerHTML='';$('build').innerHTML='';S.pieces=[];
+  $('mix').innerHTML='';S.pieces=[];
+  buildSlots(type);
   if(type==='n2f'){
     $('kind').textContent='Name → Formula. Build the formula for:';
     $('prompt').textContent=nameDisp(c);
@@ -186,22 +219,22 @@ function nextProblem(){
   var defs=[];
   var showN=$('names').checked;
   if(type==='n2f'){
-    c.forEach(function(x){defs.push(['el',x[0],showN?EL[x[0]][0]:''])});
-    c.forEach(function(x){if(x[1]>1)defs.push(['num',SUB[x[1]],''])});
+    c.forEach(function(x){defs.push(['el',x[0],showN?EL[x[0]][0]:'','el'])});
+    c.forEach(function(x){if(x[1]>1)defs.push(['num',SUB[x[1]],'','num'])});
     var syms=Object.keys(EL).filter(function(s){return s!==c[0][0]&&s!==c[1][0]});
-    shuffle(syms).slice(0,3).forEach(function(s){defs.push(['el',s,showN?EL[s][0]:''])});
+    shuffle(syms).slice(0,3).forEach(function(s){defs.push(['el',s,showN?EL[s][0]:'','el'])});
     var ns=[];for(var k=2;k<=10;k++)ns.push(k);
-    shuffle(ns).slice(0,3).forEach(function(k){defs.push(['num',SUB[k],''])});
+    shuffle(ns).slice(0,3).forEach(function(k){defs.push(['num',SUB[k],'','num'])});
   }else{
     var a=c[0],b=c[1];
-    if(a[1]>1)defs.push(['pre',PRE[a[1]],'']);
-    defs.push(['nm',EL[a[0]][0],'']);
-    defs.push(['pre',PRE[b[1]],'']);
-    defs.push(['nm',EL[b[0]][1],'']);
+    if(a[1]>1)defs.push(['pre',PRE[a[1]],'','pre']);
+    defs.push(['nm',EL[a[0]][0],'','nm1']);
+    defs.push(['pre',PRE[b[1]],'','pre']);
+    defs.push(['nm',EL[b[0]][1],'','nm2']);
     var ps=[];for(var j=1;j<=10;j++)ps.push(j);
-    shuffle(ps).slice(0,3).forEach(function(k){defs.push(['pre',PRE[k],''])});
+    shuffle(ps).slice(0,3).forEach(function(k){defs.push(['pre',PRE[k],'','pre'])});
     var other=Object.keys(EL).filter(function(s){return s!==a[0]&&s!==b[0]});
-    shuffle(other).slice(0,2).forEach(function(s){defs.push(['nm',EL[s][0],'']);defs.push(['nm',EL[s][1],''])});
+    shuffle(other).slice(0,2).forEach(function(s){defs.push(['nm',EL[s][0],'','nm1']);defs.push(['nm',EL[s][1],'','nm2'])});
   }
   shuffle(defs).forEach(addPiece);
   livePreview();
@@ -211,7 +244,7 @@ function addPiece(d){
   el.className='piece '+d[0];
   el.innerHTML=d[1]+(d[2]?'<small>'+d[2]+'</small>':'');
   var m=$('mix');var W=m.clientWidth||440,H=m.clientHeight;
-  var p={el:el,def:d,x:Math.random()*(W-90),y:Math.random()*(H-50),vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,drag:false,inBuild:false,moved:false,pending:false};
+  var p={el:el,def:d,x:Math.random()*(W-90),y:Math.random()*(H-50),vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,drag:false,slot:null,moved:false,pending:false};
   if(Math.abs(p.vx)<.3)p.vx=.5;
   if(Math.abs(p.vy)<.3)p.vy=-.5;
   m.appendChild(el);S.pieces.push(p);place(p);
@@ -221,10 +254,23 @@ function addPiece(d){
   el.addEventListener('pointercancel',function(e){up(p,e)});
 }
 function place(p){p.el.style.left=p.x+'px';p.el.style.top=p.y+'px'}
+function inSlot(p){return p.slot!==null}
+function findSlot(cx,cy){
+  var best=-1,bd=1e9;
+  for(var i=0;i<S.slots.length;i++){
+    var r=S.slots[i].el.getBoundingClientRect();
+    if(cx>r.left-10&&cx<r.right+10&&cy>r.top-10&&cy<r.bottom+10)return i;
+    var dx=cx-(r.left+r.width/2),dy=cy-(r.top+r.height/2);
+    var d=Math.sqrt(dx*dx+dy*dy);
+    if(d<bd){bd=d;best=i}
+  }
+  return bd<90?best:-1;
+}
+function clearHot(){S.slots.forEach(function(s){s.el.classList.remove('hot')})}
 function down(p,e){
   if(S.locked)return;
   p.moved=false;
-  if(p.inBuild){p.pending=true;return}
+  if(inSlot(p)){p.pending=true;return}
   p.drag=true;p.sx=e.clientX;p.sy=e.clientY;p.ox=p.x;p.oy=p.y;
   p.el.style.zIndex=10;p.el.style.cursor='grabbing';
   p.el.setPointerCapture(e.pointerId);
@@ -234,18 +280,37 @@ function move(p,e){
   var dx=e.clientX-p.sx,dy=e.clientY-p.sy;
   if(Math.abs(dx)+Math.abs(dy)>4)p.moved=true;
   p.x=p.ox+dx;p.y=p.oy+dy;place(p);
+  clearHot();
+  var r=p.el.getBoundingClientRect();
+  var i=findSlot(r.left+r.width/2,r.top+r.height/2);
+  if(i>=0&&S.slots[i].kind===p.def[3])S.slots[i].el.classList.add('hot');
 }
 function up(p){
-  if(p.inBuild){
+  if(inSlot(p)){
     if(p.pending){p.pending=false;if(!S.locked)toMix(p)}
     return;
   }
   if(!p.drag)return;
   p.drag=false;p.el.style.zIndex='';p.el.style.cursor='grab';
-  var r=p.el.getBoundingClientRect(),b=$('build').getBoundingClientRect();
-  var cx=r.left+r.width/2,cy=r.top+r.height/2;
-  var inside=cx>b.left&&cx<b.right&&cy>b.top-20&&cy<b.bottom+20;
-  if(!p.moved||inside){toBuild(p)}
+  clearHot();
+  var msg=$('msg');
+  var r=p.el.getBoundingClientRect();
+  var target=-1;
+  if(p.moved){
+    var i=findSlot(r.left+r.width/2,r.top+r.height/2);
+    if(i>=0){
+      if(S.slots[i].kind===p.def[3])target=i;
+      else{msg.className='bad';msg.textContent='That piece does not fit in that slot.'}
+    }
+  }else{
+    for(var k=0;k<S.slots.length;k++){
+      if(S.slots[k].kind===p.def[3]&&!S.slots[k].piece){target=k;break}
+    }
+    if(target<0){
+      for(var q=0;q<S.slots.length;q++){if(S.slots[q].kind===p.def[3]){target=q;break}}
+    }
+  }
+  if(target>=0){msg.textContent='';msg.className='';toSlot(p,target)}
   else{
     var m=$('mix');
     p.x=Math.max(0,Math.min(m.clientWidth-r.width,p.x));
@@ -253,51 +318,56 @@ function up(p){
     place(p);
   }
 }
-function toBuild(p){
-  p.inBuild=true;p.el.classList.add('static');
-  p.el.style.left='';p.el.style.top='';
-  $('build').appendChild(p.el);livePreview();
+function toSlot(p,i){
+  var s=S.slots[i];
+  if(s.piece)toMix(s.piece);
+  s.piece=p;p.slot=i;
+  p.el.classList.add('static');
+  p.el.style.left='';p.el.style.top='';p.el.style.zIndex='';
+  s.el.appendChild(p.el);s.el.classList.add('filled');
+  livePreview();
 }
 function toMix(p){
-  var m=$('mix');p.inBuild=false;p.el.classList.remove('static');
+  var m=$('mix');
+  if(p.slot!==null){
+    var s=S.slots[p.slot];s.piece=null;s.el.classList.remove('filled');p.slot=null;
+  }
+  p.el.classList.remove('static');
   p.x=Math.random()*(m.clientWidth-90);p.y=Math.random()*(m.clientHeight-50);
   m.appendChild(p.el);place(p);livePreview();
 }
-function built(){
-  var kids=Array.prototype.slice.call($('build').children);
-  return S.pieces.filter(function(p){return p.inBuild}).sort(function(a,b){return kids.indexOf(a.el)-kids.indexOf(b.el)});
+function slotText(){
+  return S.slots.map(function(s){return s.piece?s.piece.def[1]:''});
 }
 function livePreview(){
   var o=$('liveOut');
   if(!$('live').checked){o.textContent='';return}
-  var b=built();
-  o.textContent=b.length?'You have: '+b.map(function(p){return p.def[1]}).join(''):'';
+  var t=slotText().join('');
+  o.textContent=t?'You have: '+t:'';
 }
 $('live').onchange=livePreview;
 $('return').onclick=function(){
   if(S.locked)return;
-  built().forEach(toMix);
+  S.slots.forEach(function(s){if(s.piece)toMix(s.piece)});
   $('msg').textContent='';$('msg').className='';
 };
 $('check').onclick=function(){
   if(S.locked)return;
-  var b=built();var msg=$('msg');
-  if(!b.length){msg.className='bad';msg.textContent='Add some pieces to the build area first.';return}
+  var msg=$('msg');
+  var got=slotText();
+  if(!got.join('')){msg.className='bad';msg.textContent='Add some pieces to the slots first.';return}
   S.checks++;
   var c=S.cur.c,ok=false,hint='';
   if(S.cur.type==='n2f'){
-    var exp=[];
-    c.forEach(function(x){exp.push(x[0]);if(x[1]>1)exp.push(SUB[x[1]])});
-    var got=b.map(function(p){return p.def[1]});
+    var exp=[c[0][0],c[0][1]>1?SUB[c[0][1]]:'',c[1][0],c[1][1]>1?SUB[c[1][1]]:''];
     ok=exp.join('|')===got.join('|');
     if(!ok){
-      var ge=b.filter(function(p){return p.def[0]==='el'}).map(function(p){return p.def[1]}).join('|');
-      var ee=c.map(function(x){return x[0]}).join('|');
-      hint=ge!==ee?'Check which elements you picked and their order.':'The elements look right. Check your subscripts. The prefixes tell you how many atoms of each.';
+      hint=(exp[0]!==got[0]||exp[2]!==got[2])
+        ?'Check which elements you picked and their order.'
+        :'The elements look right. Check your subscripts. The prefixes tell you how many atoms of each.';
     }
   }else{
-    var g=norm(b.map(function(p){return p.def[1]}).join(''));
-    ok=g===nameOf(c);
+    ok=norm(got.join(''))===nameOf(c);
     if(!ok)hint='Not quite. Check the prefixes. The first element skips "mono", and the second element ends in -ide.';
   }
   if(ok){
@@ -320,7 +390,7 @@ function finish(){
 function loop(){
   var m=$('mix');var W=m.clientWidth,H=m.clientHeight;
   S.pieces.forEach(function(p){
-    if(p.drag||p.inBuild)return;
+    if(p.drag||inSlot(p))return;
     var w=p.el.offsetWidth,h=p.el.offsetHeight;
     p.x+=p.vx*S.speed;p.y+=p.vy*S.speed;
     if(p.x<0){p.x=0;p.vx=Math.abs(p.vx)}
