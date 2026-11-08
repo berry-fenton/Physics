@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bonding Lab: Ionic vs. Covalent Compounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f1ec; --panel:#ffffff; --ink:#1f2430; --muted:#6a7080; --line:#e2ded5;
+  --accent:#0f766e; --accent-soft:#d9f0ec;
+  --ionic:#2563eb; --cov:#e46a12; --net:#8b5cf6;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Nunito,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+header{background:#14323a;color:#fff;padding:14px 22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+header h1{font-size:21px;margin:0;font-weight:800;letter-spacing:.2px}
+header h1 span{color:#7fe0d2}
+header .sub{color:#b9d3d6;font-size:13px}
+.hdr-ctrls{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;background:#0d252b;border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;color:#cfe3e5;padding:6px 14px;border-radius:999px;font:inherit;font-weight:700;cursor:pointer;font-size:13px}
+.seg button.on{background:#7fe0d2;color:#0d252b}
+.tog{display:flex;align-items:center;gap:6px;font-size:13px;color:#cfe3e5;cursor:pointer;user-select:none}
+.tog input{accent-color:#7fe0d2;width:16px;height:16px}
+nav.tabs{display:flex;gap:4px;padding:0 22px;background:#1b414a}
+nav.tabs button{border:0;background:transparent;color:#cfe3e5;font:inherit;font-weight:700;padding:11px 16px;cursor:pointer;border-bottom:3px solid transparent}
+nav.tabs button.on{color:#fff;border-bottom-color:#7fe0d2}
+main{padding:18px 22px 40px;max-width:1400px;margin:0 auto}
+.view{display:none}.view.on{display:block}
+.lab{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+@media (max-width:900px){.lab{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.panel h2{font-size:15px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted)}
+.shelf{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow:auto;padding-right:4px}
+.card{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:10px;padding:7px 9px;cursor:pointer;background:#fff;text-align:left;font:inherit;color:inherit;width:100%}
+.card:hover{border-color:#b6c7c4}
+.card.sel{border-color:var(--accent);background:var(--accent-soft)}
+.card .nm{font-weight:700;font-size:14px;line-height:1.15}
+.card .meta{font-size:12px;color:var(--muted)}
+.card .tested{margin-left:auto;font-size:11px;color:var(--accent);font-weight:800;white-space:nowrap}
+.chip{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px;margin-top:2px;color:#fff}
+.chip.ionic{background:var(--ionic)}.chip.covalent{background:var(--cov)}.chip.network{background:var(--net)}
+.stations{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.stations button{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 13px;font:inherit;font-weight:700;cursor:pointer;color:var(--ink)}
+.stations button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.opts{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px;min-height:36px}
+.opts label{font-weight:700;font-size:13px;color:var(--muted)}
+.pill{display:inline-flex;border:1.5px solid var(--line);border-radius:999px;overflow:hidden}
+.pill button{border:0;background:#fff;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+.pill button.on{background:var(--accent);color:#fff}
+.run{margin-left:auto;background:var(--accent);color:#fff;border:0;border-radius:10px;padding:9px 20px;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.run:disabled{background:#a9b6b4;cursor:not-allowed}
+.bench{background:linear-gradient(#eef4f6,#e6edf0);border-radius:12px;border:1px solid var(--line);overflow:hidden}
+.bench svg{display:block;width:100%;height:auto}
+.result{margin-top:10px;border-left:4px solid var(--accent);background:#f7faf9;padding:10px 12px;border-radius:8px;min-height:48px;font-size:15px;line-height:1.45}
+.result .hd{font-weight:800}
+.result.idle{border-left-color:#c8cfce;color:var(--muted)}
+.mono{font-family:'JetBrains Mono',monospace}
+.nb{margin-top:18px}
+.nb-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.btn{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:6px 12px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;color:var(--ink)}
+.btn:hover{border-color:#a8b5b3}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tablewrap{overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle;white-space:nowrap}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:#faf9f6;position:sticky;top:0}
+th.grp{text-align:center;border-bottom:0}
+td.empty{color:#c0c4cc}
+td .v-yes{color:#047857;font-weight:800}
+td .v-weak{color:#b45309;font-weight:800}
+td .v-no{color:#9aa0aa;font-weight:700}
+select{font:inherit;font-size:13px;padding:4px 6px;border-radius:7px;border:1.5px solid var(--line);background:#fff}
+.mark-ok{color:#047857;font-weight:900}.mark-bad{color:#dc2626;font-weight:900}
+.banner{padding:10px 14px;border-radius:10px;background:#fff7e6;border:1px solid #f3d9a4;margin-bottom:12px;font-size:14px}
+.banner.good{background:#e8f7ef;border-color:#a7e0c0}
+.hint{font-size:13px;color:var(--muted)}
+.trend-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media (max-width:1000px){.trend-grid{grid-template-columns:1fr}}
+.slider-row{display:flex;align-items:center;gap:10px;margin:8px 0;flex-wrap:wrap}
+input[type=range]{accent-color:var(--accent);width:260px}
+.sumtab td,.sumtab th{text-align:center}
+.sumtab td:first-child,.sumtab th:first-child{text-align:left}
+.bar{height:8px;border-radius:4px;background:#e8e5de;overflow:hidden;margin-top:3px;min-width:70px}
+.bar i{display:block;height:100%}
+.guide{max-width:880px}
+.guide h3{margin:22px 0 8px}
+.guide ol li,.guide ul li{margin:7px 0;line-height:1.45}
+.legend{display:flex;gap:14px;font-size:13px;font-weight:700;flex-wrap:wrap}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:var(--c)}
+.stations button:disabled{opacity:.5;cursor:not-allowed}
+.tested.lock{font-size:15px}
+.gate{min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px 20px;background:radial-gradient(circle at 50% 30%,#ffffff,#e9f0f2)}
+.gate-tag{font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:#0f766e;background:var(--accent-soft);padding:4px 12px;border-radius:999px}
+.gate-formula{font-size:46px;letter-spacing:1px;font-weight:700;margin-top:14px;line-height:1.1}
+.gate-formula sub{font-size:.55em}
+.gate-name{font-size:18px;font-weight:800;margin-top:2px}
+.gate-meta{font-size:13px;color:var(--muted);margin-top:2px}
+.gate-q{font-size:17px;margin-top:18px}
+.gate-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.gate-btns button{font:inherit;font-weight:800;font-size:16px;padding:11px 22px;border-radius:12px;border:2px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer;min-width:150px}
+.gate-btns button:hover{background:var(--ink);color:#fff}
+.gate-btns button.picked{border-color:#dc2626;color:#dc2626;background:#fff5f5}
+.gate-fb{margin-top:14px;max-width:560px;background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:10px 14px;font-size:14.5px;line-height:1.45;text-align:left}
+.teacher{margin-top:10px;padding:14px;border:1.5px dashed #b8c6c3;border-radius:12px;background:#fbfcfb}
+.teacher label{display:flex;gap:8px;align-items:flex-start;margin:7px 0;cursor:pointer}
+.teacher input{accent-color:var(--accent);margin-top:3px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#14323a;color:#fff;padding:9px 16px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Bonding Lab: <span>Ionic vs. Covalent</span></h1>
+    <div class="sub">Run tests on real compounds, record your data, and find the trends.</div>
+  </div>
+  <div class="hdr-ctrls">
+    <div class="seg" id="modeSeg">
+      <button data-mode="explore">Explore</button>
+      <button data-mode="mystery">Mystery samples</button>
+    </div>
+    <label class="tog" id="typesTog"><input type="checkbox" id="showTypes"> Show bond types</label>
+    <label class="tog"><input type="checkbox" id="advanced"> Include network solids (advanced)</label>
+  </div>
+</header>
+<nav class="tabs" id="tabs">
+  <button data-view="lab" class="on">Lab bench</button>
+  <button data-view="trends">Trends</button>
+  <button data-view="guide">Investigation guide</button>
+</nav>
+
+<main>
+<!-- LAB -->
+<section class="view on" id="view-lab">
+  <div id="mysteryBanner"></div>
+  <div class="lab">
+    <div class="panel">
+      <h2>Sample shelf</h2>
+      <div class="shelf" id="shelf"></div>
+    </div>
+    <div class="panel">
+      <div class="stations" id="stations"></div>
+      <div class="opts" id="opts"></div>
+      <div class="bench" id="bench"></div>
+      <div class="result idle" id="result">Pick a sample from the shelf, choose a test, and press <b>Run test</b>.</div>
+    </div>
+  </div>
+
+  <div class="panel nb">
+    <h2>Lab notebook</h2>
+    <div class="nb-tools" id="nbTools"></div>
+    <div class="tablewrap"><table id="nbTable"></table></div>
+  </div>
+</section>
+
+<!-- TRENDS -->
+<section class="view" id="view-trends">
+  <div class="panel" style="margin-bottom:14px">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <b>Group compounds by:</b>
+      <div class="pill" id="groupPill">
+        <button data-g="actual">Actual bond type</button>
+        <button data-g="guess">My classification</button>
+      </div>
+      <span class="hint" id="groupHint"></span>
+    </div>
+  </div>
+  <div class="trend-grid">
+    <div class="panel">
+      <h2>Melting points</h2>
+      <div class="legend" id="mpLegend"></div>
+      <div id="mpChart"></div>
+      <div class="slider-row">
+        <b>Test a dividing line:</b>
+        <input type="range" id="cutoff" min="-200" max="3600" step="10" value="500">
+        <span class="mono" id="cutoffVal"></span>
+      </div>
+      <div id="cutoffStats" class="hint"></div>
+    </div>
+    <div class="panel">
+      <h2>Property summary</h2>
+      <div id="summary"></div>
+      <p class="hint">Only compounds you have actually tested appear here. Test more samples for stronger evidence.</p>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDE -->
+<section class="view" id="view-guide">
+  <div class="panel guide">
+    <h2>Investigation guide</h2>
+    <p><b>Your goal:</b> figure out how ionic and covalent (molecular) compounds differ in their physical properties, and explain <i>why</i> using what you know about their particles and the forces between them.</p>
+
+    <h3>Step 1: Identify before you test</h3>
+    <p>When you choose a compound, the tests are locked until you correctly identify its bonding from its formula. Use the periodic table: does the formula contain a metal? For covalent compounds, think about electronegativity and the molecule's shape.</p>
+
+    <h3>Part 1: Collect data (Explore mode)</h3>
+    <ol>
+      <li>Test at least <b>4 ionic</b> and <b>4 covalent</b> compounds at every station. Your results go into the lab notebook automatically.</li>
+      <li>At the <b>conductivity</b> station, test each compound three ways: as the pure sample, dissolved in water, and melted (molten).</li>
+      <li>At the <b>solubility</b> station, try both water (polar) and hexane (nonpolar).</li>
+    </ol>
+
+    <h3>Part 2: Look for trends (Trends tab)</h3>
+    <ol>
+      <li>Is there a melting-point "dividing line" that separates most ionic compounds from most covalent ones? Drag the slider to find the best one. Are there any exceptions?</li>
+      <li>Do <i>all</i> ionic compounds dissolve in water? Find at least one that doesn't. What happens to its conductivity in water?</li>
+      <li>Does any ionic compound conduct electricity as a solid? What has to happen to the ions before the bulb lights up?</li>
+      <li>Which compounds dissolve in hexane? What do they have in common? (Hint: "like dissolves like.")</li>
+      <li>Compare the crush test results. How does the arrangement of ions in a crystal explain what you see?</li>
+    </ol>
+
+    <h3>Part 3: Explain it (claim, evidence, reasoning)</h3>
+    <ul>
+      <li><b>Claim:</b> State one property that reliably tells ionic and covalent compounds apart.</li>
+      <li><b>Evidence:</b> Cite specific measurements from your notebook (at least three compounds).</li>
+      <li><b>Reasoning:</b> Connect the evidence to particles: ions and electrostatic attraction in a lattice vs. neutral molecules held by intermolecular forces.</li>
+    </ul>
+
+    <h3>Part 4: Mystery samples</h3>
+    <p>Switch to <b>Mystery samples</b>. Test the unknowns, classify each one in the notebook as ionic or covalent, then press <b>Check my classifications</b>. Be ready to defend each choice with at least two pieces of evidence.</p>
+
+    <h3>Challenge questions (accelerated)</h3>
+    <ul>
+      <li><b>Hydrogen chloride (HCl)</b> is a covalent molecule, yet its water solution makes the bulb glow brightly. Pure HCl does not. What happens to HCl molecules in water?</li>
+      <li><b>Benzoic acid</b> and <b>acetic acid</b> make the bulb glow only dimly. Why would a solution conduct "a little"?</li>
+      <li><b>Sodium nitrate</b> melts at about 308 °C and <b>iodine</b> melts at 114 °C. Why is melting point alone not enough to classify an unknown?</li>
+      <li>Turn on <b>network solids</b>. Quartz (SiO₂) and diamond are covalent, but they melt at extremely high temperatures. How is their structure different from a molecular solid like sugar?</li>
+    </ul>
+
+    <h3>Teacher settings</h3>
+    <div class="teacher">
+      <label><input type="checkbox" id="gateOn"> <span><b>Identification step:</b> students must correctly identify each compound's bonding before its tests unlock (Explore mode only).</span></label>
+      <div style="margin-left:26px">
+        <label><input type="radio" name="gateLevel" value="ic"> <span>Ionic or covalent</span></label>
+        <label><input type="radio" name="gateLevel" value="pol"> <span>Ionic, polar covalent or nonpolar covalent (adds "Covalent network" when network solids are on)</span></label>
+      </div>
+      <p class="hint" style="margin:6px 0 0">Every attempt is counted. The notebook shows how many tries each identification took and how many were right on the first try. Changing the level relocks all compounds. Settings are saved in this browser, and students can see this tab.</p>
+    </div>
+
+    <h3>Teacher notes</h3>
+    <ul>
+      <li>Values are based on literature data (melting points in °C at 1 atm, solubility in g per 100 mL water at about 25 °C). Each run adds small random measurement error, as a real lab would, so students' numbers will differ slightly.</li>
+      <li>Conductivity readings are illustrative values in µS/cm. They are scaled to show strong, weak and non-electrolyte behavior clearly, not to match a particular concentration.</li>
+      <li>If you turn the identification step off, a <b>Show bond types</b> switch appears in the header. Untick it to have students classify compounds in the notebook instead. The notebook is saved in this browser only. Use <b>Copy table</b> to paste the data into a spreadsheet or lab report.</li>
+    </ul>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- DATA ---------------- */
+// mp in °C; ws = solubility in water, g/100 mL at ~25 °C ('misc' = miscible)
+// hx = behaviour in hexane; aq = electrolyte type when dissolved; crush = crush-test result
+const COMPOUNDS = [
+  {id:'nacl',   name:'Sodium chloride',     f:'NaCl',     type:'ionic', state:'s', look:'white cubic crystals', col:'#f6f6f2', mp:801,  ws:36,   hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'kcl',    name:'Potassium chloride',  f:'KCl',      type:'ionic', state:'s', look:'white crystals', col:'#f6f6f2', mp:770,  ws:34.4, hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'ki',     name:'Potassium iodide',    f:'KI',       type:'ionic', state:'s', look:'white crystals', col:'#f8f7ef', mp:681,  ws:148,  hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'cacl2',  name:'Calcium chloride',    f:'CaCl₂',    type:'ionic', state:'s', look:'white granules', col:'#f4f4f4', mp:772,  ws:74.5, hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'nano3',  name:'Sodium nitrate',      f:'NaNO₃',    type:'ionic', state:'s', look:'white crystals', col:'#f6f6f2', mp:308,  ws:91.2, hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'k2cr2o7',name:'Potassium dichromate',f:'K₂Cr₂O₇',  type:'ionic', state:'s', look:'bright orange crystals', col:'#f2741f', liq:'#d4501a', mp:398, ws:13, hx:'insol', aq:'strong', crush:'brittle', tint:{water:'#f39a2b'}},
+  {id:'cucl2',  name:'Copper(II) chloride', f:'CuCl₂',    type:'ionic', state:'s', look:'yellow-brown powder', col:'#b88a3c', liq:'#7a4e1c', mp:498, ws:75.7, hx:'insol', aq:'strong', crush:'brittle', tint:{water:'#2fae9c'}},
+  {id:'mgo',    name:'Magnesium oxide',     f:'MgO',      type:'ionic', state:'s', look:'fine white powder', col:'#fafafa', mp:2852, ws:0.0006, hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'caf2',   name:'Calcium fluoride',    f:'CaF₂',     type:'ionic', state:'s', look:'colorless crystals', col:'#eef3f6', mp:1418, ws:0.0016, hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'baso4',  name:'Barium sulfate',      f:'BaSO₄',    type:'ionic', state:'s', look:'white powder', col:'#fbfbfb', mp:1580, ws:0.00024, hx:'insol', aq:'strong', crush:'brittle'},
+  {id:'al2o3',  name:'Aluminum oxide',      f:'Al₂O₃',    type:'ionic', state:'s', look:'white powder', col:'#f7f7f7', mp:2072, ws:0, hx:'insol', aq:'strong', crush:'brittle'},
+
+  {id:'sucrose',name:'Sucrose (table sugar)',f:'C₁₂H₂₂O₁₁',type:'covalent', state:'s', look:'white crystals', col:'#fbfaf5', liq:'#c98a2e', mp:186, note:'dec', ws:200, hx:'insol', aq:'none', crush:'soft'},
+  {id:'glucose',name:'Glucose',             f:'C₆H₁₂O₆',  type:'covalent', state:'s', look:'white powder', col:'#fbfaf5', mp:146, ws:91, hx:'insol', aq:'none', crush:'soft'},
+  {id:'urea',   name:'Urea',                f:'CO(NH₂)₂', type:'covalent', state:'s', look:'white crystals', col:'#f8f8f3', mp:133, ws:108, hx:'insol', aq:'none', crush:'soft'},
+  {id:'iodine', name:'Iodine',              f:'I₂',       type:'covalent', state:'s', look:'shiny gray-violet crystals, sharp odor', col:'#3c2f4f', liq:'#5a1f3a', mp:114, ws:0.03, hx:'sol', aq:'none', crush:'soft', tint:{water:'#d6a84a', hexane:'#8e3fb0'}},
+  {id:'naph',   name:'Naphthalene',         f:'C₁₀H₈',    type:'covalent', state:'s', look:'white flakes, mothball odor', col:'#f7f7f2', mp:80, ws:0.003, hx:'sol', aq:'none', crush:'soft'},
+  {id:'paraffin',name:'Paraffin wax',       f:'C₂₅H₅₂',   type:'covalent', state:'s', look:'white waxy solid', col:'#f1ead6', mp:58, ws:0, hx:'sol', aq:'none', crush:'waxy'},
+  {id:'benzoic',name:'Benzoic acid',        f:'C₆H₅COOH', type:'covalent', state:'s', look:'white flaky crystals', col:'#f9f9f4', mp:122, ws:0.34, hx:'slight', aq:'weak', crush:'soft'},
+  {id:'ethanol',name:'Ethanol',             f:'C₂H₅OH',   type:'covalent', state:'l', look:'colorless liquid, alcohol odor', col:'#e6f2fb', mp:-114, ws:'misc', hx:'misc', aq:'none', crush:'liquid'},
+  {id:'acetic', name:'Acetic acid (pure)',  f:'CH₃COOH',  type:'covalent', state:'l', look:'colorless liquid, vinegar odor', col:'#e6f2fb', mp:16.6, ws:'misc', hx:'misc', aq:'weak', crush:'liquid'},
+  {id:'hcl',    name:'Hydrogen chloride',   f:'HCl',      type:'covalent', state:'g', look:'colorless gas, sharp odor', col:'#eef6ee', mp:-114, ws:72, hx:'slight', aq:'strong', crush:'gas'},
+
+  {id:'sio2',   name:'Silicon dioxide (quartz)', f:'SiO₂', type:'network', state:'s', look:'clear, glassy crystals', col:'#eef1f4', liq:'#f6c27a', mp:1713, ws:0, hx:'insol', aq:'none', crush:'veryhard'},
+  {id:'diamond',name:'Diamond',             f:'C',        type:'network', state:'s', look:'clear, sparkling crystal', col:'#eaf6fb', mp:3550, note:'nomelt', ws:0, hx:'insol', aq:'none', crush:'veryhard'},
+];
+const byId = Object.fromEntries(COMPOUNDS.map(c=>[c.id,c]));
+// Fixed, mixed-up shelf order so ionic and covalent compounds aren't grouped together
+const SHELF_ORDER = ['urea','kcl','iodine','cucl2','ethanol','mgo','sucrose','nano3','hcl','caf2','naph','ki','benzoic',
+  'k2cr2o7','sio2','glucose','baso4','acetic','cacl2','paraffin','al2o3','diamond','nacl'];
+/* ---- data for the identification gate ---- */
+const POLARITY = {sucrose:'polar',glucose:'polar',urea:'polar',iodine:'nonpolar',naph:'nonpolar',paraffin:'nonpolar',benzoic:'polar',ethanol:'polar',acetic:'polar',hcl:'polar'};
+const IONS = {nacl:['Na','Na⁺ and Cl⁻'], kcl:['K','K⁺ and Cl⁻'], ki:['K','K⁺ and I⁻'], cacl2:['Ca','Ca²⁺ and Cl⁻'], nano3:['Na','Na⁺ and NO₃⁻'],
+  k2cr2o7:['K','K⁺ and Cr₂O₇²⁻'], cucl2:['Cu','Cu²⁺ and Cl⁻'], mgo:['Mg','Mg²⁺ and O²⁻'], caf2:['Ca','Ca²⁺ and F⁻'], baso4:['Ba','Ba²⁺ and SO₄²⁻'], al2o3:['Al','Al³⁺ and O²⁻']};
+const POLYATOMIC = {nano3:'NO₃⁻', k2cr2o7:'Cr₂O₇²⁻', baso4:'SO₄²⁻'};
+const WHY = {
+  sucrose:'All of its elements (C, H, O) are nonmetals, so atoms share electrons. Its many O–H bonds and unsymmetrical shape make the molecule <b>polar</b>.',
+  glucose:'All of its elements (C, H, O) are nonmetals, so atoms share electrons. Its O–H groups and unsymmetrical shape make the molecule <b>polar</b>.',
+  urea:'All of its elements (C, O, N, H) are nonmetals, so atoms share electrons. Its C=O and N–H bonds make the molecule <b>polar</b>.',
+  iodine:'Iodine is a nonmetal, so the atoms share electrons. The two atoms are identical, so the electrons are shared equally: <b>nonpolar</b>.',
+  naph:'Carbon and hydrogen are both nonmetals with similar electronegativity, and the molecule is symmetrical: <b>nonpolar</b>.',
+  paraffin:'Paraffin contains only C–C and C–H bonds, which share electrons almost equally: <b>nonpolar</b>.',
+  benzoic:'All of its elements (C, H, O) are nonmetals. Its –COOH group (C=O and O–H bonds) makes the molecule <b>polar</b>, although the large carbon ring part is nonpolar.',
+  ethanol:'All of its elements (C, H, O) are nonmetals. The O–H bond and bent shape around oxygen make the molecule <b>polar</b>.',
+  acetic:'All of its elements (C, H, O) are nonmetals. Its C=O and O–H bonds make the molecule <b>polar</b>.',
+  hcl:'H and Cl are both nonmetals, so they share electrons. Chlorine is much more electronegative, so the sharing is unequal: <b>polar</b>.',
+  sio2:'Si and O are nonmetals, so atoms share electrons. Instead of forming separate molecules, every atom is bonded into one giant 3-D network: a <b>covalent network solid</b>.',
+  diamond:'Carbon is a nonmetal. Each carbon atom is covalently bonded to four others in one giant 3-D network: a <b>covalent network solid</b>.'
+};
+const METALS = new Set(['Li','Na','K','Rb','Cs','Be','Mg','Ca','Sr','Ba','Al','Cu','Cr','Fe','Zn','Ag','Ni','Mn','Pb','Sn']);
+const ANSWER_LABEL = {ionic:'Ionic', covalent:'Covalent', polar:'Polar covalent', nonpolar:'Nonpolar covalent', network:'Covalent network'};
+function elementsOf(c){ return [...new Set(c.f.match(/[A-Z][a-z]?/g))]; }
+function correctAnswer(c, level){
+  if(c.type==='ionic') return 'ionic';
+  if(level==='ic') return 'covalent';
+  return c.type==='network' ? 'network' : POLARITY[c.id];
+}
+function gateChoices(){
+  if(S.gateLevel==='ic') return ['ionic','covalent'];
+  return ['ionic','polar','nonpolar', ...(S.advanced?['network']:[])];
+}
+function explain(c){
+  if(c.type==='ionic'){ const [m,ions]=IONS[c.id];
+    return `${m} is a metal bonded to nonmetal${elementsOf(c).length>2?'s':''}, so electrons are transferred and the compound is made of ions (${ions}) held together by electrostatic attraction in a crystal lattice.` +
+      (POLYATOMIC[c.id] ? ` (The ${POLYATOMIC[c.id]} ion has covalent bonds inside it, but the compound as a whole is ionic.)` : ''); }
+  return WHY[c.id];
+}
+function gateHint(c, pick, tries){
+  const ans = correctAnswer(c, S.gateLevel), els = elementsOf(c);
+  let h;
+  if(ans==='ionic') h = 'Not quite. Look at the elements in the formula: is any of them a <b>metal</b>? A metal combined with nonmetal(s) usually forms an ionic compound.';
+  else if(pick==='ionic') h = 'Not quite. Ionic compounds contain a <b>metal</b> ion. Are there any metals in this formula?';
+  else if(ans==='network') h = 'It is covalent, but it is <b>not made of separate molecules</b>. The atoms are all linked together in one giant structure.';
+  else if(pick==='network') h = 'It is covalent, but this one is made of <b>separate, small molecules</b>.';
+  else if(ans==='polar') h = 'It is covalent, but think about polarity. Does it contain bonds between atoms with quite different electronegativities (such as O–H, N–H, C=O or H–Cl)? Is the shape unsymmetrical?';
+  else h = 'It is covalent, but think about polarity. Are all the bonds between atoms with nearly the same electronegativity (such as C–H, C–C or I–I)? Is the molecule symmetrical?';
+  if(tries>=2) h += `<br><span class="hint">Extra hint: the elements are ${els.map(e=>`<b>${e}</b> (${METALS.has(e)?'metal':'nonmetal'})`).join(', ')}.</span>`;
+  return h;
+}
+const TYPE_LABEL = {ionic:'Ionic', covalent:'Covalent (molecular)', network:'Covalent network', unclassified:'Not yet classified'};
+const TYPE_SHORT = {ionic:'Ionic', covalent:'Covalent', network:'Network'};
+const TYPE_COL = {ionic:'#2563eb', covalent:'#e46a12', network:'#8b5cf6', unclassified:'#9aa0aa'};
+const STATE_LABEL = {s:'solid', l:'liquid', g:'gas'};
+const LETTERS = 'ABCDEFGHIJ';
+
+/* ---------------- STATE ---------------- */
+let S = {mode:'explore', showTypes:true, advanced:false, view:'lab', selected:null, station:'melt',
+         solvent:'water', condMode:'aq', nb:{}, guess:{}, mystery:null, groupBy:'actual', cutoff:500, busy:false,
+         gateOn:true, gateLevel:'ic', gate:{}, gateFb:null};
+const SAVE_KEYS = ['mode','showTypes','advanced','nb','guess','mystery','groupBy','cutoff','gateOn','gateLevel','gate'];
+try{ const saved = JSON.parse(localStorage.getItem('bondingLab')||'null');
+  if(saved){ for(const k of SAVE_KEYS) if(k in saved) S[k]=saved[k]; }
+}catch(e){}
+function save(){ try{ localStorage.setItem('bondingLab', JSON.stringify(Object.fromEntries(SAVE_KEYS.map(k=>[k,S[k]])))); }catch(e){} }
+const gateActive = ()=> S.mode!=='mystery' && S.gateOn;
+const gk = id => S.gateLevel+':'+id;
+const isLocked = id => gateActive() && !(S.gate[gk(id)] && S.gate[gk(id)].done);
+
+const $ = s=>document.querySelector(s);
+const rnd = (a,b)=>a+Math.random()*(b-a);
+const key = id => (S.mode==='mystery' ? 'm:' : '') + id;
+const isMyst = ()=>S.mode==='mystery';
+const revealed = ()=> isMyst() ? !!(S.mystery && S.mystery.checked) : (S.gateOn || S.showTypes);
+const chipShown = id => gateActive() ? !isLocked(id) : revealed();
+function chipText(id){ const c=byId[id]; if(gateActive() && S.gateLevel==='pol' && c.type==='covalent') return POLARITY[id]==='polar'?'Polar covalent':'Nonpolar covalent'; return TYPE_LABEL[c.type]; }
+function visible(){
+  if(isMyst()){ if(!S.mystery) newMystery(); return S.mystery.ids; }
+  return SHELF_ORDER.filter(id=>S.advanced || byId[id].type!=='network');
+}
+function dispName(id){ if(isMyst()){ const i=S.mystery.ids.indexOf(id); const u='Unknown '+LETTERS[i]; return S.mystery.checked ? u+': '+byId[id].name : u; } return byId[id].name; }
+function dispFormula(id){ return (isMyst() && !S.mystery.checked) ? '' : byId[id].f; }
+function newMystery(){
+  const shuffle = a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+  const ion = shuffle(COMPOUNDS.filter(c=>c.type==='ionic')).slice(0,4);
+  const cov = shuffle(COMPOUNDS.filter(c=>c.type==='covalent')).slice(0,4);
+  const net = S.advanced ? shuffle(COMPOUNDS.filter(c=>c.type==='network')).slice(0,1) : [];
+  S.mystery = {ids: shuffle([...ion,...cov,...net]).map(c=>c.id), checked:false};
+  for(const k of Object.keys(S.nb)) if(k.startsWith('m:')) delete S.nb[k];
+  for(const k of Object.keys(S.guess)) if(k.startsWith('m:')) delete S.guess[k];
+  S.selected=null; save();
+}
+
+/* ---------------- HELPERS ---------------- */
+function fmtSol(v){ if(v>=10) return Math.round(v).toString(); if(v>=1) return v.toFixed(1); if(v>=0.01) return v.toPrecision(2); return '< 0.01'; }
+function fmtNum(v){ return Math.round(v).toLocaleString('en-US'); }
+function mix(a,b,t){ const pa=parseInt(a.slice(1),16), pb=parseInt(b.slice(1),16);
+  const r=Math.round(((pa>>16)&255)*(1-t)+((pb>>16)&255)*t), g=Math.round(((pa>>8)&255)*(1-t)+((pb>>8)&255)*t), bl=Math.round((pa&255)*(1-t)+(pb&255)*t);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+bl).toString(16).slice(1); }
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),1800); }
+function hashN(s,n){ let h=0; for(const ch of s) h=(h*31+ch.charCodeAt(0))%9973; return (h%n)/n; }
+
+const BENCH_TOP = `<rect x="0" y="292" width="600" height="48" fill="#cbb79a"/><rect x="0" y="292" width="600" height="5" fill="#b29d80"/>`;
+const SVG = inner => `<svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" role="img">
+<defs><filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter><filter id="blur3"><feGaussianBlur stdDeviation="3"/></filter></defs>${BENCH_TOP}${inner}</svg>`;
+// a little pile of crystals centred at (cx, baseY)
+const PILE = [[-22,-6,0],[-11,-9,20],[0,-7,40],[11,-10,10],[22,-6,30],[-6,-16,15],[6,-17,35],[-16,-2,5],[16,-2,25],[0,-1,45]];
+function crystals(c, cx, by, scale=1, sz=9){
+  return PILE.map(([dx,dy,r])=>`<rect x="${cx+dx-sz/2}" y="${by+dy-sz/2}" width="${sz}" height="${sz}" rx="1" fill="${c.col}" stroke="#4a4f5a" stroke-width=".8"
+    transform="rotate(${r} ${cx+dx} ${by+dy}) translate(${cx+dx} ${by+dy}) scale(${scale}) translate(${-(cx+dx)} ${-(by+dy)})"/>`).join('');
+}
+function emptyMsg(t){ return `<text x="300" y="324" text-anchor="middle" font-size="16" fill="#5b4a35" font-family="Nunito, sans-serif" font-weight="700">${t}</text>`; }
+
+/* ---------------- STATIONS ---------------- */
+const STATIONS = {
+/* ===== MELTING POINT ===== */
+melt:{ label:'Melting point', dur:4200,
+  compute(c){
+    const err = Math.max(1, Math.abs(c.mp)*0.008);
+    const m = c.mp + rnd(-err, err);
+    const cooling = c.mp < 25;
+    const T0 = 25, Tend = cooling ? m - 25 : m + Math.max(30, m*0.07);
+    let text, rec;
+    const mr = Math.round(m);
+    if(c.note==='nomelt'){ text = `Heated in a high-temperature furnace to about <b class="mono">3500 °C</b> and it still had not melted. (At normal pressure diamond doesn't melt; it turns to graphite or vaporizes first.)`; rec='> 3500'; }
+    else if(c.note==='dec'){ text = `Melted at about <b class="mono">${mr} °C</b>, then quickly turned brown and began to char (it decomposes).`; rec = `${mr} (chars)`; }
+    else if(c.state==='g'){ text = `This sample is a <b>gas</b> at room temperature. Cooled it until it condensed into a liquid and then froze at <b class="mono">${mr} °C</b>.`; rec = String(mr); }
+    else if(cooling){ text = `This sample is a <b>liquid</b> at room temperature. Cooled it until it froze at <b class="mono">${mr} °C</b> (the freezing point is the same as the melting point).`; rec=String(mr); }
+    else { text = `The sample melted at <b class="mono">${mr} °C</b>.` + (m>1200 ? ' (A high-temperature furnace was needed.)' : ''); rec=String(mr); }
+    return {m:c.note==='nomelt'?3500:m, cooling, T0, Tend: c.note==='nomelt'?3500:Tend, text, rec:{mp:rec, mpVal:c.note==='nomelt'?3500:m}};
+  },
+  T(o,p){ // temperature profile with a plateau while melting
+    if(o.m===3500 && !o.cooling && o.Tend===3500) return o.T0 + (o.m-o.T0)*ease(clamp(p/0.9));
+    if(p<0.55) return o.T0 + (o.m-o.T0)*ease(p/0.55);
+    if(p<0.8) return o.m;
+    return o.m + (o.Tend-o.m)*((p-0.8)/0.2);
+  },
+  frac(o,p){ if(o.m===3500&&o.Tend===3500) return 0; return clamp((p-0.55)/0.25); },
+  draw(c,o,p){
+    let s='';
+    // furnace / apparatus
+    s += `<rect x="100" y="205" width="200" height="87" rx="10" fill="#38424f"/><rect x="112" y="217" width="110" height="36" rx="5" fill="#0d1a14"/>
+          <circle cx="262" cy="248" r="13" fill="#56606e" stroke="#222" /><line x1="262" y1="248" x2="${262+10*Math.cos(-2.4+p*3)}" y2="${248+10*Math.sin(-2.4+p*3)}" stroke="#ddd" stroke-width="2"/>
+          <text x="200" y="283" text-anchor="middle" font-size="11" fill="#aab3bf" font-family="Nunito, sans-serif" font-weight="700">MELTING POINT APPARATUS</text>`;
+    const T = o ? this.T(o,p) : 25;
+    const heat = clamp((T-300)/1800);
+    if(heat>0) s += `<ellipse cx="200" cy="185" rx="${50+30*heat}" ry="${30+15*heat}" fill="#ff7a1a" opacity="${0.55*heat}" filter="url(#blur8)"/>`;
+    const cru = mix('#d9d4cc', '#ff8a2a', heat);
+    s += `<polygon points="150,150 250,150 236,205 164,205" fill="${cru}" stroke="#7b746a" stroke-width="2"/>`;
+    s += `<text x="167" y="243" font-size="22" fill="#52f2a0" font-family="JetBrains Mono, monospace" font-weight="700">${o? Math.round(T): '25'} °C</text>`;
+    if(c){
+      let f = o ? this.frac(o,p) : 0; // fraction melted (heating) or frozen (cooling)
+      const solidAmt = o && o.cooling ? f : (o ? 1-f : (c.mp<25?0:1));
+      const liqAmt = 1 - solidAmt;
+      const liqCol = c.liq || (c.col==='#f6f6f2'||c.col.startsWith('#f')? '#dfe9f2' : c.col);
+      const charred = c.note==='dec' && o && p>0.75 ? clamp((p-0.75)/0.25) : 0;
+      if(c.state==='g' && o && o.cooling && p<0.4){ /* gas: nothing visible yet */ }
+      else if(c.state==='g' && !o){ s += `<text x="200" y="185" text-anchor="middle" font-size="12" fill="#555" font-family="Nunito, sans-serif">(gas – invisible)</text>`; }
+      else {
+        if(liqAmt>0.01) s += `<ellipse cx="200" cy="197" rx="${8+30*liqAmt}" ry="${3+4*liqAmt}" fill="${charred? mix(liqCol,'#3b2412',charred):liqCol}" stroke="#666" stroke-width=".6" opacity=".95"/>`;
+        if(solidAmt>0.01) s += crystals(c,200,196,solidAmt);
+      }
+    }
+    // heating curve chart
+    const X0=345,X1=575,Y0=50,Y1=262;
+    s += `<rect x="330" y="22" width="258" height="262" rx="10" fill="#fff" stroke="#d8dde2"/>
+      <line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="#555"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="#555"/>
+      <text x="${(X0+X1)/2}" y="278" text-anchor="middle" font-size="11" fill="#555" font-family="Nunito, sans-serif">time →</text>
+      <text x="460" y="40" text-anchor="middle" font-size="12" fill="#333" font-family="Nunito, sans-serif" font-weight="800">${o&&o.cooling?'Cooling':'Heating'} curve</text>`;
+    if(o){
+      const lo = Math.min(o.T0,o.Tend)-10, hi = Math.max(o.T0,o.Tend,o.m)+10;
+      const y = t=> Y1 - (t-lo)/(hi-lo)*(Y1-Y0-8);
+      let pts=[]; const N=Math.max(2,Math.round(p*90));
+      for(let i=0;i<=N;i++){ const q=i/90; pts.push(`${X0+q*(X1-X0)},${y(this.T(o,q))}`); }
+      s += `<polyline points="${pts.join(' ')}" fill="none" stroke="#dc2626" stroke-width="2.5"/>`;
+      s += `<text x="${X0-4}" y="${y(o.T0)+4}" text-anchor="end" font-size="10" fill="#555" font-family="JetBrains Mono, monospace">25</text>`;
+      if(p>0.6 && !(o.m===3500&&o.Tend===3500)){ s += `<line x1="${X0}" y1="${y(o.m)}" x2="${X1}" y2="${y(o.m)}" stroke="#dc2626" stroke-dasharray="3 4" opacity=".5"/>
+        <text x="${X0+0.66*(X1-X0)}" y="${y(o.m)+(o.cooling?16:-7)}" text-anchor="middle" font-size="11" fill="#b91c1c" font-family="Nunito, sans-serif" font-weight="800">${o.cooling?'freezing':'melting'}: ${Math.round(o.m)} °C</text>`; }
+    }
+    if(!c) s += emptyMsg('Choose a sample from the shelf');
+    return SVG(s);
+  },
+  record(o){ return o.rec; }
+},
+
+/* ===== SOLUBILITY ===== */
+sol:{ label:'Solubility', dur:4200,
+  compute(c){
+    const solv = S.solvent; let frac, text, cat, val=null;
+    if(solv==='water'){
+      if(c.ws==='misc'){ frac=1; cat='miscible'; text = `Poured 5 mL into 100 mL of water and stirred. The liquids mixed completely into one clear layer: <b>miscible</b> (they mix in any amount).`; }
+      else {
+        val = c.ws*(1+rnd(-0.04,0.04)); frac = Math.min(1, c.ws/5);
+        cat = c.ws>=1 ? 'soluble' : c.ws>=0.1 ? 'slight' : 'insoluble';
+        const obs = c.state==='g' ? (cat==='soluble' ? 'The bubbles shrank and vanished before reaching the surface: the gas dissolved rapidly.' : 'Most bubbles reached the surface and escaped.')
+          : cat==='soluble' ? 'All of it dissolved.' : cat==='slight' ? 'A small amount dissolved; most of the solid stayed at the bottom.' : 'No visible change. The solid sank and stayed at the bottom.';
+        text = (c.state==='g' ? `Bubbled the gas into 100 mL of water at 25 °C. ` : `Added 5.0 g to 100 mL of water at 25 °C and stirred. `) + obs + ` Measured solubility: <b class="mono">${fmtSol(val)} g / 100 mL</b>.`;
+      }
+    } else {
+      const h=c.hx; frac = h==='sol'||h==='misc' ? 1 : h==='slight' ? 0.15 : 0;
+      cat = h==='sol'?'soluble':h==='misc'?'miscible':h==='slight'?'slight':'insoluble';
+      const what = c.state==='g' ? 'Bubbled the gas into 100 mL of hexane and stirred. ' : c.state==='l' ? 'Poured 5 mL into 100 mL of hexane and stirred. ' : 'Added 5.0 g to 100 mL of hexane (a nonpolar solvent) and stirred. ';
+      const obs = {soluble:'It dissolved completely.', miscible:'The liquids mixed completely: <b>miscible</b>.', slight:'Only a little dissolved.', insoluble:'No visible change. It did not dissolve.'}[cat];
+      text = what + obs + (c.tint && c.tint.hexane && frac>0 ? ' The solution turned violet.' : '');
+    }
+    if(solv==='water' && c.tint && c.tint.water && frac>0.003 && c.state==='s') text += c.id==='iodine' ? ' The water turned a faint yellow-brown.' : ' The solution became colored.';
+    return {frac, cat, val, text, solv};
+  },
+  draw(c,o,p){
+    const solv = o ? o.solv : S.solvent;
+    const liqCol = solv==='water' ? '#bfe2f7' : '#f4f0d9';
+    const BX0=215,BX1=385,TOP=135,BOT=285;
+    let s=`<text x="300" y="38" text-anchor="middle" font-size="13" fill="#4b5563" font-family="Nunito, sans-serif" font-weight="800">100 mL ${solv==='water'?'WATER (polar)':'HEXANE (nonpolar)'}</text>`;
+    s += `<rect x="${BX0}" y="${TOP}" width="${BX1-BX0}" height="${BOT-TOP}" fill="${liqCol}" opacity=".85"/>`;
+    const fall = o ? clamp(p/0.28) : 0, q = o ? clamp((p-0.3)/0.65) : 0;
+    const dissolved = o ? o.frac*ease(q) : 0;
+    if(c && o && c.tint && c.tint[solv] && o.frac>0){ const strength = (c.id==='iodine'&&solv==='water')?0.25:0.65; s += `<rect x="${BX0}" y="${TOP}" width="${BX1-BX0}" height="${BOT-TOP}" fill="${c.tint[solv]}" opacity="${strength*Math.max(dissolved, o.frac<0.05?q*0.6:0)}"/>`; }
+    // sample
+    if(c && o){
+      if(c.state==='s'){
+        const N=18;
+        for(let i=0;i<N;i++){
+          const x = 245 + (i*37)%112, finalY = 274 - (i%3)*6 - (i>8?4:0);
+          const startY = 40 + (i%5)*6;
+          const y = startY + (finalY-startY)*ease(clamp(fall*1.15 - i*0.008));
+          const sc = 1 - dissolved;
+          if(sc>0.02) s += `<rect x="${x-4*sc}" y="${y-4*sc}" width="${8*sc}" height="${8*sc}" fill="${c.col}" stroke="#4a4f5a" stroke-width=".7" transform="rotate(${i*23} ${x} ${y})"/>`;
+        }
+      } else if(c.state==='l'){
+        if(p<0.35){ s += `<rect x="296" y="${40}" width="8" height="${95*clamp(p/0.1)}" fill="#cfe5f5" stroke="#7aa" stroke-width=".5"/>`; }
+        if(p>0.1){ const a = (1-dissolved)*0.8; s += `<ellipse cx="300" cy="${TOP+10}" rx="${60}" ry="8" fill="#9ccbe8" opacity="${a}"/>`; }
+      } else { // gas: tube + bubbles
+        s += `<rect x="352" y="70" width="7" height="205" fill="#ddd" stroke="#888"/>`;
+        if(p>0.05) for(let i=0;i<14;i++){
+          const t = ((p*3 + i/14)%1); const y = 270 - t*(270-TOP);
+          const r = 5*(1 - (o.frac>0.5 ? clamp(t*1.6) : 0.1));
+          if(r>0.4) s += `<circle cx="${345 - (i%4)*18 - t*30}" cy="${y}" r="${r}" fill="#fff" stroke="#8ab" opacity=".85"/>`;
+        }
+      }
+      // stirring rod
+      if(q>0 && q<1 && c.state!=='g'){ const sw = Math.sin(q*Math.PI*8)*28; s += `<line x1="${300+sw*0.4}" y1="70" x2="${300+sw}" y2="278" stroke="#cfd8dc" stroke-width="5" stroke-linecap="round" opacity=".9"/>`; }
+    }
+    // beaker glass
+    s += `<path d="M${BX0-6} ${95} L${BX0} 100 L${BX0} ${BOT} Q${BX0} ${BOT+7} ${BX0+8} ${BOT+7} L${BX1-8} ${BOT+7} Q${BX1} ${BOT+7} ${BX1} ${BOT} L${BX1} 100" fill="none" stroke="#7d8fa0" stroke-width="3"/>`;
+    for(let i=0;i<4;i++) s+=`<line x1="${BX0}" y1="${TOP+i*35}" x2="${BX0+14}" y2="${TOP+i*35}" stroke="#7d8fa0" stroke-width="1.5"/>`;
+    if(!c) s += emptyMsg('Choose a sample from the shelf');
+    return SVG(s);
+  },
+  record(o){ return {[o.solv==='water'?'water':'hexane']:{cat:o.cat, val:o.val}}; }
+},
+
+/* ===== CONDUCTIVITY ===== */
+cond:{ label:'Conductivity', dur:3400,
+  compute(c){
+    const mode=S.condMode; let reading, text, how, skip=false;
+    if(mode==='pure' || (mode==='molten' && c.state!=='s')){
+      reading = rnd(0,0.4);
+      how = c.state==='s' ? 'Pressed the electrodes against the dry, solid crystals.' : c.state==='l' ? 'Dipped the electrodes into the pure liquid.' : 'Placed the electrodes in a sealed tube of the pure gas.';
+      if(mode==='molten') how = `This sample is already a ${STATE_LABEL[c.state]} at room temperature, so it was tested as the pure ${STATE_LABEL[c.state]}. ` + how;
+    } else if(mode==='aq'){
+      const amt = c.ws==='misc' ? 1 : Math.min(1, c.ws);
+      const base = rnd(0.8,2.2);
+      reading = c.aq==='strong' ? 12000*amt*rnd(0.9,1.1) + base : c.aq==='weak' ? 550*amt*rnd(0.9,1.1) + base : base;
+      how = 'Mixed the sample with distilled water, then dipped in the electrodes.';
+      if(c.ws!=='misc' && c.ws<0.1) how += ' Very little of the sample dissolved.';
+    } else { // molten
+      if(c.note==='nomelt'){ skip=true; text='Diamond cannot be melted with laboratory equipment, so this test is not possible.'; reading=0; }
+      else if(c.note==='dec'){ reading=rnd(0,0.5); how='Heated the sample; it melted but quickly charred and decomposed.'; }
+      else { reading = c.type==='ionic' ? 3e6*rnd(0.8,1.2) : rnd(0,0.5); how = `Heated the sample above its melting point${c.mp>1200?' in a high-temperature furnace':''}, then dipped in the electrodes.`; }
+    }
+    const lvl = reading>2000 ? 'strong' : reading>150 ? 'weak' : 'none';
+    const bright = lvl==='strong'?1:lvl==='weak'?0.35:0;
+    if(!skip){
+      const meter = reading>20000 ? '<b class="mono">OVER</b> (off the scale: very high)' : `<b class="mono">${reading<10?reading.toFixed(1):fmtNum(reading)} µS/cm</b>`;
+      text = `${how} ${lvl==='strong'?'The bulb glows <b>brightly</b>.':lvl==='weak'?'The bulb glows <b>dimly</b>.':'The bulb <b>does not light</b>.'} Meter reading: ${meter}.`;
+    }
+    return {mode, reading, lvl, bright, text, skip};
+  },
+  draw(c,o,p){
+    const mode = o ? o.mode : S.condMode;
+    const lower = o ? ease(clamp(p/0.35)) : 0;
+    const on = o ? clamp((p-0.4)/0.25) : 0;
+    const bright = o ? o.bright*on : 0;
+    let s='';
+    // container
+    const solidPure = c && mode==='pure' && c.state==='s';
+    const molten = mode==='molten' && (!c || c.state==='s');
+    let eTop=110, eBot;
+    if(molten){
+      s += `<polygon points="245,205 355,205 341,252 259,252" fill="#d9d4cc" stroke="#7b746a" stroke-width="2"/>
+            <rect x="285" y="262" width="30" height="30" fill="#5b6470"/><path d="M290 262 Q300 ${238-6*Math.sin(p*30)} 310 262 Z" fill="#3b82f6" opacity=".8"/>`;
+      if(c && o && !o.skip){ const col = c.type==='ionic' ? '#ffb347' : (c.liq||'#e8d9a8'); s += `<ellipse cx="300" cy="226" rx="44" ry="7" fill="${c.note==='dec'?'#4a2a12':col}" stroke="#a05a1a" stroke-width=".6"/>`; }
+      else if(c && !o) s += crystals(c,300,240,1);
+      eBot = 240 - 120*(1-lower) ;
+    } else if(solidPure){
+      s += `<ellipse cx="300" cy="282" rx="80" ry="9" fill="#e9eef2" stroke="#8a98a6" stroke-width="1.5"/>`;
+      s += crystals(c,300,276,1.4,11);
+      eBot = 262 - 120*(1-lower);
+    } else {
+      s += `<rect x="230" y="190" width="140" height="95" fill="${mode==='aq'?'#bfe2f7':(c&&c.state==='g'?'#f0f4f6':'#d9ecf8')}" opacity=".85"/>`;
+      if(c && o && mode==='aq' && c.tint && c.tint.water && c.ws!=='misc' && c.ws>=1) s += `<rect x="230" y="190" width="140" height="95" fill="${c.tint.water}" opacity=".55"/>`;
+      if(c && mode==='aq' && c.ws!=='misc' && c.ws<0.1 && c.state==='s') s += crystals(c,300,281,0.9);
+      s += `<path d="M225 150 L230 152 L230 285 Q230 291 236 291 L364 291 Q370 291 370 285 L370 150" fill="none" stroke="#7d8fa0" stroke-width="3"/>`;
+      if(c && c.state==='g' && mode!=='aq') s += `<rect x="230" y="150" width="140" height="6" fill="#7d8fa0"/>`;
+      eBot = 270 - 120*(1-lower);
+    }
+    // electrodes
+    const eY0 = eBot-110;
+    s += `<rect x="271" y="${eY0}" width="9" height="110" fill="#7c7f86"/><rect x="320" y="${eY0}" width="9" height="110" fill="#7c7f86"/>`;
+    // wires
+    const w = `stroke="#c0392b" stroke-width="3" fill="none"`, w2 = `stroke="#1f2937" stroke-width="3" fill="none"`;
+    s += `<path d="M85 196 L85 75 L178 75" ${w}/><path d="M222 75 L275.5 75 L275.5 ${eY0}" ${w}/>`;
+    s += `<path d="M85 262 L40 262 L40 30 L324.5 30 L324.5 ${eY0}" ${w2}/>`;
+    // battery
+    s += `<rect x="62" y="196" width="46" height="66" rx="5" fill="#2b2f36"/><rect x="62" y="196" width="46" height="18" rx="5" fill="#d4a017"/>
+          <rect x="78" y="190" width="14" height="7" fill="#888"/><text x="85" y="245" text-anchor="middle" font-size="13" fill="#fff" font-family="Nunito, sans-serif" font-weight="800">9 V</text>`;
+    // bulb
+    if(bright>0) s += `<circle cx="200" cy="72" r="${38+28*bright}" fill="#ffe14d" opacity="${0.85*bright}" filter="url(#blur8)"/>`;
+    s += `<circle cx="200" cy="66" r="22" fill="${bright>0?mix('#f3f6f8','#fff5b0',bright):'#eef2f5'}" stroke="#8a98a6" stroke-width="2" opacity=".95"/>
+          <rect x="190" y="84" width="20" height="12" fill="#9aa3ad"/>
+          <path d="M193 78 L195 62 L200 70 L205 62 L207 78" fill="none" stroke="${bright>0?'#ff9f1a':'#666'}" stroke-width="1.6"/>`;
+    // meter
+    let disp = '0.0';
+    if(o && on>0 && !o.skip){ const r = o.reading*on; disp = r>20000 ? 'OVER' : r<10 ? r.toFixed(1) : fmtNum(r); }
+    if(o && o.skip) disp='----';
+    s += `<rect x="420" y="40" width="160" height="88" rx="10" fill="#2b2f36"/><rect x="432" y="52" width="136" height="44" rx="5" fill="#0d1a14"/>
+          <text x="560" y="84" text-anchor="end" font-size="22" fill="#52f2a0" font-family="JetBrains Mono, monospace" font-weight="700">${disp}</text>
+          <text x="500" y="117" text-anchor="middle" font-size="11" fill="#cfd6dc" font-family="Nunito, sans-serif" font-weight="700">CONDUCTIVITY µS/cm</text>`;
+    s += `<text x="500" y="170" text-anchor="middle" font-size="13" fill="#4b5563" font-family="Nunito, sans-serif" font-weight="800">${{pure:'PURE SAMPLE',aq:'DISSOLVED IN WATER',molten:'MOLTEN (MELTED)'}[mode]}</text>`;
+    if(!c) s += emptyMsg('Choose a sample from the shelf');
+    return SVG(s);
+  },
+  record(o){ if(o.skip) return {condMolten:{lvl:'na'}}; return {[{pure:'condPure',aq:'condAq',molten:'condMolten'}[o.mode]]:{lvl:o.lvl, reading:o.reading}}; }
+},
+
+/* ===== CRUSH TEST ===== */
+crush:{ label:'Crush test', dur:3000,
+  compute(c){
+    const T = {
+      brittle:'It took a firm blow. The sample <b>shattered</b> into smaller pieces with flat, angular faces: hard but brittle.',
+      soft:'It <b>crushed easily</b> into a fine powder with very little force: soft.',
+      waxy:'It <b>squashed and smeared</b> into a flat layer instead of breaking: soft and waxy.',
+      veryhard:'The hammer bounced off with a "clink". <b>No visible damage</b>: extremely hard.',
+      liquid:'This sample is a liquid: it just splashes. There is no solid to crush.',
+      gas:'This sample is a gas: there is nothing to crush.'
+    };
+    return {r:c.crush, text:T[c.crush]};
+  },
+  draw(c,o,p){
+    let s = `<rect x="190" y="252" width="220" height="40" rx="4" fill="#5b6470"/><rect x="215" y="246" width="170" height="8" fill="#717b88"/>`;
+    const r = o ? o.r : null;
+    const imp = 0.35, q = o ? clamp((p-imp)/(1-imp)) : 0;
+    let ang = 55;
+    if(o && (r!=='liquid' && r!=='gas')){
+      ang = p<imp ? 55 - 55*ease(p/imp) : 0;
+      if(r==='veryhard' && p>=imp) ang = 22*Math.sin(Math.PI*clamp(q*1.6));
+      if(r!=='veryhard' && p>=imp) ang = 30*ease(clamp((q-0.3)/0.7));
+    }
+    // sample
+    if(c){
+      if(c.state==='l'){ s += `<ellipse cx="300" cy="244" rx="26" ry="4" fill="#bfe2f7" opacity=".8"/>`; }
+      else if(c.state==='g'){ s += `<text x="300" y="235" text-anchor="middle" font-size="12" fill="#555" font-family="Nunito, sans-serif">(gas)</text>`; }
+      else if(!o || p<imp || r==='veryhard'){
+        s += `<polygon points="284,246 290,230 306,227 316,236 314,246" fill="${c.col}" stroke="#4a4f5a" stroke-width="1"/>`;
+        if(r==='veryhard' && p>=imp && q<0.4) s += [0,1,2,3,4].map(i=>{const a=-Math.PI*(0.15+i*0.17); return `<line x1="${300+18*Math.cos(a)}" y1="${232+18*Math.sin(a)}" x2="${300+32*Math.cos(a)}" y2="${232+32*Math.sin(a)}" stroke="#f59e0b" stroke-width="2.5"/>`}).join('');
+      } else if(r==='brittle'){
+        const sh=[[-60,-4,20],[-38,-2,-30],[-18,-1,60],[14,-1,10],[34,-3,-50],[58,-2,35],[-6,-2,80],[44,-1,-15],[-48,-1,45]];
+        sh.forEach(([dx,dy,rot],i)=>{ const t=ease(clamp(q*2)); const x=300+dx*t, y=243+dy - Math.sin(Math.PI*clamp(q*2))*(14+i%3*8);
+          s+=`<polygon points="${x-5},${y+3} ${x-1},${y-5} ${x+6},${y-2} ${x+3},${y+4}" fill="${c.col}" stroke="#4a4f5a" stroke-width=".8" transform="rotate(${rot*t} ${x} ${y})"/>`; });
+      } else if(r==='soft'){
+        const t = ease(clamp(q*2));
+        s += `<path d="M${300-30*t-10} 246 Q300 ${246-10+3*t} ${300+30*t+10} 246 Z" fill="${c.col}" stroke="#4a4f5a" stroke-width=".8"/>`;
+        for(let i=0;i<22;i++){ const x=300+(hashN('p'+i,100)-0.5)*80*t, y=246-hashN('q'+i,100)*4; s+=`<circle cx="${x}" cy="${y}" r="1.4" fill="${c.col}" stroke="#4a4f5a" stroke-width=".3"/>`; }
+      } else if(r==='waxy'){
+        const t = ease(clamp(q*2));
+        s += `<ellipse cx="300" cy="${244+t}" rx="${16+22*t}" ry="${9-5*t}" fill="${c.col}" stroke="#8a7d5a" stroke-width="1"/>`;
+      }
+    }
+    // hammer (pivot at 492,214)
+    s += `<g transform="rotate(${ang} 492 214)"><rect x="318" y="209" width="180" height="11" rx="4" fill="#8b5a2b"/><rect x="280" y="190" width="40" height="38" rx="4" fill="#6b7280" stroke="#374151" stroke-width="1.5"/><rect x="280" y="223" width="40" height="5" fill="#4b5563"/></g>`;
+    if(!c) s += emptyMsg('Choose a sample from the shelf');
+    return SVG(s);
+  },
+  record(o){ return {crush:o.r}; }
+}
+};
+
+/* ---------------- RENDER: LAB ---------------- */
+function jarIcon(c){
+  if(c.state==='g') return `<svg width="34" height="40" viewBox="0 0 34 40"><rect x="9" y="6" width="16" height="32" rx="7" fill="#cbd5df" stroke="#64748b"/><rect x="13" y="1" width="8" height="6" fill="#64748b"/></svg>`;
+  if(c.state==='l') return `<svg width="34" height="40" viewBox="0 0 34 40"><path d="M12 2h10v8l6 6v20a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V16l6-6z" fill="#f4f8fb" stroke="#64748b"/><path d="M7 22h20v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z" fill="#bfe2f7"/></svg>`;
+  return `<svg width="34" height="40" viewBox="0 0 34 40"><rect x="5" y="9" width="24" height="29" rx="4" fill="#f4f8fb" stroke="#64748b"/><rect x="7" y="3" width="20" height="7" rx="2" fill="#475569"/>
+    <path d="M7 36 L7 26 Q10 21 13 25 Q16 20 19 24 Q23 20 27 25 L27 36 Z" fill="${c.col}" stroke="#888" stroke-width=".6"/></svg>`;
+}
+function testedCount(id){ const r=S.nb[key(id)]; if(!r) return 0; return ['mp','water','hexane','condPure','condAq','condMolten','crush'].filter(k=>r[k]!==undefined).length; }
+function renderShelf(){
+  const ids = visible();
+  $('#shelf').innerHTML = ids.map(id=>{
+    const c=byId[id], n=testedCount(id);
+    const chip = chipShown(id) ? `<span class="chip ${c.type}">${chipText(id)}</span>` : '';
+    const f = dispFormula(id), locked = isLocked(id);
+    return `<button class="card ${S.selected===id?'sel':''}" data-id="${id}">${jarIcon(c)}
+      <div><div class="nm">${dispName(id)}${f?` <span class="mono" style="font-weight:500;font-size:12.5px">${f}</span>`:''}</div>
+      <div class="meta">${STATE_LABEL[c.state]} · ${c.look}</div>${chip}</div>
+      ${locked?`<span class="tested lock" title="Identify to unlock">🔒</span>`:n?`<span class="tested">${n}/7 ✓</span>`:''}</button>`;
+  }).join('');
+  document.querySelectorAll('.card').forEach(b=>b.onclick=()=>{ if(S.busy) return; S.selected=b.dataset.id; S.gateFb=null; renderShelf(); renderStations(); renderOpts(); renderBench(); setResult(null); });
+}
+function renderStations(){
+  const lk = S.selected && isLocked(S.selected);
+  $('#stations').innerHTML = Object.entries(STATIONS).map(([k,v])=>`<button data-st="${k}" class="${S.station===k&&!lk?'on':''}" ${lk?'disabled title="Identify the compound first"':''}>${lk?'🔒 ':''}${v.label}</button>`).join('');
+  document.querySelectorAll('#stations button').forEach(b=>b.onclick=()=>{ if(S.busy || b.disabled) return; S.station=b.dataset.st; renderStations(); renderOpts(); renderBench(); setResult(null); });
+}
+function pill(name, cur, opts){ return `<div class="pill" data-pill="${name}">${opts.map(([v,l])=>`<button data-v="${v}" class="${cur===v?'on':''}">${l}</button>`).join('')}</div>`; }
+function renderOpts(){
+  let h='';
+  if(S.selected && isLocked(S.selected)){
+    $('#opts').innerHTML = `<span class="hint"><b>Step 1:</b> identify this compound's bonding to unlock the four tests.</span>`; return; }
+  if(S.station==='sol') h += `<label>Solvent</label>` + pill('solvent', S.solvent, [['water','Water (polar)'],['hexane','Hexane (nonpolar)']]);
+  if(S.station==='cond') h += `<label>Test the sample</label>` + pill('condMode', S.condMode, [['pure','Pure'],['aq','Dissolved in water'],['molten','Molten']]);
+  if(S.station==='melt') h += `<span class="hint">Heats the sample slowly and records the temperature where it melts.</span>`;
+  if(S.station==='crush') h += `<span class="hint">Strikes the sample with a small hammer to see how it breaks.</span>`;
+  h += `<button class="run" id="runBtn" ${!S.selected||S.busy?'disabled':''}>${S.busy?'Running…':'Run test ▶'}</button>`;
+  $('#opts').innerHTML = h;
+  document.querySelectorAll('#opts [data-pill] button').forEach(b=>b.onclick=()=>{ if(S.busy) return; S[b.parentElement.dataset.pill]=b.dataset.v; renderOpts(); renderBench(); setResult(null); });
+  $('#runBtn').onclick = runTest;
+}
+function renderBench(o=null,p=0){
+  if(S.selected && isLocked(S.selected)){ renderGate(S.selected); return; }
+  const c = S.selected ? byId[S.selected] : null; $('#bench').innerHTML = STATIONS[S.station].draw(c,o,p); }
+function renderGate(id){
+  const c = byId[id], g = S.gate[gk(id)] || {tries:0}, fb = S.gateFb;
+  const q = S.gateLevel==='ic' ? 'Is this compound <b>ionic</b> or <b>covalent</b>?' : 'Classify this compound: is it <b>ionic</b>, <b>polar covalent</b> or <b>nonpolar covalent</b>?';
+  $('#bench').innerHTML = `<div class="gate">
+    <div class="gate-tag">🔒 Step 1: Identify before testing</div>
+    <div class="gate-formula">${c.f.replace(/[₀-₉]+/g,m=>"<sub>"+[...m].map(d=>d.charCodeAt(0)-8320).join("")+"</sub>")}</div>
+    <div class="gate-name">${c.name}</div>
+    <div class="gate-meta">${STATE_LABEL[c.state]} · ${c.look}</div>
+    <div class="gate-q">${q}</div>
+    <div class="gate-btns">${gateChoices().map(a=>`<button data-a="${a}" class="${fb&&fb.pick===a?'picked':''}">${ANSWER_LABEL[a]}</button>`).join('')}</div>
+    ${fb?`<div class="gate-fb">${fb.html}</div>`:''}
+    ${g.tries?`<div class="hint" style="margin-top:8px">Attempts so far: ${g.tries}</div>`:''}
+  </div>`;
+  document.querySelectorAll('.gate-btns button').forEach(b=>b.onclick=()=>answerGate(id, b.dataset.a));
+}
+function answerGate(id, pick){
+  const c = byId[id], k = gk(id);
+  const g = S.gate[k] = S.gate[k] || {tries:0, done:false};
+  g.tries++;
+  if(pick === correctAnswer(c, S.gateLevel)){
+    g.done = true; g.ans = pick; S.guess[key(id)] = c.type; S.gateFb = null; save();
+    renderShelf(); renderStations(); renderOpts(); renderBench(); renderNotebook();
+    setResult(`<div class="hd">✓ Correct${g.tries===1?' on the first try':''}: ${c.name} is ${ANSWER_LABEL[pick].toLowerCase()}.</div>${explain(c)}<br><span class="hint">The tests are unlocked. Choose a station and press <b>Run test</b>.</span>`);
+  } else {
+    S.gateFb = {pick, html: gateHint(c, pick, g.tries)}; save();
+    renderGate(id); setResult(null);
+  }
+}
+function setResult(html){
+  const r=$('#result');
+  if(!html && S.selected && isLocked(S.selected)){ r.className='result idle'; r.innerHTML='Choose an answer above. The melting point, solubility, conductivity and crush tests unlock once you identify this compound correctly.'; return; }
+  if(!html){ r.className='result idle'; r.innerHTML = S.selected ? `Ready: <b>${dispName(S.selected)}</b> at the <b>${STATIONS[S.station].label.toLowerCase()}</b> station. Press <b>Run test</b>.` : 'Pick a sample from the shelf, choose a test, and press <b>Run test</b>.'; return; }
+  r.className='result'; r.innerHTML=html;
+}
+function runTest(){
+  if(!S.selected || S.busy || isLocked(S.selected)) return;
+  const c = byId[S.selected], st = STATIONS[S.station], o = st.compute(c);
+  S.busy=true; renderOpts(); setResult('<span class="hint">Running test…</span>');
+  const instant = (st===STATIONS.crush && (c.state!=='s')) || (st===STATIONS.cond && o.skip);
+  const dur = instant ? 400 : st.dur, t0 = performance.now();
+  function frame(now){
+    const p = clamp((now-t0)/dur);
+    renderBench(o,p);
+    if(p<1) requestAnimationFrame(frame);
+    else {
+      S.busy=false;
+      const k=key(c.id); S.nb[k] = Object.assign(S.nb[k]||{}, st.record(o)); save();
+      setResult(`<div class="hd">${dispName(c.id)}: ${st.label}${st===STATIONS.sol?' in '+o.solv:''}${st===STATIONS.cond?' ('+{pure:'pure',aq:'in water',molten:'molten'}[o.mode]+')':''}</div>${o.text}`);
+      renderOpts(); renderShelf(); renderNotebook();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- NOTEBOOK ---------------- */
+function cellSol(v){ if(!v) return null; const m={soluble:['v-yes','Soluble'],miscible:['v-yes','Miscible'],slight:['v-weak','Slightly'],insoluble:['v-no','Insoluble']}[v.cat];
+  return `<span class="${m[0]}">${m[1]}</span>` + (v.val!=null?` <span class="mono" style="font-size:12px">(${fmtSol(v.val)} g)</span>`:''); }
+function cellCond(v){ if(!v) return null; if(v.lvl==='na') return '<span class="v-no">n/a</span>';
+  const m={strong:['v-yes','Bright'],weak:['v-weak','Dim'],none:['v-no','None']}[v.lvl];
+  return `<span class="${m[0]}">${m[1]}</span> <span class="mono" style="font-size:12px">(${v.reading>20000?'OVER':v.reading<10?v.reading.toFixed(1):fmtNum(v.reading)})</span>`; }
+const CRUSH_LABEL={brittle:'Brittle (shatters)',soft:'Soft (crumbles)',waxy:'Waxy (smears)',veryhard:'Very hard',liquid:'n/a (liquid)',gas:'n/a (gas)'};
+function textOf(html){ const d=document.createElement('div'); d.innerHTML=html||''; return d.textContent; }
+function nbRows(){ return visible().filter(id=>S.nb[key(id)]); }
+function renderNotebook(){
+  const ids = nbRows(), showT = revealed() && !gateActive(), gA = gateActive();
+  let tools = `<button class="btn" id="copyCsv">Copy table (CSV)</button><button class="btn" id="clearNb">Clear notebook</button>`;
+  if(isMyst()) tools = `<button class="btn primary" id="checkBtn">Check my classifications</button><button class="btn" id="newSet">New mystery set</button>` + tools;
+  if(gA){ const done = visible().map(id=>S.gate[gk(id)]).filter(g=>g&&g.done);
+    if(done.length) tools += `<span class="hint"><b>Identified:</b> ${done.length} compound${done.length>1?'s':''} · ${done.filter(g=>g.tries===1).length} on the first try</span>`; }
+  tools += `<span class="hint" style="margin-left:auto">MP = melting point (°C). Solubility values in g per 100 mL. Conductivity in µS/cm.</span>`;
+  $('#nbTools').innerHTML = tools;
+  if(!ids.length){ $('#nbTable').innerHTML = `<tr><td class="empty" style="padding:18px">No data yet. Run a test and the results will appear here.</td></tr>`; }
+  else {
+    let h = `<thead><tr><th rowspan="2">Compound</th>${showT?'<th rowspan="2">Bond type</th>':''}<th rowspan="2">MP (°C)</th><th colspan="2" class="grp">Solubility</th><th colspan="3" class="grp">Conductivity (bulb)</th><th rowspan="2">Crush test</th><th rowspan="2">${gA?'Identified as':'My classification'}</th></tr>
+      <tr><th>Water</th><th>Hexane</th><th>Pure</th><th>In water</th><th>Molten</th></tr></thead><tbody>`;
+    for(const id of ids){
+      const r=S.nb[key(id)], c=byId[id], g=S.guess[key(id)]||'';
+      const td = v=> v==null ? '<td class="empty">–</td>' : `<td>${v}</td>`;
+      let mark='';
+      if(isMyst() && S.mystery.checked) mark = g===c.type ? ' <span class="mark-ok">✓</span>' : ' <span class="mark-bad">✗</span>';
+      const f = dispFormula(id);
+      h += `<tr><td><b>${dispName(id)}</b>${f?` <span class="mono" style="font-size:12px">${f}</span>`:''}</td>${showT?`<td><span class="chip ${c.type}">${TYPE_SHORT[c.type]}</span></td>`:''}
+        ${td(r.mp!=null?`<span class="mono">${r.mp}</span>`:null)}${td(cellSol(r.water))}${td(cellSol(r.hexane))}${td(cellCond(r.condPure))}${td(cellCond(r.condAq))}${td(cellCond(r.condMolten))}${td(r.crush?CRUSH_LABEL[r.crush]:null)}
+        ${gA ? `<td>${(()=>{ const gg=S.gate[gk(id)]; return gg&&gg.done ? `<span class="chip ${c.type}">${ANSWER_LABEL[gg.ans]}</span> <span class="hint">(${gg.tries===1?'1st try':gg.tries+' tries'})</span>` : '<span class="v-no">not identified</span>'; })()}</td></tr>` : `
+        <td><select data-g="${id}"><option value="">choose…</option><option value="ionic" ${g==='ionic'?'selected':''}>Ionic</option><option value="covalent" ${g==='covalent'?'selected':''}>Covalent (molecular)</option>${(S.advanced||c.type==='network'||g==='network')?`<option value="network" ${g==='network'?'selected':''}>Covalent network</option>`:''}</select>${mark}</td></tr>`}`;
+    }
+    $('#nbTable').innerHTML = h+'</tbody>';
+    document.querySelectorAll('#nbTable select').forEach(sel=>sel.onchange=()=>{ S.guess[key(sel.dataset.g)]=sel.value; save(); });
+  }
+  $('#copyCsv').onclick = copyCsv;
+  $('#clearNb').onclick = ()=>{ if($('#clearNb').dataset.armed){ for(const k of Object.keys(S.nb)) if(isMyst()===k.startsWith('m:')) delete S.nb[k];
+      if(!isMyst()){ S.gate={}; for(const k of Object.keys(S.guess)) if(!k.startsWith('m:')) delete S.guess[k]; }
+      save(); renderAll(); toast(isMyst()?'Notebook cleared':'Notebook and identifications cleared'); }
+    else { $('#clearNb').dataset.armed='1'; $('#clearNb').textContent='Click again to confirm'; setTimeout(()=>{ const b=$('#clearNb'); if(b){ delete b.dataset.armed; b.textContent='Clear notebook'; } },2500); } };
+  if(isMyst()){
+    $('#checkBtn').onclick = ()=>{
+      const ids=S.mystery.ids, untested = ids.filter(id=>!S.guess[key(id)]);
+      if(untested.length){ toast(`Classify all ${ids.length} unknowns first (${untested.length} left)`); return; }
+      S.mystery.checked=true; save(); renderAll();
+    };
+    $('#newSet').onclick = ()=>{ newMystery(); renderAll(); toast('New mystery set ready'); };
+  }
+}
+function copyCsv(){
+  const ids = nbRows(), showT=revealed();
+  const head = ['Compound','Formula', ...(showT?['Bond type']:[]),'Melting point (C)','Water solubility','Hexane solubility','Conductivity pure','Conductivity in water','Conductivity molten','Crush test', gateActive()?'Identified as (tries)':'My classification'];
+  const rows = ids.map(id=>{ const r=S.nb[key(id)], c=byId[id];
+    return [dispName(id), dispFormula(id), ...(showT?[TYPE_LABEL[c.type]]:[]), r.mp??'', textOf(cellSol(r.water)), textOf(cellSol(r.hexane)), textOf(cellCond(r.condPure)), textOf(cellCond(r.condAq)), textOf(cellCond(r.condMolten)), r.crush?CRUSH_LABEL[r.crush]:'', (gateActive() ? ((g=>g&&g.done?ANSWER_LABEL[g.ans]+' ('+g.tries+(g.tries===1?' try':' tries')+')':'')(S.gate[gk(id)])) : (TYPE_LABEL[S.guess[key(id)]]||''))];
+  });
+  const csv = [head,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  try{ navigator.clipboard.writeText(csv).then(()=>toast('Copied! Paste into a spreadsheet.'), ()=>toast('Copy was blocked by the browser')); }catch(e){ toast('Copy was blocked by the browser'); }
+}
+function renderBanner(){
+  const el=$('#mysteryBanner');
+  if(!isMyst()){ el.innerHTML=''; return; }
+  if(S.mystery.checked){
+    const ids=S.mystery.ids, ok=ids.filter(id=>S.guess[key(id)]===byId[id].type).length;
+    el.innerHTML = `<div class="banner ${ok===ids.length?'good':''}"><b>Score: ${ok} / ${ids.length} correct.</b> Names and bond types are now revealed. For each one you missed, which piece of evidence misled you?</div>`;
+  } else el.innerHTML = `<div class="banner"><b>Mystery mode:</b> the names are hidden. Test each unknown, choose <i>Ionic</i> or <i>Covalent</i> in the notebook, then press <b>Check my classifications</b>.</div>`;
+}
+
+/* ---------------- TRENDS ---------------- */
+function groupOf(id){
+  if(S.groupBy==='actual' && revealed()) return byId[id].type;
+  return S.guess[key(id)] || 'unclassified';
+}
+function renderTrends(){
+  const canActual = revealed();
+  if(!canActual && S.groupBy==='actual') S.groupBy='guess';
+  document.querySelectorAll('#groupPill button').forEach(b=>{ b.classList.toggle('on', b.dataset.g===S.groupBy); b.disabled = b.dataset.g==='actual' && !canActual; b.style.opacity=b.disabled?.4:1; });
+  $('#groupHint').textContent = canActual ? '' : (isMyst() ? 'Actual bond types unlock after you check your classifications.' : 'Bond types are hidden. Turn on "Show bond types" to compare with the real answer.');
+  const ids = nbRows();
+  const groups = ['ionic','covalent', ...((S.advanced||ids.some(id=>groupOf(id)==='network'))?['network']:[]), ...(ids.some(id=>groupOf(id)==='unclassified')?['unclassified']:[])];
+  $('#mpLegend').innerHTML = groups.map(g=>`<span style="--c:${TYPE_COL[g]}">${TYPE_LABEL[g]}</span>`).join('');
+  // melting chart
+  const pts = ids.filter(id=>S.nb[key(id)].mpVal!=null).map(id=>({id, g:groupOf(id), v:S.nb[key(id)].mpVal}));
+  const W=640,H=380,L=62,R=20,T=18,B=48;
+  const maxV = Math.max(1000, ...pts.map(p=>p.v))*1.06, minV = Math.min(-150, ...pts.map(p=>p.v))-30;
+  const yy = v=> T + (maxV-v)/(maxV-minV)*(H-T-B);
+  const gx = i=> L + (i+0.5)*(W-L-R)/groups.length;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" font-family="Nunito, sans-serif">`;
+  const step = maxV-minV>2500?500:250;
+  for(let v=Math.ceil(minV/step)*step; v<=maxV; v+=step){ s+=`<line x1="${L}" x2="${W-R}" y1="${yy(v)}" y2="${yy(v)}" stroke="${v===0?'#9aa0aa':'#ebe8e1'}"/><text x="${L-8}" y="${yy(v)+4}" text-anchor="end" font-size="11" fill="#6a7080" font-family="JetBrains Mono, monospace">${v}</text>`; }
+  s += `<text transform="translate(16 ${(H-B+T)/2}) rotate(-90)" text-anchor="middle" font-size="12" fill="#4b5563" font-weight="700">Melting point (°C)</text>`;
+  s += `<line x1="${L}" x2="${W-R}" y1="${yy(25)}" y2="${yy(25)}" stroke="#94a3b8" stroke-dasharray="2 3"/><text x="${W-R-2}" y="${yy(25)-4}" text-anchor="end" font-size="10" fill="#64748b">room temp (25 °C)</text>`;
+  groups.forEach((g,i)=>{ s+=`<text x="${gx(i)}" y="${H-B+20}" text-anchor="middle" font-size="12.5" font-weight="800" fill="${TYPE_COL[g]}">${TYPE_LABEL[g]}</text>`; });
+  const cut = S.cutoff;
+  if(cut>=minV && cut<=maxV) s+=`<line x1="${L}" x2="${W-R}" y1="${yy(cut)}" y2="${yy(cut)}" stroke="#0f766e" stroke-width="2.5" stroke-dasharray="7 5"/><text x="${L+6}" y="${yy(cut)-6}" font-size="11" fill="#0f766e" font-weight="800">${cut} °C</text>`;
+  pts.forEach(pt=>{ const i=groups.indexOf(pt.g); const x=gx(i)+(hashN(pt.id,1000)-0.5)*70; const y=yy(pt.v); const f=dispFormula(pt.id)||LETTERS[S.mystery?S.mystery.ids.indexOf(pt.id):0];
+    s+=`<g><title>${dispName(pt.id)}: ${Math.round(pt.v)} °C</title><circle cx="${x}" cy="${y}" r="6.5" fill="${TYPE_COL[pt.g]}" stroke="#fff" stroke-width="1.5"/><text x="${x+10}" y="${y+4}" font-size="11" fill="#374151">${f}</text></g>`; });
+  if(!pts.length) s+=`<text x="${(W+L)/2}" y="${H/2}" text-anchor="middle" font-size="15" fill="#9aa0aa" font-weight="700">Run melting-point tests to see data here</text>`;
+  $('#mpChart').innerHTML = s+'</svg>';
+  $('#cutoff').value = cut; $('#cutoffVal').textContent = cut+' °C';
+  if(pts.length){
+    $('#cutoffStats').innerHTML = groups.filter(g=>pts.some(p=>p.g===g)).map(g=>{ const gp=pts.filter(p=>p.g===g); const above=gp.filter(p=>p.v>cut).length;
+      return `<span style="color:${TYPE_COL[g]};font-weight:800">${TYPE_LABEL[g]}</span>: ${above} above, ${gp.length-above} below`; }).join(' &nbsp;·&nbsp; ');
+  } else $('#cutoffStats').textContent='';
+  // summary table
+  const props = [
+    ['Dissolves in water', r=>r.water, v=>v.cat==='soluble'||v.cat==='miscible'],
+    ['Dissolves in hexane', r=>r.hexane, v=>v.cat==='soluble'||v.cat==='miscible'],
+    ['Conducts as pure sample', r=>r.condPure, v=>v.lvl!=='none'],
+    ['Conducts in water', r=>r.condAq, v=>v.lvl!=='none'],
+    ['Conducts when molten', r=>r.condMolten&&r.condMolten.lvl!=='na'?r.condMolten:null, v=>v.lvl!=='none'],
+    ['Brittle (shatters)', r=>r.crush&&r.crush!=='liquid'&&r.crush!=='gas'?r.crush:null, v=>v==='brittle'],
+  ];
+  const sg = groups.filter(g=>ids.some(id=>groupOf(id)===g));
+  if(!sg.length){ $('#summary').innerHTML='<p class="hint">No data yet.</p>'; return; }
+  let h = `<table class="sumtab"><thead><tr><th>Property</th>${sg.map(g=>`<th style="color:${TYPE_COL[g]}">${TYPE_SHORT[g]||'Unclassified'}</th>`).join('')}</tr></thead><tbody>`;
+  for(const [label,get,test] of props){
+    h += `<tr><td><b>${label}</b></td>`;
+    for(const g of sg){ const vals = ids.filter(id=>groupOf(id)===g).map(id=>get(S.nb[key(id)])).filter(v=>v!=null);
+      if(!vals.length){ h+='<td class="empty">–</td>'; continue; }
+      const yes = vals.filter(test).length;
+      h += `<td><span class="mono">${yes} / ${vals.length}</span><div class="bar"><i style="width:${100*yes/vals.length}%;background:${TYPE_COL[g]}"></i></div></td>`; }
+    h += '</tr>';
+  }
+  $('#summary').innerHTML = h+'</tbody></table>';
+}
+
+/* ---------------- GLOBAL ---------------- */
+function renderHeader(){
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.mode===S.mode));
+  $('#showTypes').checked = S.showTypes; $('#advanced').checked = S.advanced;
+  $('#typesTog').style.display = (isMyst()||S.gateOn) ? 'none' : '';
+  $('#gateOn').checked = S.gateOn; document.querySelectorAll('input[name=gateLevel]').forEach(r=>{ r.checked = r.value===S.gateLevel; r.disabled=!S.gateOn; });
+}
+function renderAll(){ visible(); if(S.selected && !visible().includes(S.selected)) S.selected=null; renderHeader(); renderBanner(); renderShelf(); renderStations(); renderOpts(); renderBench(); setResult(null); renderNotebook(); if(S.view==='trends') renderTrends(); }
+document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{ if(S.busy) return; S.mode=b.dataset.mode; S.selected=null; save(); renderAll(); });
+$('#showTypes').onchange = e=>{ S.showTypes=e.target.checked; save(); renderAll(); };
+$('#advanced').onchange = e=>{ if(S.busy){ e.target.checked=S.advanced; return; } S.advanced=e.target.checked; if(isMyst()) newMystery(); save(); renderAll(); };
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{ S.view=b.dataset.view; document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on', v.id==='view-'+S.view)); if(S.view==='trends') renderTrends(); });
+document.querySelectorAll('#groupPill button').forEach(b=>b.onclick=()=>{ if(b.disabled) return; S.groupBy=b.dataset.g; save(); renderTrends(); });
+$('#gateOn').onchange = e=>{ if(S.busy){ e.target.checked=S.gateOn; return; } S.gateOn=e.target.checked; S.gateFb=null; save(); renderAll(); toast(S.gateOn?'Identification step turned on':'Identification step turned off'); };
+document.querySelectorAll('input[name=gateLevel]').forEach(r=>r.onchange=()=>{ S.gateLevel=r.value; S.gateFb=null; save(); renderAll(); toast('Identification level updated'); });
+$('#cutoff').oninput = e=>{ S.cutoff=+e.target.value; save(); renderTrends(); };
+renderAll();
+</script>
+</body>
+</html>
