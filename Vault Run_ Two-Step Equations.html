@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vault Run: Two-Step Equations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,700&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4EAF0; --surface:#FFFFFF; --surface2:#F1F4F7; --ink:#14243A; --muted:#536476; --line:#C2CEDA;
+  --brass:#DDAE2E; --brass-text:#7A5904; --steel:#8297AC; --steel-dark:#5E7489;
+  --red:#C2362B; --red-soft:#FBE4E1; --green:#23794A; --green-soft:#DDF1E4; --scrim:rgba(14,26,40,.82);
+  --display:"Chakra Petch","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111D2B; --surface:#1B2C40; --surface2:#22374F; --ink:#EDF2F6; --muted:#97A8BA; --line:#344B63;
+    --brass:#D9B13B; --brass-text:#E8C55C; --steel:#5E7489; --steel-dark:#465A6E;
+    --red:#F26B5F; --red-soft:#45221F; --green:#5CC489; --green-soft:#183A28; --scrim:rgba(5,10,18,.86);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111D2B; --surface:#1B2C40; --surface2:#22374F; --ink:#EDF2F6; --muted:#97A8BA; --line:#344B63;
+  --brass:#D9B13B; --brass-text:#E8C55C; --steel:#5E7489; --steel-dark:#465A6E;
+  --red:#F26B5F; --red-soft:#45221F; --green:#5CC489; --green-soft:#183A28; --scrim:rgba(5,10,18,.86);
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.5;min-height:100%}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brass);outline-offset:3px}
+.wrap{max-width:780px;margin:0 auto;padding:18px 16px 48px}
+[hidden]{display:none !important}
+
+/* Door */
+.door .rim{fill:var(--steel)}
+.door .face{fill:var(--surface);stroke:var(--steel-dark);stroke-width:3}
+.door .bolt{fill:var(--steel-dark)}
+.door .ticks{fill:none;stroke:var(--line);stroke-width:6;stroke-dasharray:2 7}
+.door .spoke{stroke:var(--brass);stroke-width:9;stroke-linecap:round}
+.door .hub{fill:var(--brass)}
+.door .knob{fill:var(--brass)}
+.door .handle{transform-origin:100px 100px;transition:transform .7s cubic-bezier(.3,1.4,.5,1)}
+
+/* Start */
+.hero{display:grid;grid-template-columns:minmax(150px,230px) 1fr;gap:28px;align-items:center;margin:8px 0 26px}
+.hero h1{font-family:var(--display);font-size:clamp(2.6rem,9vw,4.2rem);line-height:1;margin:0 0 10px;letter-spacing:.01em}
+.hero p{margin:0;font-size:1.15rem;max-width:34ch}
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:20px 22px;margin-bottom:16px}
+.panel h2{font-family:var(--display);font-size:1.25rem;margin:0 0 12px}
+.optrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-bottom:14px}
+.optrow > span{min-width:5.5em;font-weight:700}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{border:2px solid var(--line);background:var(--surface2);border-radius:12px;padding:8px 14px;cursor:pointer;font-weight:700}
+.seg button small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.seg button[aria-pressed="true"]{border-color:var(--brass);background:var(--brass);color:#1A1405}
+.seg button[aria-pressed="true"] small{color:#3D2F08}
+.how{margin:0;padding-left:1.3em}
+.how li{margin-bottom:6px}
+.btn{font-family:var(--display);font-weight:700;font-size:1.15rem;border:none;border-radius:14px;padding:13px 24px;background:var(--brass);color:#1A1405;cursor:pointer}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;border:2px solid var(--line);color:var(--ink)}
+.startbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.best{color:var(--muted)}
+
+/* HUD */
+.hud{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:10px 14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:52px;height:52px}
+.timer{font-family:var(--display);font-weight:700;font-size:clamp(2rem,8vw,2.8rem);text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.timer.low{color:var(--red)}
+.stats{display:flex;gap:16px;align-items:center}
+.stat{text-align:right;font-weight:700;font-size:1.2rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat small{display:block;font-weight:400;color:var(--muted);font-size:.78rem}
+.iconbtn{border:2px solid var(--line);background:var(--surface2);border-radius:10px;width:40px;height:40px;cursor:pointer;display:grid;place-items:center;font-size:1rem}
+.tools{display:flex;gap:6px}
+.tbar{height:10px;background:var(--surface);border:2px solid var(--line);border-radius:999px;margin:10px 0 0;overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--brass);width:100%;transition:width .1s linear}
+.tbar.low i{background:var(--red)}
+
+.locks{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+.lock{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-weight:700;font-size:.9rem;color:#1A1405}
+.lock::after{content:"";width:6px;height:11px;border-radius:3px 3px 1px 1px;background:var(--line)}
+.lock.current{border:3px solid var(--brass)}
+.lock.current::after{background:var(--brass)}
+.lock.open{background:var(--brass);border-color:var(--brass)}
+.lock.open.rough{background:var(--steel);border-color:var(--steel)}
+.lock.open::after{content:"✓";width:auto;height:auto;background:none}
+
+/* Card */
+.card{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:18px 20px 22px;position:relative}
+.qhead{display:flex;justify-content:space-between;color:var(--muted);font-weight:700}
+.streak{color:var(--brass-text)}
+.eq{font-size:clamp(2.3rem,10vw,3.6rem);font-weight:700;text-align:center;margin:14px 0 4px;white-space:nowrap;overflow-x:auto;line-height:1.3}
+.var{font-style:italic}
+.frac{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;font-size:.72em;line-height:1.15}
+.frac > span:first-child{border-bottom:.12em solid currentColor;padding:0 .2em}
+.work{text-align:center;color:var(--muted);font-size:clamp(1.1rem,4.5vw,1.45rem);min-height:1.7em;white-space:nowrap;overflow-x:auto}
+.work .hl{color:var(--brass-text);font-weight:700}
+.prompt{font-weight:700;margin:14px 0 10px;font-size:1.1rem}
+.moves{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.move{min-height:66px;border-radius:14px;border:2px solid var(--line);background:var(--surface2);cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 14px;text-align:left;font-weight:700;font-size:1.08rem;line-height:1.25}
+.move:hover:not(:disabled){border-color:var(--brass)}
+.move kbd{font-family:var(--display);font-size:.85rem;min-width:26px;height:26px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;color:var(--muted);flex:none}
+.move.wrong{border-color:var(--red);background:var(--red-soft);cursor:not-allowed;opacity:.75;text-decoration:line-through}
+.answer{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:clamp(1.9rem,8vw,2.7rem);font-weight:700}
+.answer input{width:4.6ch;font:inherit;text-align:center;border:3px solid var(--line);border-radius:14px;background:var(--surface2);color:var(--ink);padding:2px 6px}
+.answer input:focus{outline:none;border-color:var(--brass)}
+.answer .sign{font-size:1.1rem;padding:10px 14px}
+.feedback{margin-top:16px;padding:12px 14px;border-radius:12px;min-height:1em}
+.feedback:empty{padding:0;margin:0}
+.feedback.bad{background:var(--red-soft);border-left:6px solid var(--red)}
+.feedback.good{background:var(--green-soft);border-left:6px solid var(--green)}
+.pop{position:absolute;right:20px;top:46px;font-family:var(--display);font-weight:700;font-size:1.6rem;pointer-events:none;animation:pop 1s ease-out forwards}
+.pop.good{color:var(--green)} .pop.bad{color:var(--red)}
+@keyframes pop{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-40px)}}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+/* Overlays */
+.overlay{position:fixed;inset:0;background:var(--scrim);display:grid;place-items:center;z-index:30;padding:20px}
+.count{font-family:var(--display);font-size:clamp(6rem,30vw,11rem);font-weight:700;color:#F3D778}
+.pausebox{background:var(--surface);border-radius:20px;padding:28px;text-align:center;max-width:360px}
+.pausebox h2{font-family:var(--display);margin:0 0 8px}
+
+/* End */
+.endhead{display:flex;gap:22px;align-items:center;margin:8px 0 18px;flex-wrap:wrap}
+.endhead svg.door{width:130px;height:130px}
+.endhead h1{font-family:var(--display);font-size:clamp(2.2rem,8vw,3.4rem);line-height:1.05;margin:0 0 6px}
+.endhead p{margin:0;font-size:1.1rem}
+.stars{font-size:2.2rem;letter-spacing:.1em;color:var(--brass);margin-top:6px}
+.stars .off{color:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.tile{background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px 14px}
+.tile b{display:block;font-family:var(--display);font-size:1.8rem;line-height:1.1}
+.tile span{color:var(--muted);font-size:.9rem}
+.review{list-style:none;margin:0;padding:0}
+.review li{padding:10px 0;border-top:2px solid var(--line);font-size:1.15rem;overflow-x:auto;white-space:nowrap}
+.review li:first-child{border-top:none}
+.review .arrow{color:var(--muted);margin:0 .4em}
+.endbtns{display:flex;gap:12px;flex-wrap:wrap}
+
+@media (max-width:560px){
+  .hero{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .hero svg{width:160px}
+  .hero p{margin:0 auto}
+  .moves{grid-template-columns:1fr}
+  .hud{grid-template-columns:1fr auto;}
+  .brand .name{display:none}
+  .hud .timer{grid-column:1/-1;grid-row:1}
+  .stats{gap:10px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- START -->
+  <section id="start">
+    <div class="hero">
+      <div id="heroDoor"></div>
+      <div>
+        <h1>Vault Run</h1>
+        <p>Every lock on the vault opens with a two-step equation. Crack them all before the alarm goes off.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Set up the heist</h2>
+      <div class="optrow"><span>Locks</span>
+        <div class="seg" data-opt="n">
+          <button data-v="12" aria-pressed="false">12</button>
+          <button data-v="15" aria-pressed="true">15</button>
+          <button data-v="18" aria-pressed="false">18</button>
+        </div>
+      </div>
+      <div class="optrow"><span>Speed</span>
+        <div class="seg" data-opt="speed">
+          <button data-v="relaxed" aria-pressed="false">Relaxed<small>60 s per lock</small></button>
+          <button data-v="standard" aria-pressed="true">Standard<small>40 s per lock</small></button>
+          <button data-v="fast" aria-pressed="false">Fast<small>25 s per lock</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>How to crack a lock</h2>
+      <ol class="how">
+        <li>Pick the first move: undo the number being added or subtracted.</li>
+        <li>Type the new number on the right side.</li>
+        <li>Pick the second move: undo the multiplying or dividing, then type what <i>x</i> equals.</li>
+      </ol>
+      <p style="margin:12px 0 0;color:var(--muted)">A clean solve adds 5 seconds and builds your streak. A mistake costs 5 seconds. Locks get harder as you go.</p>
+    </div>
+
+    <div class="startbar">
+      <button class="btn" id="startBtn">Start the heist</button>
+      <span class="best" id="bestLine"></span>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" hidden>
+    <div class="hud">
+      <div class="brand"><span id="hudDoor"></span><span class="name" style="font-family:var(--display);font-weight:700;font-size:1.2rem">Vault Run</span></div>
+      <div class="timer" id="timer" aria-live="off">0:00</div>
+      <div class="stats">
+        <div class="stat"><small>Score</small><span id="score">0</span></div>
+        <div class="tools">
+          <button class="iconbtn" id="pauseBtn" aria-label="Pause">❚❚</button>
+          <button class="iconbtn" id="muteBtn" aria-label="Mute sound">🔊</button>
+        </div>
+      </div>
+    </div>
+    <div class="tbar" id="tbar"><i></i></div>
+    <div class="locks" id="locks" aria-label="Locks"></div>
+
+    <div class="card" id="card">
+      <div class="qhead"><span id="qnum">Lock 1</span><span class="streak" id="streak"></span></div>
+      <div class="eq" id="eq" aria-live="polite"></div>
+      <div class="work" id="work"></div>
+      <div class="prompt" id="prompt"></div>
+      <div class="moves" id="moves"></div>
+      <div class="answer" id="answer" hidden>
+        <span id="ansLeft"></span><span>=</span>
+        <input id="ans" type="text" inputmode="numeric" autocomplete="off" aria-label="Your answer">
+        <button class="btn ghost sign" id="signBtn" aria-label="Make negative or positive">±</button>
+        <button class="btn" id="checkBtn">Check</button>
+      </div>
+      <div class="feedback" id="feedback" role="status"></div>
+    </div>
+  </section>
+
+  <!-- END -->
+  <section id="end" hidden>
+    <div class="endhead">
+      <span id="endDoor"></span>
+      <div>
+        <h1 id="endTitle"></h1>
+        <p id="endMsg"></p>
+        <div class="stars" id="stars"></div>
+      </div>
+    </div>
+    <div class="grid" id="tiles"></div>
+    <div class="panel" id="reviewPanel">
+      <h2 id="reviewTitle">Locks to practice</h2>
+      <ul class="review" id="review"></ul>
+    </div>
+    <div class="endbtns">
+      <button class="btn" id="againBtn">Play again</button>
+      <button class="btn ghost" id="setupBtn">Change settings</button>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="countOv" hidden><div class="count" id="count">3</div></div>
+<div class="overlay" id="pauseOv" hidden>
+  <div class="pausebox">
+    <h2>Paused</h2>
+    <p>The clock is stopped and the lock is hidden.</p>
+    <button class="btn" id="resumeBtn">Resume</button>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const MINUS = '\u2212';
+const X = '<i class="var">x</i>';
+const SPEEDS = {relaxed:60, standard:40, fast:25};
+const fmt = n => n < 0 ? MINUS + Math.abs(n) : String(n);
+const par = n => n < 0 ? '(' + fmt(n) + ')' : String(n);
+const rint = (a,b) => Math.floor(Math.random()*(b-a+1)) + a;
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const nz = (a,b) => { let v; do { v = rint(a,b); } while (v === 0); return v; };
+const shuffle = a => { for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+/* ---------- Door art ---------- */
+function doorSVG(id){
+  let bolts = '';
+  for (let k=0;k<12;k++){
+    const t = k/12*Math.PI*2;
+    bolts += `<circle class="bolt" cx="${(100+89*Math.cos(t)).toFixed(1)}" cy="${(100+89*Math.sin(t)).toFixed(1)}" r="4.5"/>`;
+  }
+  let spokes = '';
+  for (let k=0;k<3;k++){
+    const t = k/3*Math.PI*2 - Math.PI/2;
+    const x = 100+48*Math.cos(t), y = 100+48*Math.sin(t);
+    spokes += `<line class="spoke" x1="100" y1="100" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><circle class="knob" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9"/>`;
+  }
+  return `<svg class="door" viewBox="0 0 200 200" aria-hidden="true"><circle class="rim" cx="100" cy="100" r="98"/>${bolts}<circle class="face" cx="100" cy="100" r="80"/><circle class="ticks" cx="100" cy="100" r="66"/><g class="handle" id="${id}">${spokes}<circle class="hub" cx="100" cy="100" r="16"/></g></svg>`;
+}
+$('#heroDoor').innerHTML = doorSVG('heroHandle');
+$('#hudDoor').innerHTML = doorSVG('hudHandle');
+$('#endDoor').innerHTML = doorSVG('endHandle');
+
+/* ---------- Sound ---------- */
+let ctx = null, muted = false;
+function tone(f, d, type='triangle', vol=.08, delay=0){
+  if (muted) return;
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ctx.currentTime + delay, o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d + .02);
+  } catch(e) {}
+}
+const sfx = {
+  good: () => { tone(523,.1); tone(784,.16,'triangle',.08,.08); },
+  unlock: () => { tone(523,.1); tone(659,.1,'triangle',.08,.09); tone(1047,.3,'triangle',.08,.18); },
+  bad: () => tone(140,.28,'sawtooth',.05),
+  tick: () => tone(1250,.04,'square',.025),
+  go: () => tone(880,.25,'square',.04),
+  win: () => [523,659,784,1047].forEach((f,i)=>tone(f,.25,'triangle',.08,i*.12)),
+  alarm: () => { for (let i=0;i<4;i++){ tone(880,.17,'square',.05,i*.36); tone(587,.17,'square',.05,i*.36+.18); } }
+};
+
+/* ---------- Settings ---------- */
+const opts = {n:15, speed:'standard'};
+document.querySelectorAll('[data-opt]').forEach(group => {
+  group.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    group.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    opts[group.dataset.opt] = group.dataset.opt === 'n' ? +b.dataset.v : b.dataset.v;
+    showBest();
+  });
+});
+const bestKey = () => `vaultrun:${opts.n}:${opts.speed}`;
+function getBest(){ try { return +(localStorage.getItem(bestKey()) || 0); } catch(e){ return 0; } }
+function setBest(v){ try { localStorage.setItem(bestKey(), String(v)); } catch(e){} }
+function showBest(){ const b = getBest(); $('#bestLine').textContent = b ? `Best score at this setting: ${b}` : ''; }
+showBest();
+
+/* ---------- Problems ---------- */
+function makeProblem(idx, n, seen){
+  const t = idx / n, tier = t < .34 ? 1 : t < .67 ? 2 : 3;
+  const kinds = tier === 1 ? ['mul','mul','flip'] : tier === 2 ? ['mul','div','flip','div','mul'] : ['mul','div','neg','flip','div','neg'];
+  for (let tries=0; tries<80; tries++){
+    const kind = pick(kinds);
+    let a, x;
+    if (kind === 'div'){ a = rint(2, tier === 2 ? 5 : 6); x = a * (tier === 3 ? nz(-5,6) : rint(1,6)); }
+    else if (kind === 'neg'){ a = -rint(2,6); x = nz(-8,9); }
+    else { a = rint(2, tier === 1 ? 5 : 9); x = tier === 1 ? rint(1,10) : tier === 2 ? rint(1,12) : nz(-9,12); }
+    const b = rint(1, tier === 1 ? 12 : 20);
+    const sign = kind === 'flip' ? 1 : pick([1,-1]);
+    const mid = kind === 'div' ? x / a : a * x;
+    const c = mid + sign * b;
+    if (tier === 1 && c <= 0) continue;
+    if (Math.abs(c) > 60) continue;
+    const key = [kind,a,b,sign,c].join();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    return {kind, a, x, b, sign, c, mid};
+  }
+}
+const termHTML = p => p.kind === 'div'
+  ? `<span class="frac"><span>${X}</span><span>${p.a}</span></span>`
+  : `${fmt(p.a)}${X}`;
+const lhsHTML = p => p.kind === 'flip'
+  ? `${p.b} + ${termHTML(p)}`
+  : `${termHTML(p)} ${p.sign > 0 ? '+' : MINUS} ${p.b}`;
+const constTxt = p => `${p.sign > 0 ? '+' : MINUS} ${p.b}`;
+const lbl = {
+  sub: v => `Subtract ${v} from both sides`,
+  add: v => `Add ${v} to both sides`,
+  div: v => `Divide both sides by ${v}`,
+  mul: v => `Multiply both sides by ${v}`
+};
+
+function moves1(p){
+  const ct = constTxt(p);
+  const right = p.sign > 0 ? lbl.sub(p.b) : lbl.add(p.b);
+  const wrong = p.sign > 0 ? lbl.add(p.b) : lbl.sub(p.b);
+  const A = p.kind === 'div' ? String(p.a) : fmt(p.a);
+  const aOps = p.kind === 'div' ? [lbl.mul(A), lbl.div(A)] : [lbl.div(A), lbl.mul(A)];
+  return shuffle([
+    {label:right, ok:true},
+    {label:wrong, hint:`That doubles the ${p.b} instead of cancelling it. The equation has ${ct}, so do the opposite.`},
+    {label:aOps[0], hint:`Right idea, wrong order. Deal with the ${ct} first. It’s the number farthest from x.`},
+    {label:aOps[1], hint:`Not yet. Start with the ${ct} and undo it with the opposite operation.`}
+  ]);
+}
+function moves2(p){
+  if (p.kind === 'div') return shuffle([
+    {label:lbl.mul(p.a), ok:true},
+    {label:lbl.div(p.a), hint:`x is already divided by ${p.a}. Undo dividing with the opposite: multiply.`},
+    {label:lbl.sub(p.a), hint:`Nothing is being added here. x is divided by ${p.a}, so multiply by ${p.a}.`},
+    {label:lbl.add(p.a), hint:`Nothing is being subtracted here. x is divided by ${p.a}, so multiply by ${p.a}.`}
+  ]);
+  const A = fmt(p.a), abs = Math.abs(p.a);
+  const list = [
+    {label:lbl.div(A), ok:true},
+    {label:lbl.mul(A), hint:`${A}x means ${A} times x. Undo multiplying with the opposite: divide by ${A}.`},
+    {label:lbl.sub(abs), hint:`The ${A} is multiplied by x, not added to it. Divide by ${A}.`}
+  ];
+  if (p.a < 0) list.push({label:lbl.div(abs), hint:`Keep the negative sign. Divide by ${A} so you’re left with just x.`});
+  else list.push({label:lbl.add(abs), hint:`The ${A} is multiplied by x, not subtracted. Divide by ${A}.`});
+  return shuffle(list);
+}
+
+/* ---------- Game state ---------- */
+let S = null;
+function show(id){ ['start','game','end'].forEach(s => $('#'+s).hidden = s !== id); window.scrollTo(0,0); }
+
+function startGame(){
+  const seen = new Set(), probs = [];
+  for (let i=0;i<opts.n;i++) probs.push(makeProblem(i, opts.n, seen));
+  const total = opts.n * SPEEDS[opts.speed] * 1000;
+  S = {n:opts.n, probs, i:0, phase:'move1', ms:total, total, score:0, streak:0, bestStreak:0,
+       results:[], dirty:false, paused:false, hold:true, over:false, rot:0, lastSec:null, tid:null, last:0};
+  show('game');
+  buildLocks(); renderProblem(); renderHud();
+  setRot(0);
+  countdown(() => { S.hold = false; startTimer(); focusFirst(); });
+}
+
+function countdown(done){
+  const ov = $('#countOv'), el = $('#count');
+  let k = 3; ov.hidden = false; el.textContent = k; sfx.tick();
+  const step = () => {
+    k--;
+    if (k > 0){ el.textContent = k; sfx.tick(); setTimeout(step, 650); }
+    else { el.textContent = 'Go'; sfx.go(); setTimeout(() => { ov.hidden = true; done(); }, 450); }
+  };
+  setTimeout(step, 650);
+}
+
+function startTimer(){
+  S.last = performance.now();
+  clearInterval(S.tid);
+  S.tid = setInterval(tick, 100);
+}
+function tick(){
+  const now = performance.now();
+  if (!S.paused && !S.hold) S.ms -= now - S.last;
+  S.last = now;
+  if (S.ms <= 0){ S.ms = 0; renderHud(); end('time'); return; }
+  const sec = Math.ceil(S.ms/1000);
+  if (sec <= 10 && sec !== S.lastSec && !S.paused && !S.hold) sfx.tick();
+  S.lastSec = sec;
+  renderHud();
+}
+function renderHud(){
+  const sec = Math.ceil(S.ms/1000);
+  $('#timer').textContent = `${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+  const low = sec <= 15;
+  $('#timer').classList.toggle('low', low);
+  $('#tbar').classList.toggle('low', low);
+  $('#tbar i').style.width = Math.min(100, S.ms/S.total*100) + '%';
+  $('#score').textContent = S.score;
+  $('#streak').textContent = S.streak >= 2 ? `Clean streak ×${S.streak}` : '';
+}
+function setRot(r){ ['#hudHandle'].forEach(s => { const h = $(s); if (h) h.style.transform = `rotate(${r}deg)`; }); }
+
+function buildLocks(){
+  const box = $('#locks'); box.innerHTML = '';
+  for (let i=0;i<S.n;i++){ const d = document.createElement('span'); d.className = 'lock'; box.appendChild(d); }
+}
+function updateLocks(){
+  [...$('#locks').children].forEach((d,i) => {
+    const r = S.results[i];
+    d.className = 'lock' + (r ? ' open' + (r.clean ? '' : ' rough') : '') + (i === S.i && !r ? ' current' : '');
+    d.setAttribute('aria-label', `Lock ${i+1}: ${r ? 'open' : i === S.i ? 'current' : 'locked'}`);
+  });
+}
+
+function renderProblem(){
+  const p = S.probs[S.i];
+  S.phase = 'move1'; S.dirty = false;
+  $('#qnum').textContent = `Lock ${S.i+1} of ${S.n}`;
+  $('#eq').innerHTML = `${lhsHTML(p)} = ${fmt(p.c)}`;
+  $('#work').innerHTML = '';
+  $('#answer').hidden = true;
+  feedback('', '');
+  showMoves(moves1(p), 'Step 1: What do you do to both sides?');
+  updateLocks();
+}
+function showMoves(list, prompt){
+  $('#prompt').textContent = prompt;
+  const box = $('#moves'); box.hidden = false; box.innerHTML = '';
+  list.forEach((m,k) => {
+    const b = document.createElement('button');
+    b.className = 'move';
+    b.innerHTML = `<kbd>${k+1}</kbd><span>${m.label}</span>`;
+    b.onclick = () => chooseMove(m, b);
+    box.appendChild(b);
+  });
+}
+function focusFirst(){
+  if ($('#answer').hidden){ const b = $('#moves .move:not(:disabled)'); if (b) b.focus({preventScroll:true}); }
+  else $('#ans').focus({preventScroll:true});
+}
+function feedback(msg, kind){ const f = $('#feedback'); f.textContent = msg; f.className = 'feedback' + (kind ? ' ' + kind : ''); }
+function popText(t, kind){
+  const s = document.createElement('span'); s.className = 'pop ' + kind; s.textContent = t;
+  $('#card').appendChild(s); setTimeout(() => s.remove(), 1000);
+}
+function penalty(hint){
+  S.ms -= 5000; S.dirty = true; S.streak = 0;
+  sfx.bad(); feedback(`${hint} (${MINUS}5 seconds)`, 'bad'); popText(`${MINUS}5 s`, 'bad');
+  const c = $('#card'); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+  renderHud();
+}
+
+function chooseMove(m, btn){
+  if (S.paused || S.over || S.hold) return;
+  if (!m.ok){ btn.classList.add('wrong'); btn.disabled = true; penalty(m.hint); return; }
+  sfx.good();
+  const p = S.probs[S.i];
+  if (S.phase === 'move1'){
+    S.phase = 'num1';
+    const sym = p.sign > 0 ? MINUS : '+';
+    $('#work').innerHTML = `${lhsHTML(p)} <span class="hl">${sym} ${p.b}</span> = ${fmt(p.c)} <span class="hl">${sym} ${p.b}</span>`;
+    askNumber(termHTML(p), 'Now simplify. What does the right side become?');
+  } else {
+    S.phase = 'num2';
+    const s = p.kind === 'div' ? '×' : '÷', v = p.kind === 'div' ? p.a : par(p.a);
+    $('#work').innerHTML = `${termHTML(p)} <span class="hl">${s} ${v}</span> = ${fmt(p.mid)} <span class="hl">${s} ${v}</span>`;
+    askNumber(X, 'Simplify one more time. What does x equal?');
+  }
+  feedback('', '');
+}
+function askNumber(left, prompt){
+  $('#moves').hidden = true;
+  $('#prompt').textContent = prompt;
+  $('#ansLeft').innerHTML = left;
+  $('#answer').hidden = false;
+  const inp = $('#ans'); inp.value = ''; inp.focus({preventScroll:true});
+}
+function checkNumber(){
+  if (S.paused || S.over || S.hold) return;
+  if (S.phase !== 'num1' && S.phase !== 'num2') return;
+  const raw = $('#ans').value.trim().replace(/[−–—]/g,'-').replace(/\s/g,'');
+  if (!/^-?\d+$/.test(raw)){ feedback('Type a whole number, like 12 or −4.', 'bad'); return; }
+  const v = +raw, p = S.probs[S.i];
+  const target = S.phase === 'num1' ? p.mid : p.x;
+  if (v === target){
+    if (S.phase === 'num1'){
+      sfx.good();
+      $('#eq').innerHTML = `${termHTML(p)} = ${fmt(p.mid)}`;
+      $('#work').innerHTML = '';
+      $('#answer').hidden = true;
+      S.phase = 'move2';
+      feedback('Nice. One more step.', 'good');
+      showMoves(moves2(p), 'Step 2: What do you do to both sides?');
+      focusFirst();
+    } else solved();
+    return;
+  }
+  let h;
+  if (v === -target && target !== 0) h = 'So close. Check the sign.';
+  else if (S.phase === 'num1') h = `Not quite. Work out ${fmt(p.c)} ${p.sign > 0 ? MINUS : '+'} ${p.b}.`;
+  else h = p.kind === 'div' ? `Not quite. Work out ${fmt(p.mid)} × ${p.a}.` : `Not quite. Work out ${fmt(p.mid)} ÷ ${par(p.a)}.`;
+  penalty(h);
+  $('#ans').select();
+}
+function solved(){
+  const p = S.probs[S.i], clean = !S.dirty;
+  S.streak = clean ? S.streak + 1 : 0;
+  S.bestStreak = Math.max(S.bestStreak, S.streak);
+  const pts = 100 + (clean ? 25 * S.streak : 0);
+  S.score += pts;
+  if (clean) S.ms += 5000;
+  S.results.push({p, clean});
+  sfx.unlock();
+  $('#eq').innerHTML = `${X} = ${fmt(p.x)}`;
+  $('#work').innerHTML = ''; $('#answer').hidden = true; $('#moves').hidden = true; $('#prompt').textContent = '';
+  feedback(clean ? `Lock open! +${pts} points and +5 seconds for a clean solve.` : `Lock open! +${pts} points.`, 'good');
+  popText(`+${pts}`, 'good');
+  S.rot += 120; setRot(S.rot);
+  S.hold = true;
+  updateLocks(); renderHud();
+  S.i++;
+  setTimeout(() => {
+    if (S.over) return;
+    if (S.i >= S.n){ end('done'); return; }
+    renderProblem(); S.hold = false; S.last = performance.now(); focusFirst();
+  }, 1100);
+}
+
+/* ---------- End ---------- */
+function steps(p){
+  return `${lhsHTML(p)} = ${fmt(p.c)}<span class="arrow">→</span>${termHTML(p)} = ${fmt(p.mid)}<span class="arrow">→</span>${X} = ${fmt(p.x)}`;
+}
+function end(reason){
+  if (S.over) return;
+  S.over = true; clearInterval(S.tid);
+  $('#pauseOv').hidden = true;
+  const opened = S.results.length, clean = S.results.filter(r => r.clean).length;
+  const secs = Math.ceil(S.ms/1000);
+  const bonus = reason === 'done' ? secs * 3 : 0;
+  S.score += bonus;
+  let stars = 0;
+  if (opened === S.n && clean >= Math.ceil(S.n*.8)) stars = 3;
+  else if (opened === S.n || opened >= Math.ceil(S.n*.75)) stars = 2;
+  else if (opened >= Math.ceil(S.n*.4)) stars = 1;
+  const prevBest = getBest(), newBest = S.score > prevBest;
+  if (newBest) setBest(S.score);
+
+  if (reason === 'done'){
+    sfx.win();
+    $('#endTitle').textContent = 'Vault cracked!';
+    $('#endMsg').textContent = `You opened all ${S.n} locks with ${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')} to spare.`;
+  } else {
+    sfx.alarm();
+    $('#endTitle').textContent = 'Alarm! Time’s up.';
+    $('#endMsg').textContent = `You opened ${opened} of ${S.n} locks before the alarm went off.`;
+  }
+  $('#stars').innerHTML = [0,1,2].map(k => `<span class="${k < stars ? '' : 'off'}">★</span>`).join('');
+  $('#tiles').innerHTML = [
+    [`${opened}/${S.n}`, 'Locks opened'],
+    [`${clean}`, 'Clean solves'],
+    [`${S.bestStreak}`, 'Best streak'],
+    [`${S.score}`, newBest ? 'Score (new best!)' : `Score${bonus ? ` (incl. +${bonus} time bonus)` : ''}`]
+  ].map(([b,s]) => `<div class="tile"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  const practice = S.results.filter(r => !r.clean).map(r => r.p);
+  const unreached = S.probs.slice(opened);
+  const list = practice.concat(unreached.slice(0, 3));
+  if (list.length){
+    $('#reviewPanel').hidden = false;
+    $('#reviewTitle').textContent = practice.length ? 'Locks to practice' : 'Locks you didn’t reach';
+    $('#review').innerHTML = list.map(p => `<li>${steps(p)}</li>`).join('');
+  } else $('#reviewPanel').hidden = true;
+
+  setTimeout(() => {
+    show('end');
+    const h = $('#endHandle'); h.style.transform = 'rotate(0deg)';
+    if (reason === 'done') requestAnimationFrame(() => requestAnimationFrame(() => h.style.transform = 'rotate(360deg)'));
+  }, reason === 'done' ? 700 : 1300);
+}
+
+/* ---------- Pause / mute / input ---------- */
+function setPause(on){
+  if (!S || S.over) return;
+  S.paused = on; $('#pauseOv').hidden = !on;
+  S.last = performance.now();
+  if (on) $('#resumeBtn').focus(); else focusFirst();
+}
+$('#pauseBtn').onclick = () => setPause(true);
+$('#resumeBtn').onclick = () => setPause(false);
+$('#muteBtn').onclick = () => {
+  muted = !muted;
+  $('#muteBtn').textContent = muted ? '🔇' : '🔊';
+  $('#muteBtn').setAttribute('aria-label', muted ? 'Turn sound on' : 'Mute sound');
+};
+$('#checkBtn').onclick = checkNumber;
+$('#signBtn').onclick = () => {
+  const inp = $('#ans'); let v = inp.value.trim();
+  inp.value = /^[-−]/.test(v) ? v.replace(/^[-−]/,'') : '-' + v;
+  inp.focus();
+};
+$('#ans').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); checkNumber(); } });
+document.addEventListener('keydown', e => {
+  if (!S || S.over || $('#game').hidden) return;
+  if (e.key === 'Escape'){ setPause(!S.paused); return; }
+  if (document.activeElement === $('#ans')) return;
+  if (/^[1-4]$/.test(e.key) && !$('#moves').hidden){
+    const b = $('#moves').children[+e.key - 1];
+    if (b && !b.disabled) b.click();
+  }
+});
+document.addEventListener('visibilitychange', () => { if (document.hidden && S && !S.over && !S.hold && !$('#game').hidden) setPause(true); });
+
+$('#startBtn').onclick = () => { const h = $('#heroHandle'); h.style.transform = 'rotate(240deg)'; setTimeout(startGame, 350); };
+$('#againBtn').onclick = startGame;
+$('#setupBtn').onclick = () => { $('#heroHandle').style.transform = 'rotate(0deg)'; showBest(); show('start'); };
+</script>
+</body>
+</html>
