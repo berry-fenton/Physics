@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Torque Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EBEFF3; --panel:#F7F9FB; --grid:#DBE2E8; --ink:#1E2A35; --muted:#5A6876; --line:#C6D0D9;
+  --body:#BCC8D3; --edge:#33475A; --chip:#DFE6EC; --accent:#1F5FAD;
+  --f1:#D2461C; --f2:#1E66C9; --f3:#2B8A3E; --f4:#8E3AAE; --w:#8A5A1F;
+  --ok:#23773A; --bad:#BC2C2C; --okbg:#E1F1E5; --badbg:#F8E3E3;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#11171D; --panel:#182028; --grid:#1D2730; --ink:#E3E9EF; --muted:#98A5B2; --line:#2C3843;
+    --body:#3A4A59; --edge:#B3C3D1; --chip:#222D37; --accent:#72A9EE;
+    --f1:#FF7B4F; --f2:#62A4FF; --f3:#5ECB71; --f4:#CB87EA; --w:#D9A55C;
+    --ok:#6BD37E; --bad:#FF7272; --okbg:#173022; --badbg:#3A1C1C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#11171D; --panel:#182028; --grid:#1D2730; --ink:#E3E9EF; --muted:#98A5B2; --line:#2C3843;
+  --body:#3A4A59; --edge:#B3C3D1; --chip:#222D37; --accent:#72A9EE;
+  --f1:#FF7B4F; --f2:#62A4FF; --f3:#5ECB71; --f4:#CB87EA; --w:#D9A55C;
+  --ok:#6BD37E; --bad:#FF7272; --okbg:#173022; --badbg:#3A1C1C;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{margin:0;font-size:1.35rem;letter-spacing:-0.01em}
+.mark{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;border:2px solid var(--ink);font-size:20px;font-weight:700;line-height:1}
+.tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:10px}
+.tabs button{border:0;background:transparent;padding:6px 16px;border-radius:7px;cursor:pointer;font-weight:700;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+
+.app{display:grid;grid-template-columns:230px minmax(0,1fr) 370px;min-height:calc(100vh - 56px);align-items:start}
+.nav{border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;max-height:100vh;overflow:auto}
+.nav h2{font-size:.95rem;margin:18px 8px 6px;color:var(--muted);font-weight:700}
+.nav h2:first-child{margin-top:4px}
+.nav button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;padding:7px 8px;border-radius:7px;cursor:pointer;font-size:.95rem}
+.nav button:hover{background:var(--chip)}
+.nav button[aria-current="true"]{background:var(--panel);box-shadow:0 0 0 1px var(--line);font-weight:700}
+.nav .st{flex:none;width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700}
+.nav .st.done{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+.nav .st.seen{border-color:var(--muted);border-style:dashed}
+.nav-select{display:none;width:100%;margin-bottom:10px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
+
+.stage{padding:14px 18px;display:flex;flex-direction:column;gap:10px;min-width:0;position:sticky;top:env(safe-area-inset-top,0px)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel);padding:5px 12px 5px 9px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-size:.92rem}
+.chip .box{width:15px;height:15px;border-radius:4px;border:2px solid var(--muted);display:grid;place-items:center;font-size:11px;line-height:1}
+.chip[aria-pressed="true"]{border-color:var(--ink);font-weight:700}
+.chip[aria-pressed="true"] .box{background:var(--ink);border-color:var(--ink);color:var(--panel)}
+.chip[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
+.canvas-wrap{position:relative;flex:none;min-height:380px;height:min(68vh,720px);border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper)}
+canvas{display:block;width:100%;height:100%}
+.runbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.runbar[hidden]{display:none}
+.read{display:flex;flex-wrap:wrap;gap:6px 18px;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.95rem}
+.read b{color:var(--ink)}
+
+.btn{border:1.5px solid var(--ink);background:var(--ink);color:var(--panel);padding:7px 16px;border-radius:8px;cursor:pointer;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.small{padding:4px 10px;font-size:.88rem}
+
+.panel{border-left:1px solid var(--line);background:var(--panel);padding:18px 20px 28px;min-height:calc(100vh - 56px)}
+.panel h2{margin:0 0 4px;font-size:1.3rem;line-height:1.25}
+.panel h3{margin:20px 0 8px;font-size:1rem}
+.lvl{color:var(--muted);font-size:.9rem}
+.statement{margin:10px 0}
+.given{margin:0 0 6px;padding-left:20px;color:var(--muted)}
+.given li{margin:2px 0}
+.box2{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:14px;background:var(--paper)}
+.box2 > p:first-child{margin-top:0}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1.5px solid var(--line);background:var(--panel);padding:6px 12px;border-radius:8px;cursor:pointer}
+.opt:hover{border-color:var(--ink)}
+.ansrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ansrow label{font-weight:700;font-style:italic}
+.ansrow input{width:120px;padding:7px 9px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel)}
+.ansrow input:disabled{opacity:.5}
+.fb{margin-top:10px;padding:8px 11px;border-radius:8px;font-size:.95rem}
+.fb.ok{background:var(--okbg);color:var(--ok)}
+.fb.bad{background:var(--badbg);color:var(--bad)}
+.fb.info{background:var(--chip)}
+.hint{margin:8px 0 0;padding-left:12px;border-left:3px solid var(--accent)}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.explain{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--okbg)}
+.explain p{margin:0}
+
+table.tq{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.93rem}
+table.tq th,table.tq td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right}
+table.tq th:first-child,table.tq td:first-child{text-align:left}
+table.tq tr.net td{font-weight:700;border-bottom:0}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:baseline}
+.meter{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.85rem;color:var(--muted)}
+.track{position:relative;flex:1;height:12px;border-radius:6px;background:var(--chip)}
+.track .fill{position:absolute;top:0;bottom:0;background:var(--accent);border-radius:6px}
+.track .zero{position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:var(--ink);transform:translateX(-1px)}
+
+.ctrl{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;margin:10px 0}
+.ctrl label{font-size:.92rem}
+.ctrl input[type=range]{grid-column:1 / -1;width:100%;accent-color:var(--accent)}
+.ctrl output{font-variant-numeric:tabular-nums;font-weight:700;font-size:.92rem}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:6px 12px 10px;margin:10px 0}
+legend{font-weight:700;padding:0 6px;display:flex;align-items:center;gap:6px}
+.check{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:.95rem}
+
+@media (max-width:1150px){
+  .app{grid-template-columns:minmax(0,1fr) 350px}
+  .nav{display:none}
+  .nav-select{display:block}
+}
+@media (max-width:780px){
+  .app{grid-template-columns:1fr}
+  .panel{border-left:0;border-top:1px solid var(--line);min-height:0}
+  .stage{position:static}
+  .canvas-wrap{height:52vh;min-height:320px}
+  .top{padding:8px 14px}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mark" aria-hidden="true">↺</span><h1>Torque Lab</h1></div>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button role="tab" id="tab-problems" aria-selected="true">Problems</button>
+    <button role="tab" id="tab-sandbox" aria-selected="false">Sandbox</button>
+  </div>
+</header>
+<main class="app">
+  <aside class="nav" id="nav" aria-label="Problem list"></aside>
+  <section class="stage">
+    <select id="navSelect" class="nav-select" aria-label="Choose a problem"></select>
+    <div class="toggles" id="toggles" role="group" aria-label="Show on diagram"></div>
+    <div class="canvas-wrap" id="cw"><canvas id="cv" aria-label="Torque diagram"></canvas></div>
+    <div class="runbar" id="runbar" hidden>
+      <button class="btn" id="runBtn">Run</button>
+      <button class="btn ghost" id="resetBtn">Reset</button>
+      <div class="read" id="read"></div>
+    </div>
+  </section>
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+</main>
+
+<script>
+"use strict";
+const G = 9.8, D2R = Math.PI/180;
+const $ = s => document.querySelector(s);
+const fmt = x => { const a = Math.abs(x); if (a < 0.005) return "0"; if (a >= 100) return x.toFixed(0); if (a >= 10) return x.toFixed(1); return x.toFixed(2); };
+const sfmt = x => (Math.abs(x) < 0.005 ? "0" : (x > 0 ? "+" : "−") + fmt(Math.abs(x)));
+const dirSym = x => Math.abs(x) < 0.005 ? "" : (x > 0 ? " ↺" : " ↻");
+function F(label, p, mag, ang, color, o){ return Object.assign({label, p, F:mag, ang, color}, o || {}); }
+
+const LEVELS = {1:"Lever arms", 2:"Balancing", 3:"Structures", 4:"Rotational dynamics"};
+const DIR = ["Counterclockwise", "Clockwise"];
+
+/* ---------- Scenes shared by more than one problem ---------- */
+function signScene(st, askHy){
+  const T = 392, Hx = 339.5, Hy = 98, u = !st.solved;
+  return {
+    bounds:[-0.5,2.6,-1.05,1.45], pivot:"hinge", caption:"Uniform beam: 10 kg. Sign: 20 kg.",
+    body:{shapes:[{t:"bar", a:[0,0], b:[2,0], w:12}]},
+    props:[
+      {t:"wall", x:-0.02, y0:-1.0, y1:1.4, side:-1},
+      {t:"line", a:[2,0], b:[0,1.1547]},
+      {t:"line", a:[1.5,0], b:[1.5,-0.5]},
+      {t:"block", c:[1.5,-0.72], w:0.55, h:0.42, text:"20 kg"}
+    ],
+    forces:[
+      F("T", [2,0], T, 150, "f1", {unknown: u && !askHy}),
+      F("W beam", [1,0], 98, -90, "w"),
+      F("W sign", [1.5,0], 196, -90, "f2"),
+      F("Hx", [0,0], Hx, 0, "f3", {unknown:u}),
+      F("Hy", [0,0], Hy, 90, "f4", {unknown:u})
+    ],
+    dims:[{a:[0,0], b:[1.5,0], text:"1.5 m", off:30}, {a:[0,0], b:[2,0], text:"2.0 m", off:56}],
+    arcs:[{c:[2,0], a0:150, a1:180, r:52, text:"30°"}]
+  };
+}
+function pulleyScene(st){
+  const R = 0.2, a = 4.9, t = st.t || 0, drop = 0.5*a*t*t, by = -0.8 - drop, u = !st.solved, hb = 0.13;
+  return {
+    bounds:[-0.75,0.95,-2.05,0.55], pivot:"axle", caption:"Pulley: solid disk, 4 kg, R = 0.20 m. Axle force not shown.",
+    body:{I:0.08, shapes:[{t:"disk", r:R}]},
+    props:[
+      {t:"ceil", y:0.45, x0:-0.45, x1:0.45},
+      {t:"line", a:[0,0], b:[0,0.45], w:4},
+      {t:"line", a:[R,0], b:[R,by+hb]},
+      {t:"block", c:[R,by], w:0.26, h:0.26, text:"2 kg"}
+    ],
+    forces:[
+      F("T", [R,0], 9.8, -90, "f1", {fixedPoint:true, unknown:u}),
+      F("T", [R,by+hb], 9.8, 90, "f1", {onBody:false, unknown:u, side:true}),
+      F("mg", [R,by-hb], 19.6, -90, "w", {onBody:false})
+    ]
+  };
+}
+
+/* ---------- Problem bank ---------- */
+const P = [
+{ id:"wrench1", level:1, title:"Wrench warm-up",
+  text:"You push straight up on the end of a 0.25 m wrench with an 80 N force. What torque do you exert on the bolt?",
+  given:["Wrench length: 0.25 m", "Force: 80 N, perpendicular to the wrench"],
+  predict:{q:"Which way will the bolt turn?", opts:DIR, ans:0, why:"The push lifts the end of the wrench, which swings it counterclockwise around the bolt."},
+  ask:{sym:"τ", unit:"N·m", value:20, note:"Enter the magnitude."},
+  traps:[{v:320, m:"Torque is r × F, not F ÷ r."}],
+  hints:["The pivot is the center of the bolt.", "Turn on Lever arm. Because the push is perpendicular to the wrench, the lever arm is the whole wrench.", "τ = r⊥F"],
+  explain:"The push is perpendicular to the wrench, so the lever arm is the full 0.25 m. τ = r⊥F = (0.25 m)(80 N) = 20 N·m, counterclockwise.",
+  build:st=>({bounds:[-0.1,0.42,-0.15,0.2], pivot:"bolt", body:{shapes:[{t:"wrench", L:0.25}]},
+    forces:[F("F",[0.25,0],80,90,"f1")], dims:[{a:[0,0], b:[0.25,0], text:"0.25 m", off:-36}]})
+},
+{ id:"wrench2", level:1, title:"Push at an angle",
+  text:"Same wrench, same 80 N push, but now the force makes a 60° angle with the handle. What torque do you exert?",
+  given:["Wrench length: 0.25 m", "Force: 80 N at 60° to the handle"],
+  predict:{q:"Compared with pushing straight up, the torque will be…", opts:["Larger","Smaller","The same"], ans:1, why:"Part of the push now points along the handle, and that part can’t turn the bolt."},
+  ask:{sym:"τ", unit:"N·m", value:17.32, note:"Enter the magnitude."},
+  traps:[{v:20, m:"That’s the torque for a perpendicular push. Only part of this force is perpendicular to the wrench."},{v:10, m:"Close. You used cos 60°. The angle is measured from the handle, so the perpendicular part uses sin 60°."}],
+  hints:["Turn on Lever arm and compare its length to the wrench.", "Only the part of the force perpendicular to the wrench makes it turn. Turn on Components to see it.", "τ = rF sin θ, where θ is the angle between r and F."],
+  explain:"τ = rF sin θ = (0.25 m)(80 N)(sin 60°) = 17.3 N·m. With the lever arm: r⊥ = (0.25 m)(sin 60°) = 0.217 m, and r⊥F gives the same 17.3 N·m.",
+  build:st=>({bounds:[-0.1,0.42,-0.15,0.2], pivot:"bolt", body:{shapes:[{t:"wrench", L:0.25}]},
+    props:[{t:"ref", a:[0.25,0], b:[0.37,0], hideOnRun:true}],
+    forces:[F("F",[0.25,0],80,60,"f1")], dims:[{a:[0,0], b:[0.25,0], text:"0.25 m", off:-36}],
+    arcs:[{c:[0.25,0], a0:0, a1:60, r:36, text:"60°"}]})
+},
+{ id:"wrench3", level:1, title:"Find the force",
+  text:"A bolt needs 20 N·m of torque to loosen. You push down on the end of a 0.30 m wrench at 30° below the handle. How hard must you push?",
+  given:["Wrench length: 0.30 m", "Torque needed: 20 N·m", "Angle between handle and force: 30°"],
+  predict:{q:"Which way will this push turn the bolt?", opts:DIR, ans:1, why:"Pushing the end down swings the wrench clockwise."},
+  ask:{sym:"F", unit:"N", value:133.33},
+  traps:[{v:66.67, m:"That would work for a perpendicular push. At 30°, only half the force is perpendicular."},{v:76.98, m:"You used cos 30°. The perpendicular part of the force uses sin 30°."}],
+  hints:["Turn on Line of action to see which way this force turns the wrench.", "τ = rF sin θ. You know τ, r, and θ.", "Solve for F: F = τ ÷ (r sin θ)."],
+  explain:"F = τ ÷ (r sin θ) = 20 N·m ÷ [(0.30 m)(sin 30°)] = 133 N. At this angle you need twice the force a perpendicular push would take (66.7 N).",
+  build:st=>({bounds:[-0.1,0.5,-0.2,0.17], pivot:"bolt", body:{shapes:[{t:"wrench", L:0.30}]},
+    props:[{t:"ref", a:[0.30,0], b:[0.43,0], hideOnRun:true}],
+    forces:[F("F",[0.30,0],133.3,-30,"f1",{unknown:!st.solved})], dims:[{a:[0,0], b:[0.30,0], text:"0.30 m", off:34}],
+    arcs:[{c:[0.30,0], a0:-30, a1:0, r:40, text:"30°"}]})
+},
+{ id:"pole", level:1, title:"Rope on a pole",
+  text:"A rope tied to the top of a 2.0 m pole pulls with 50 N at 30° below horizontal. The pole can pivot at its base. What torque does the rope exert about the base?",
+  given:["Pole height: 2.0 m", "Rope tension: 50 N, 30° below horizontal"],
+  predict:{q:"Is the rope’s lever arm longer than the pole, shorter, or the same?", opts:["Longer","Shorter","The same"], ans:1, why:"The rope isn’t perpendicular to the pole, so the perpendicular distance from the base to the rope’s line is less than 2.0 m."},
+  ask:{sym:"τ", unit:"N·m", value:86.60, note:"Enter the magnitude."},
+  traps:[{v:100, m:"That treats the rope as perpendicular to the pole. Check the lever arm."},{v:50, m:"You used sin 30°. The 30° is measured from horizontal, not from the pole. The angle between r and F is 120°."}],
+  hints:["Turn on r and θ. The angle that matters is between r (up the pole) and the force, and it isn’t 30°.", "The angle between r and F is 90° + 30° = 120°. Or turn on Lever arm and use r⊥ directly.", "τ = rF sin θ = r⊥F"],
+  explain:"The angle between r (straight up) and the rope is 120°, and sin 120° = sin 60°. τ = (2.0 m)(50 N)(sin 120°) = 86.6 N·m, clockwise. The lever arm is (2.0 m)(cos 30°) = 1.73 m, shorter than the pole.",
+  build:st=>({bounds:[-1.3,2.3,-0.35,2.5], pivot:"pin", body:{shapes:[{t:"bar", a:[0,0], b:[0,2], w:12}]},
+    props:[{t:"floor", y:-0.03, x0:-1.2, x1:2.2}, {t:"ref", a:[0,2], b:[0.75,2], hideOnRun:true}],
+    forces:[F("T",[0,2],50,-30,"f1")], dims:[{a:[0,0], b:[0,2], text:"2.0 m", off:34}],
+    arcs:[{c:[0,2], a0:-30, a1:0, r:48, text:"30°"}]})
+},
+{ id:"seesaw1", level:2, title:"Where should Ben sit?",
+  text:"Ana (30 kg) sits 1.5 m left of the pivot on a uniform 20 kg seesaw. Where must Ben (45 kg) sit, to the right of the pivot, for the seesaw to balance?",
+  given:["Ana: 30 kg, 1.5 m left", "Ben: 45 kg", "Uniform plank: 20 kg, pivot at its center"],
+  predict:{q:"Will Ben sit closer to the pivot than Ana, or farther?", opts:["Closer","Farther","The same distance"], ans:0, why:"Ben is heavier, so he needs a shorter lever arm to make the same torque."},
+  ask:{sym:"d", unit:"m", value:1.00},
+  traps:[{v:2.25, m:"That has the ratio upside down. The heavier person needs the shorter lever arm."}],
+  hints:["Which forces act right at the pivot? Their torques are zero.", "Ana’s weight makes a counterclockwise torque and Ben’s makes a clockwise one. For balance they’re equal.", "W₁(1.5 m) = W₂d"],
+  explain:"Balance means equal and opposite torques: (294 N)(1.5 m) = (441 N)d, so d = 1.00 m. The plank’s weight and the pivot’s push both act at the pivot, so their lever arms are zero.",
+  build:st=>{ const bx = st.solved ? 1.0 : 1.6; return {bounds:[-2.45,2.45,-0.85,1.05], pivot:"pin",
+    body:{shapes:[{t:"bar",a:[-2,0],b:[2,0],w:10},{t:"block",c:[-1.5,0.2],w:0.32,h:0.32,text:"30 kg"},{t:"block",c:[bx,0.22],w:0.36,h:0.36,text:"45 kg",ghost:!st.solved}]},
+    props:[{t:"tri",h:0.55,w:0.5},{t:"floor",y:-0.56,x0:-2.4,x1:2.4}],
+    forces:[F("W₁",[-1.5,0],294,-90,"f1"),F("W₂",[bx,0],441,-90,"f2",{ghost:!st.solved}),F("W plank",[0,0],196,-90,"w"),F("N",[0,0],931,90,"f3")],
+    dims:[{a:[0,0],b:[-1.5,0],text:"1.5 m",off:-72},{a:[0,0],b:[bx,0],text:st.solved?"1.00 m":"d = ?",off:72}]}; }
+},
+{ id:"seesaw2", level:2, title:"Two on one side",
+  text:"Two kids sit on the left side of a uniform 20 kg seesaw: 25 kg at 1.8 m and 15 kg at 0.8 m from the pivot. A third kid sits 1.6 m to the right. What mass balances the seesaw?",
+  given:["Left: 25 kg at 1.8 m and 15 kg at 0.8 m", "Right: unknown mass at 1.6 m", "Plank pivoted at its center"],
+  predict:{q:"Will the third kid’s mass be more or less than 40 kg, the total mass on the left?", opts:["More than 40 kg","Less than 40 kg","Exactly 40 kg"], ans:1, why:"The third kid sits farther out than the left side’s average position, so less mass makes the same torque."},
+  ask:{sym:"m", unit:"kg", value:35.63},
+  traps:[{v:40, m:"Balancing masses only works when lever arms match. Balance torques instead."}],
+  hints:["Both kids on the left make counterclockwise torques. Add them.", "The third kid’s clockwise torque must equal that sum.", "m g (1.6 m) = (245 N)(1.8 m) + (147 N)(0.8 m)"],
+  explain:"Counterclockwise: (245 N)(1.8 m) + (147 N)(0.8 m) = 559 N·m. Clockwise must match: m(9.8 m/s²)(1.6 m) = 559 N·m, so m = 35.6 kg.",
+  build:st=>({bounds:[-2.45,2.45,-0.85,1.15], pivot:"pin",
+    body:{shapes:[{t:"bar",a:[-2,0],b:[2,0],w:10},{t:"block",c:[-1.8,0.2],w:0.3,h:0.3,text:"25 kg"},{t:"block",c:[-0.8,0.18],w:0.26,h:0.26,text:"15 kg"},{t:"block",c:[1.6,0.21],w:0.34,h:0.34,text:st.solved?"35.6 kg":"m = ?"}]},
+    props:[{t:"tri",h:0.55,w:0.5},{t:"floor",y:-0.56,x0:-2.4,x1:2.4}],
+    forces:[F("W₁",[-1.8,0],245,-90,"f1"),F("W₂",[-0.8,0],147,-90,"f4"),F("W₃",[1.6,0],349.1,-90,"f2",{unknown:!st.solved}),F("W plank",[0,0],196,-90,"w"),F("N",[0,0],937.1,90,"f3",{unknown:!st.solved})],
+    dims:[{a:[0,0],b:[-1.8,0],text:"1.8 m",off:-92},{a:[0,0],b:[-0.8,0],text:"0.8 m",off:-60},{a:[0,0],b:[1.6,0],text:"1.6 m",off:72}]})
+},
+{ id:"meterstick", level:2, title:"Weigh a meter stick",
+  text:"A uniform meter stick balances on a pivot at the 40 cm mark when a 0.20 kg mass hangs from the 10 cm mark. What is the mass of the meter stick?",
+  given:["Pivot: 40 cm mark", "Hanging mass: 0.20 kg at the 10 cm mark", "Stick is uniform"],
+  predict:{q:"Is the meter stick heavier or lighter than the 0.20 kg mass?", opts:["Heavier","Lighter","The same"], ans:0, why:"The stick’s weight acts at the 50 cm mark, only 10 cm from the pivot. A short lever arm needs a big force."},
+  ask:{sym:"M", unit:"kg", value:0.60},
+  traps:[{v:0.0667, m:"The lever arms are swapped. The stick’s weight acts 0.10 m from the pivot; the hanging mass is 0.30 m away."},{v:0.12, m:"Measure lever arms from the pivot at 40 cm, not from the end of the stick."}],
+  hints:["Where does a uniform stick’s weight act?", "Measure each lever arm from the pivot at 40 cm, not from the end of the stick.", "(0.20 kg) g (0.30 m) = M g (0.10 m)"],
+  explain:"The stick’s weight acts at its center, the 50 cm mark, 0.10 m right of the pivot. The hanging mass is 0.30 m left. (0.20 kg)g(0.30 m) = Mg(0.10 m), so M = 0.60 kg. Notice that g cancels.",
+  build:st=>({bounds:[-0.55,0.72,-0.36,0.25], pivot:"pin",
+    body:{shapes:[{t:"meterstick", x0:-0.4, x1:0.6}]},
+    props:[{t:"tri",h:0.12,w:0.1},{t:"line",a:[-0.3,0],b:[-0.3,-0.17]},{t:"block",c:[-0.3,-0.21],w:0.08,h:0.08,text:""},{t:"text",at:[-0.25,-0.21],text:"0.20 kg",align:"left"}],
+    forces:[F("W₁",[-0.3,0],1.96,-90,"f1"),F("W stick",[0.1,0],5.88,-90,"w",{unknown:!st.solved}),F("N",[0,0],7.84,90,"f3",{unknown:!st.solved})]})
+},
+{ id:"sign1", level:3, title:"Hanging sign: cable tension",
+  text:"A 2.0 m uniform beam (10 kg) sticks out from a wall on a hinge. A cable from the beam’s end to the wall makes a 30° angle with the beam. A 20 kg sign hangs 1.5 m from the wall. Find the cable tension.",
+  given:["Beam: 2.0 m, 10 kg, uniform", "Sign: 20 kg, hung 1.5 m from the wall", "Cable angle with beam: 30°"],
+  predict:{q:"Will the tension be more or less than the total weight on the beam (294 N)?", opts:["More than 294 N","Less than 294 N","Exactly 294 N"], ans:0, why:"The cable pulls at a shallow angle, so its lever arm is short. It needs a big force to make enough torque."},
+  ask:{sym:"T", unit:"N", value:392},
+  traps:[{v:226.3, m:"You used cos 30°. The perpendicular part of the tension (relative to the beam) uses sin 30°."},{v:196, m:"Check the cable’s lever arm: (2.0 m)(sin 30°) = 1.0 m."}],
+  hints:["Put the pivot at the hinge. Why is that a smart choice?", "Turn on Lever arm. The cable’s lever arm is shorter than the beam.", "T(2.0 m)(sin 30°) = (98 N)(1.0 m) + (196 N)(1.5 m)"],
+  explain:"Taking torques about the hinge makes the unknown hinge force drop out. Clockwise: (98 N)(1.0 m) + (196 N)(1.5 m) = 392 N·m. Counterclockwise: T(2.0 m)(sin 30°) = T(1.0 m). So T = 392 N.",
+  build:st=>signScene(st,false)
+},
+{ id:"sign2", level:3, title:"Hanging sign: hinge force",
+  text:"Same beam and sign. You found T = 392 N. What is the vertical part of the force the hinge exerts on the beam?",
+  given:["T = 392 N at 30° to the beam", "Beam weight: 98 N", "Sign weight: 196 N"],
+  predict:{q:"Does the hinge push the beam up, pull it down, or neither?", opts:["Up","Down","Neither"], ans:0, why:"The cable holds up only T sin 30° = 196 N of the 294 N, so the hinge supplies the rest."},
+  ask:{sym:"Hy", unit:"N", value:98},
+  traps:[{v:294, m:"That’s the total weight. The cable already holds up part of it."},{v:339.5, m:"That’s the horizontal part, Hx = T cos 30°. This asks for the vertical part."}],
+  hints:["Torque already gave you T. Now use forces.", "ΣFy = 0: Hy + T sin 30° − 98 N − 196 N = 0"],
+  explain:"With T known, ΣFy = 0 gives Hy + T sin 30° = 98 N + 196 N, so Hy = 294 N − 196 N = 98 N, upward. Horizontally, Hx = T cos 30° = 339 N, pushing away from the wall.",
+  build:st=>signScene(st,true)
+},
+{ id:"ladder", level:3, title:"Ladder against a wall",
+  text:"A uniform 4.0 m ladder (15 kg) leans against a frictionless wall at 60° above the floor. What force does the wall exert on the ladder?",
+  given:["Ladder: 4.0 m, 15 kg, uniform", "Angle with floor: 60°", "Wall is frictionless; the floor is not"],
+  predict:{q:"Taking the pivot at the foot, which forces have zero torque?", opts:["Floor’s normal force and friction","Weight and wall force","Only the weight"], ans:0, why:"Both floor forces act right at the foot, so their lever arms are zero."},
+  ask:{sym:"N", unit:"N", value:42.44, note:"N is the wall’s normal force."},
+  traps:[{v:84.87, m:"The weight acts at the ladder’s center, so its lever arm is (2.0 m)(cos 60°), not (4.0 m)(cos 60°)."},{v:127.3, m:"Check which trig function goes with each lever arm. Turn on Lever arm: the weight’s is horizontal, the wall force’s is vertical."}],
+  hints:["Pivot at the foot. Which forces have zero lever arm there?", "Turn on Lever arm. The weight’s lever arm is horizontal; the wall force’s lever arm is vertical.", "N(4.0 m)(sin 60°) = (147 N)(2.0 m)(cos 60°)"],
+  explain:"About the foot, friction and the floor’s normal force have zero lever arm. The weight’s lever arm is (2.0 m)(cos 60°) = 1.0 m, and the wall force’s is (4.0 m)(sin 60°) = 3.46 m. N(3.46 m) = (147 N)(1.0 m), so N = 42.4 N.",
+  build:st=>({bounds:[-1.3,3.1,-0.4,4.0], pivot:"foot",
+    body:{shapes:[{t:"ladder",a:[0,0],b:[2,3.4641]}]},
+    props:[{t:"floor",y:-0.02,x0:-1.2,x1:3.0},{t:"wall",x:2.03,y0:-0.02,y1:3.95,side:1}],
+    forces:[F("W",[1,1.732],147,-90,"w"),F("N wall",[2,3.4641],42.44,180,"f1",{unknown:!st.solved}),F("N floor",[0,0],147,90,"f2"),F("f",[0,0],42.44,0,"f3",{unknown:!st.solved})],
+    dims:[{a:[0,0],b:[2,3.4641],text:"4.0 m",off:-30}],
+    arcs:[{c:[0,0],a0:0,a1:60,r:52,text:"60°"}]})
+},
+{ id:"disk1", level:4, title:"Spin a disk", dynamic:true, motion:"rigid", maxT:3,
+  text:"A string wrapped around a solid disk (4.0 kg, radius 0.50 m) is pulled to the right with 10 N. The disk turns on a fixed, frictionless axle. Find its angular acceleration.",
+  given:["Solid disk: 4.0 kg, R = 0.50 m", "Pull: 10 N, tangent to the rim"],
+  predict:{q:"Which way will the disk spin?", opts:DIR, ans:1, why:"The string pulls the top of the disk to the right, which turns it clockwise."},
+  ask:{sym:"α", unit:"rad/s²", value:10, note:"Enter the magnitude."},
+  traps:[{v:5, m:"That’s α for a hoop (I = MR²). A solid disk has I = ½MR²."},{v:2.5, m:"Check I = ½MR² = ½(4.0 kg)(0.50 m)²."}],
+  hints:["The axle force acts at the pivot, so only the string makes a torque.", "Solid disk: I = ½MR²", "α = τ ÷ I"],
+  explain:"I = ½MR² = ½(4.0 kg)(0.50 m)² = 0.50 kg·m². τ = RF = (0.50 m)(10 N) = 5.0 N·m. α = τ ÷ I = 10 rad/s², clockwise.",
+  build:st=>({bounds:[-0.95,1.3,-0.75,0.85], pivot:"axle", caption:"Axle force not shown (zero torque).",
+    body:{I:0.5, shapes:[{t:"disk",r:0.5}]},
+    forces:[F("F",[0,0.5],10,0,"f1",{fixedPoint:true})],
+    dims:[{a:[0,0],b:[-0.3536,-0.3536],text:"R = 0.50 m",off:-16}]})
+},
+{ id:"disk2", level:4, title:"Tug-of-war on a wheel", dynamic:true, motion:"rigid", maxT:3,
+  text:"A solid disk (5.0 kg, R = 0.40 m) has a hub of radius 0.20 m. A 20 N force pulls a string on the rim, and a 30 N force pulls a string on the hub, as shown. Find the angular acceleration.",
+  given:["Solid disk: 5.0 kg, R = 0.40 m (treat the hub as part of the disk)", "20 N on the rim (bottom)", "30 N on the hub (top)"],
+  predict:{q:"Which way will the wheel turn?", opts:DIR, ans:0, why:"The 20 N force has twice the lever arm, so its torque (8.0 N·m) beats the 30 N force’s torque (6.0 N·m)."},
+  ask:{sym:"α", unit:"rad/s²", value:5, note:"Enter the magnitude."},
+  traps:[{v:35, m:"You added the torques, but they turn the wheel in opposite directions."},{v:25, m:"Check I = ½MR² = ½(5.0 kg)(0.40 m)² = 0.40 kg·m²."}],
+  hints:["Find each torque and give it a sign. Counterclockwise is +.", "τ_net = (20 N)(0.40 m) − (30 N)(0.20 m)", "α = τ_net ÷ I, with I = ½MR²"],
+  explain:"Counterclockwise: (20 N)(0.40 m) = 8.0 N·m. Clockwise: (30 N)(0.20 m) = 6.0 N·m. Net: 2.0 N·m counterclockwise. I = ½(5.0 kg)(0.40 m)² = 0.40 kg·m², so α = 5.0 rad/s². The bigger force loses because its lever arm is half as long.",
+  build:st=>({bounds:[-0.8,1.15,-0.6,0.6], pivot:"axle", caption:"Axle force not shown (zero torque).",
+    body:{I:0.4, shapes:[{t:"disk",r:0.4,hub:0.2}]},
+    forces:[F("F₁",[0,-0.4],20,0,"f1",{fixedPoint:true}),F("F₂",[0,0.2],30,0,"f2",{fixedPoint:true})],
+    dims:[{a:[0,0],b:[-0.4,0],text:"0.40 m",off:14},{a:[0,0],b:[-0.2,0],text:"0.20 m",off:-14}]})
+},
+{ id:"rodtop", level:4, title:"Rod on a table", dynamic:true, motion:"rigid", maxT:3,
+  text:"A uniform rod (2.0 kg, 1.5 m) lies on a frictionless table, pinned at one end. You pull its free end with 12 N at 40° to the rod. Find the rod’s angular acceleration at that moment.",
+  given:["Rod: 2.0 kg, 1.5 m, pinned at one end", "Pull: 12 N at 40° to the rod", "Top view, so gravity makes no torque here"],
+  predict:{q:"Which way will the rod start to turn?", opts:DIR, ans:0, why:"The pull has a part pointing up the page at the free end, which swings the rod counterclockwise."},
+  ask:{sym:"α", unit:"rad/s²", value:7.713},
+  traps:[{v:12, m:"You left out sin θ. Only the perpendicular part of the pull makes torque."},{v:1.93, m:"For a rod about one end, I = ⅓ML², not ML²/12 or ML²."}],
+  hints:["τ = rF sin θ with θ = 40°.", "Rod about one end: I = ⅓ML²", "α = τ ÷ I"],
+  explain:"τ = rF sin θ = (1.5 m)(12 N)(sin 40°) = 11.6 N·m. About its end, I = ⅓ML² = ⅓(2.0 kg)(1.5 m)² = 1.5 kg·m². α = 11.6 ÷ 1.5 = 7.71 rad/s². Run it with Lever arm on: as the rod turns toward the pull, the lever arm shrinks and so does α.",
+  build:st=>({bounds:[-0.4,2.3,-0.55,1.5], pivot:"pin", caption:"Top view. The pull keeps the same direction as the rod turns.",
+    body:{I:1.5, shapes:[{t:"bar",a:[0,0],b:[1.5,0],w:12}]},
+    props:[{t:"ref",a:[1.5,0],b:[2.0,0],hideOnRun:true}],
+    forces:[F("F",[1.5,0],12,40,"f1")],
+    dims:[{a:[0,0],b:[1.5,0],text:"1.5 m",off:-28}],
+    arcs:[{c:[1.5,0],a0:0,a1:40,r:42,text:"40°"}]})
+},
+{ id:"pulley1", level:4, title:"Heavy pulley", dynamic:true, motion:"pulley",
+  text:"A 2.0 kg block hangs from a string wrapped around a pulley, a solid disk (4.0 kg, R = 0.20 m). The block is released from rest. Find the pulley’s angular acceleration.",
+  given:["Block: 2.0 kg", "Pulley: solid disk, 4.0 kg, R = 0.20 m", "The string doesn’t slip"],
+  predict:{q:"Is the string tension equal to the block’s weight (19.6 N), less, or more?", opts:["Equal","Less","More"], ans:1, why:"The block speeds up as it falls, so the upward tension must be smaller than its weight."},
+  ask:{sym:"α", unit:"rad/s²", value:24.5, note:"Enter the magnitude."},
+  traps:[{v:49, m:"That’s free fall, a = g. The pulley’s inertia slows the block down."},{v:16.33, m:"Check the pulley’s I: a solid disk has I = ½MR², so the pulley adds ½M to the equation, not M."}],
+  hints:["The string tension, not the block’s weight, pulls on the pulley.", "Block: mg − T = ma. Pulley: TR = (½MR²)α. And a = αR.", "Combine: a = mg ÷ (m + ½M), then α = a ÷ R."],
+  explain:"Block: mg − T = ma. Pulley: TR = (½MR²)α with a = αR, so T = ½Ma. Combine: mg = (m + ½M)a, so a = 19.6 N ÷ 4.0 kg = 4.9 m/s². α = a ÷ R = 24.5 rad/s².",
+  build:st=>pulleyScene(st)
+},
+{ id:"pulley2", level:4, title:"Heavy pulley: tension", dynamic:true, motion:"pulley",
+  text:"Same pulley and block. The block accelerates down at 4.9 m/s². What is the tension in the string?",
+  given:["Block: 2.0 kg, a = 4.9 m/s²", "Pulley: solid disk, 4.0 kg, R = 0.20 m"],
+  ask:{sym:"T", unit:"N", value:9.8},
+  traps:[{v:19.6, m:"That’s the block’s weight. If the tension equaled mg, the block wouldn’t speed up."},{v:29.4, m:"Check your signs. The block accelerates down, so mg − T = ma."}],
+  hints:["Use the block: mg − T = ma.", "Or use the pulley: TR = (½MR²)α, with α = a ÷ R."],
+  explain:"T = m(g − a) = (2.0 kg)(9.8 − 4.9 m/s²) = 9.8 N. Check with the pulley: T = ½Ma = ½(4.0 kg)(4.9 m/s²) = 9.8 N. That’s half the block’s weight.",
+  build:st=>pulleyScene(st)
+},
+{ id:"rodfall", level:4, title:"Falling rod", dynamic:true, motion:"rigid", maxT:6,
+  text:"A uniform 1.2 m rod (1.5 kg) is pinned at one end and held horizontal, then released. Find its angular acceleration the instant it’s released.",
+  given:["Rod: 1.5 kg, 1.2 m, pinned at one end", "Starts at rest, horizontal"],
+  predict:{q:"As the rod swings down, what happens to its angular acceleration?", opts:["It increases","It decreases","It stays the same"], ans:1, why:"The weight’s lever arm shrinks as the rod swings toward vertical, so the torque shrinks too."},
+  ask:{sym:"α", unit:"rad/s²", value:12.25, note:"Enter the magnitude."},
+  traps:[{v:49, m:"I = ML²/12 is for the rod’s center. This rod turns about its end: I = ⅓ML²."},{v:4.083, m:"I = ML² treats the rod like a point mass at its end. A uniform rod about its end has I = ⅓ML²."},{v:24.5, m:"The weight acts at the rod’s center, so its lever arm is L/2, not L."}],
+  hints:["At release, the weight acts at the center, 0.60 m from the pivot.", "Rod about one end: I = ⅓ML²", "α = τ ÷ I"],
+  explain:"At release the weight’s lever arm is the full L/2 = 0.60 m, so τ = (14.7 N)(0.60 m) = 8.82 N·m. I = ⅓ML² = ⅓(1.5 kg)(1.2 m)² = 0.72 kg·m², so α = 12.25 rad/s². Run it with Lever arm on: the lever arm shrinks to zero at the bottom, and α drops to zero.",
+  build:st=>({bounds:[-1.45,1.45,-1.4,0.5], pivot:"pin", caption:"Pivot force not shown (zero torque).",
+    body:{I:0.72, shapes:[{t:"bar",a:[0,0],b:[1.2,0],w:12}]},
+    props:[{t:"ceil",y:0.36,x0:-0.3,x1:0.3},{t:"line",a:[0,0],b:[0,0.36],w:4}],
+    forces:[F("W",[0.6,0],14.7,-90,"w")],
+    dims:[{a:[0,0],b:[1.2,0],text:"1.2 m",off:30}]})
+}
+];
+
+/* ---------- State ---------- */
+const S = {
+  mode:"problems", pi:0, pst:{}, solved:new Set(),
+  tog:{lever:false, loa:false, rt:false, comp:false, tq:false},
+  phi:0, omega:0, alpha:0, t:0, running:false,
+  sb:{L:3, pivot:1.0, m:2, weight:false, forces:[{x:3, F:40, ang:90}, {x:0, F:60, ang:90}]},
+  hit:[]
+};
+try { const s = JSON.parse(localStorage.getItem("torqueLab.solved") || "[]"); s.forEach(x => S.solved.add(x)); } catch(e) {}
+function saveSolved(){ try { localStorage.setItem("torqueLab.solved", JSON.stringify([...S.solved])); } catch(e) {} }
+function PS(p){ if(!S.pst[p.id]) S.pst[p.id] = {pred:null, attempts:0, hints:0, solved:S.solved.has(p.id), revealed:false, fb:null, input:""}; return S.pst[p.id]; }
+const unlocked = p => { const s = PS(p); return s.solved || s.revealed; };
+const cur = () => P[S.pi];
+
+/* ---------- Scene and physics ---------- */
+function sbScene(){
+  const s = S.sb, p = s.pivot, L = s.L;
+  const forces = s.forces.map((f,i) => F(`F${i+1}`, [f.x - p, 0], f.F, f.ang, "f" + (i+1)));
+  if (s.weight) forces.push(F("W", [L/2 - p, 0], s.m*G, -90, "w"));
+  return {bounds:[-4.4,4.4,-2.5,2.5], pivot:"pin", fpx:1.5, sandbox:true,
+    caption: s.weight ? "Vertical beam with gravity." : "Top view: no gravity on the beam.",
+    body:{I: s.m*(L*L/12 + (L/2 - p)**2), shapes:[{t:"bar", a:[-p,0], b:[L-p,0], w:14, ticks:true, x0:-p}]},
+    props: s.weight ? [{t:"post"}] : [], forces};
+}
+function getScene(){
+  if (S.mode === "sandbox") return sbScene();
+  const p = cur();
+  return p.build({solved: unlocked(p), t:S.t});
+}
+function rot(v, a){ const c = Math.cos(a), s = Math.sin(a); return [v[0]*c - v[1]*s, v[0]*s + v[1]*c]; }
+function worldForces(sc, phi){
+  return sc.forces.map(f => {
+    const P = (f.fixedPoint || f.onBody === false) ? f.p : rot(f.p, phi);
+    const a = f.ang*D2R;
+    return Object.assign({}, f, {P, u:[Math.cos(a), Math.sin(a)]});
+  });
+}
+const torqueOf = f => (f.P[0]*f.u[1] - f.P[1]*f.u[0]) * f.F;
+const rperpOf = f => Math.abs(f.P[0]*f.u[1] - f.P[1]*f.u[0]);
+function netTorque(sc, phi){ let s = 0; worldForces(sc, phi).forEach(f => { if (f.onBody !== false) s += torqueOf(f); }); return s; }
+function isDynamic(){ return S.mode === "sandbox" || !!cur().dynamic; }
+
+/* ---------- Canvas ---------- */
+const cv = $("#cv"), cw = $("#cw"), ctx = cv.getContext("2d");
+let SC = 100, OX = 0, OY = 0, W = 0, H = 0, css, PLACED = [];
+const col = n => css.getPropertyValue("--" + n).trim();
+const toS = p => [OX + p[0]*SC, OY - p[1]*SC];
+const FONT = (sz, b, it) => `${it ? "italic " : ""}${b ? "700 " : ""}${sz}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+
+function line(a, b, w, c, dash){ ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineWidth = w; ctx.strokeStyle = c; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]); }
+function arrow(a, b, w, c, head, dash){
+  head = head || 11;
+  const dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx,dy); if (L < 1) return;
+  const ux = dx/L, uy = dy/L, hb = Math.min(head, L*0.6);
+  line(a, [b[0]-ux*hb*0.8, b[1]-uy*hb*0.8], w, c, dash);
+  ctx.beginPath(); ctx.moveTo(b[0], b[1]);
+  ctx.lineTo(b[0]-ux*hb - uy*hb*0.5, b[1]-uy*hb + ux*hb*0.5);
+  ctx.lineTo(b[0]-ux*hb + uy*hb*0.5, b[1]-uy*hb - ux*hb*0.5);
+  ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+}
+function pill(text, x, y, o){
+  o = o || {};
+  ctx.font = FONT(o.size || 13, o.bold !== false, o.italic);
+  const tw = ctx.measureText(text).width, th = (o.size || 13) + 2, px = 4, py = 2;
+  let x0 = o.align === "left" ? x : o.align === "right" ? x - tw : x - tw/2;
+  let y0 = o.base === "top" ? y : o.base === "bottom" ? y - th : y - th/2;
+  const av = o.avoid || [0,-1];
+  for (let k = 0; k < 6; k++){
+    const hitBox = PLACED.some(b => x0 - px < b[0] + b[2] && x0 + tw + px > b[0] && y0 - py < b[1] + b[3] && y0 + th + py > b[1]);
+    if (!hitBox) break;
+    x0 += av[0]*(th + 4); y0 += av[1]*(th + 4);
+  }
+  PLACED.push([x0 - px, y0 - py, tw + 2*px, th + 2*py]);
+  ctx.globalAlpha *= 0.86; ctx.fillStyle = col("paper");
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x0-px, y0-py, tw+2*px, th+2*py, 5) : ctx.rect(x0-px, y0-py, tw+2*px, th+2*py); ctx.fill();
+  ctx.globalAlpha /= 0.86;
+  ctx.fillStyle = o.color || col("ink"); ctx.textAlign = "left"; ctx.textBaseline = "top";
+  ctx.fillText(text, x0, y0 + 1);
+}
+function hatch(a, b, nx, ny, c){
+  const L = Math.hypot(b[0]-a[0], b[1]-a[1]), ux = (b[0]-a[0])/L, uy = (b[1]-a[1])/L;
+  for (let s = 6; s < L; s += 12){
+    const p = [a[0]+ux*s, a[1]+uy*s];
+    line(p, [p[0] + nx*9 - ux*7, p[1] + ny*9 - uy*7], 1.2, c);
+  }
+}
+
+function drawProp(pr){
+  const ink = col("ink"), muted = col("muted");
+  if (pr.t === "floor"){ const a = toS([pr.x0, pr.y]), b = toS([pr.x1, pr.y]); line(a, b, 2, ink); hatch(a, b, 0, 1, muted); }
+  else if (pr.t === "ceil"){ const a = toS([pr.x0, pr.y]), b = toS([pr.x1, pr.y]); line(a, b, 2, ink); hatch(a, b, 0, -1, muted); }
+  else if (pr.t === "wall"){ const a = toS([pr.x, pr.y0]), b = toS([pr.x, pr.y1]); line(a, b, 2, ink); hatch(a, b, pr.side, 0, muted); }
+  else if (pr.t === "line"){ line(toS(pr.a), toS(pr.b), pr.w || 2, ink); }
+  else if (pr.t === "ref"){ line(toS(pr.a), toS(pr.b), 1.5, muted, [4,4]); }
+  else if (pr.t === "tri"){
+    const a = toS([0,-0.01]), l = toS([-pr.w/2, -pr.h]), r = toS([pr.w/2, -pr.h]);
+    ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(l[0],l[1]); ctx.lineTo(r[0],r[1]); ctx.closePath();
+    ctx.fillStyle = col("chip"); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = ink; ctx.stroke();
+  }
+  else if (pr.t === "block"){
+    const a = toS([pr.c[0]-pr.w/2, pr.c[1]+pr.h/2]), w = pr.w*SC, h = pr.h*SC;
+    ctx.fillStyle = col("body"); ctx.fillRect(a[0], a[1], w, h); ctx.lineWidth = 2; ctx.strokeStyle = col("edge"); ctx.strokeRect(a[0], a[1], w, h);
+    if (pr.text){ ctx.font = FONT(12, true); ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(pr.text, a[0]+w/2, a[1]+h/2); }
+  }
+  else if (pr.t === "text"){ const p = toS(pr.at); ctx.font = FONT(12, true); ctx.fillStyle = ink; ctx.textAlign = pr.align || "center"; ctx.textBaseline = "middle"; ctx.fillText(pr.text, p[0], p[1]); }
+  else if (pr.t === "post"){ const a = toS([0,0]), b = toS([0,-2.35]); line(a, b, 6, col("line")); line([b[0]-30,b[1]], [b[0]+30,b[1]], 3, muted); }
+}
+
+function drawBody(body, phi){
+  const edge = col("edge"), fill = col("body"), ink = col("ink");
+  body.shapes.forEach(s => {
+    ctx.globalAlpha = s.ghost ? 0.35 : 1;
+    if (s.t === "bar" || s.t === "wrench" || s.t === "meterstick"){
+      let a, b, w;
+      if (s.t === "bar"){ a = rot(s.a, phi); b = rot(s.b, phi); w = s.w; }
+      else if (s.t === "wrench"){ a = [0,0]; b = rot([s.L,0], phi); w = 13; }
+      else { a = rot([s.x0,0], phi); b = rot([s.x1,0], phi); w = 16; }
+      const A = toS(a), B = toS(b);
+      ctx.lineCap = s.t === "meterstick" ? "butt" : "round";
+      line(A, B, w + 3, edge); line(A, B, w, fill); ctx.lineCap = "butt";
+      if (s.t === "wrench"){
+        ctx.beginPath(); ctx.arc(A[0], A[1], 22, 0, 2*Math.PI); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = edge; ctx.stroke();
+      }
+      if (s.t === "meterstick" && Math.abs(phi) < 1e-9){
+        for (let i = 0; i <= 10; i++){
+          const x = s.x0 + 0.1*i, p = toS([x,0]);
+          line([p[0], p[1]-8], [p[0], p[1]+(i%5===0?8:3)], 1.2, edge);
+          ctx.font = FONT(10.5, true); ctx.fillStyle = col("muted"); ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+          ctx.fillText(i*10 + (i === 10 ? " cm" : ""), p[0], p[1]-11);
+        }
+      }
+      if (s.ticks){
+        const L = Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]);
+        for (let d = 0.5; d < L - 0.01; d += 0.5){
+          const p = toS(rot([s.x0 + d, 0], phi)), n = [-Math.sin(phi), -Math.cos(phi)];
+          line([p[0]+n[0]*4, p[1]+n[1]*4], [p[0]-n[0]*4, p[1]-n[1]*4], 1.2, edge);
+        }
+      }
+    } else if (s.t === "disk"){
+      const C = toS([0,0]), R = s.r*SC;
+      ctx.beginPath(); ctx.arc(C[0], C[1], R, 0, 2*Math.PI); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = edge; ctx.stroke();
+      if (s.hub){ ctx.beginPath(); ctx.arc(C[0], C[1], s.hub*SC, 0, 2*Math.PI); ctx.lineWidth = 2; ctx.stroke(); }
+      for (let k = 0; k < 3; k++){
+        const a = phi + k*2*Math.PI/3 + Math.PI/2;
+        line(C, [C[0] + Math.cos(a)*R*0.9, C[1] - Math.sin(a)*R*0.9], 2, edge);
+      }
+      const a = phi + Math.PI/2;
+      ctx.beginPath(); ctx.arc(C[0] + Math.cos(a)*R*0.75, C[1] - Math.sin(a)*R*0.75, 4.5, 0, 2*Math.PI); ctx.fillStyle = col("accent"); ctx.fill();
+    } else if (s.t === "block"){
+      const cs = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([i,j]) => toS(rot([s.c[0] + i*s.w/2, s.c[1] + j*s.h/2], phi)));
+      ctx.beginPath(); cs.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
+      ctx.fillStyle = col("chip"); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = edge; ctx.setLineDash(s.ghost ? [4,3] : []); ctx.stroke(); ctx.setLineDash([]);
+      const c = toS(rot(s.c, phi)); ctx.font = FONT(12, true); ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(s.text, c[0], c[1]);
+    } else if (s.t === "ladder"){
+      const A = toS(rot(s.a, phi)), B = toS(rot(s.b, phi)), L = Math.hypot(B[0]-A[0], B[1]-A[1]);
+      const ux = (B[0]-A[0])/L, uy = (B[1]-A[1])/L, nx = -uy*8, ny = ux*8;
+      const Lm = Math.hypot(s.b[0]-s.a[0], s.b[1]-s.a[1]);
+      for (let d = 0.4; d < Lm - 0.1; d += 0.4){ const p = [A[0]+ux*d*SC, A[1]+uy*d*SC]; line([p[0]-nx,p[1]-ny], [p[0]+nx,p[1]+ny], 2.5, edge); }
+      line([A[0]+nx,A[1]+ny], [B[0]+nx,B[1]+ny], 4, edge); line([A[0]-nx,A[1]-ny], [B[0]-nx,B[1]-ny], 4, edge);
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+
+function drawPivot(kind){
+  const O = toS([0,0]), ink = col("ink"), paper = col("paper");
+  if (kind === "bolt"){
+    ctx.beginPath(); for (let i = 0; i < 6; i++){ const a = i*Math.PI/3 + Math.PI/6; const p = [O[0] + 11*Math.cos(a), O[1] + 11*Math.sin(a)]; i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1]); }
+    ctx.closePath(); ctx.fillStyle = col("chip"); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = ink; ctx.stroke();
+    ctx.beginPath(); ctx.arc(O[0], O[1], 3, 0, 2*Math.PI); ctx.fillStyle = ink; ctx.fill();
+  } else if (kind === "axle"){
+    ctx.beginPath(); ctx.arc(O[0], O[1], 6, 0, 2*Math.PI); ctx.fillStyle = ink; ctx.fill();
+  } else if (kind === "foot"){
+    ctx.beginPath(); ctx.arc(O[0], O[1], 5, 0, 2*Math.PI); ctx.fillStyle = ink; ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.arc(O[0], O[1], 6.5, 0, 2*Math.PI); ctx.fillStyle = paper; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = ink; ctx.stroke();
+  }
+}
+
+function drawDim(d){
+  const A = toS(d.a), B = toS(d.b), L = Math.hypot(B[0]-A[0], B[1]-A[1]); if (L < 4) return;
+  const dx = (B[0]-A[0])/L, dy = (B[1]-A[1])/L, nx = dy, ny = -dx, o = d.off || 20;
+  const a = [A[0]+nx*o, A[1]+ny*o], b = [B[0]+nx*o, B[1]+ny*o], m = col("muted");
+  line([A[0]+nx*(o-Math.sign(o)*4), A[1]+ny*(o-Math.sign(o)*4)], [a[0]+nx*Math.sign(o)*5, a[1]+ny*Math.sign(o)*5], 1, m);
+  line([B[0]+nx*(o-Math.sign(o)*4), B[1]+ny*(o-Math.sign(o)*4)], [b[0]+nx*Math.sign(o)*5, b[1]+ny*Math.sign(o)*5], 1, m);
+  arrow([ (a[0]+b[0])/2, (a[1]+b[1])/2 ], a, 1.2, m, 7); arrow([ (a[0]+b[0])/2, (a[1]+b[1])/2 ], b, 1.2, m, 7);
+  pill(d.text, (a[0]+b[0])/2, (a[1]+b[1])/2, {color:m, size:12.5});
+}
+function drawArcSpec(s){
+  const C = toS(s.c), m = col("muted"), lo = Math.min(s.a0, s.a1)*D2R, hi = Math.max(s.a0, s.a1)*D2R;
+  ctx.beginPath(); ctx.arc(C[0], C[1], s.r, -hi, -lo); ctx.lineWidth = 1.5; ctx.strokeStyle = m; ctx.stroke();
+  const mid = (lo + hi)/2;
+  pill(s.text, C[0] + Math.cos(mid)*(s.r + 16), C[1] - Math.sin(mid)*(s.r + 16), {color:m, size:12.5});
+}
+
+function drawLOA(f, alpha){
+  const P = toS(f.P), ux = f.u[0], uy = -f.u[1], E = 3000;
+  ctx.globalAlpha = alpha * (f.ghost ? 0.4 : 1);
+  line([P[0]-ux*E, P[1]-uy*E], [P[0]+ux*E, P[1]+uy*E], 1.5, col(f.color), [7,6]);
+  ctx.globalAlpha = 1;
+}
+function drawLever(f, state){
+  const rp = rperpOf(f), c = col(f.color), O = toS([0,0]);
+  const atPivot = Math.hypot(f.P[0], f.P[1])*SC < 3;
+  if (atPivot){ state.zero = true; return; }
+  const along = f.P[0]*f.u[0] + f.P[1]*f.u[1];
+  const Q = [f.P[0] - f.u[0]*along, f.P[1] - f.u[1]*along], Qs = toS(Q);
+  ctx.globalAlpha = f.ghost ? 0.45 : 1;
+  if (rp*SC < 3){
+    const Ps = toS(f.P); pill("r⊥ = 0", Ps[0] + 10, Ps[1] - 14, {color:c, align:"left", size:12.5});
+    ctx.globalAlpha = 1; return;
+  }
+  line(O, Qs, 4.5, c);
+  ctx.beginPath(); ctx.arc(Qs[0], Qs[1], 3.5, 0, 2*Math.PI); ctx.fillStyle = c; ctx.fill();
+  const vx = (O[0]-Qs[0]), vy = (O[1]-Qs[1]), vl = Math.hypot(vx,vy), v = [vx/vl, vy/vl];
+  let us = [f.u[0], -f.u[1]];
+  const Ps = toS(f.P); if ((Ps[0]-Qs[0])*us[0] + (Ps[1]-Qs[1])*us[1] < 0) us = [-us[0], -us[1]];
+  const k = 9;
+  ctx.beginPath(); ctx.moveTo(Qs[0]+us[0]*k, Qs[1]+us[1]*k); ctx.lineTo(Qs[0]+us[0]*k+v[0]*k, Qs[1]+us[1]*k+v[1]*k); ctx.lineTo(Qs[0]+v[0]*k, Qs[1]+v[1]*k);
+  ctx.lineWidth = 1.5; ctx.strokeStyle = c; ctx.stroke();
+  const mid = [(O[0]+Qs[0])/2 - us[0]*14, (O[1]+Qs[1])/2 - us[1]*14];
+  pill(f.ghost ? "r⊥ = ?" : `r⊥ = ${fmt(rp)} m`, mid[0], mid[1], {color:c, size:12.5});
+  ctx.globalAlpha = 1;
+}
+function drawR(f){
+  const rl = Math.hypot(f.P[0], f.P[1]); if (rl*SC < 4) return;
+  const O = toS([0,0]), Ps = toS(f.P), m = col("muted"), rh = [f.P[0]/rl, f.P[1]/rl];
+  ctx.globalAlpha = f.ghost ? 0.45 : 1;
+  arrow(O, Ps, 2, m, 9);
+  const n = [-(Ps[1]-O[1]), Ps[0]-O[0]], nl = Math.hypot(n[0], n[1]);
+  pill("r", (O[0]+Ps[0])/2 + n[0]/nl*12, (O[1]+Ps[1])/2 + n[1]/nl*12, {color:m, italic:true, size:14});
+  line(Ps, [Ps[0] + rh[0]*38, Ps[1] - rh[1]*38], 1.3, m, [3,3]);
+  const ar = Math.atan2(rh[1], rh[0]), af = Math.atan2(f.u[1], f.u[0]);
+  let d = af - ar; while (d > Math.PI) d -= 2*Math.PI; while (d < -Math.PI) d += 2*Math.PI;
+  ctx.beginPath(); ctx.arc(Ps[0], Ps[1], 24, -ar, -(ar + d), d > 0); ctx.lineWidth = 1.6; ctx.strokeStyle = m; ctx.stroke();
+  const mid = ar + d/2;
+  pill(`θ = ${Math.round(Math.abs(d)/D2R)}°`, Ps[0] + Math.cos(mid)*44, Ps[1] - Math.sin(mid)*44, {color:m, size:12.5});
+  ctx.globalAlpha = 1;
+}
+function drawComp(f, fpx){
+  const rl = Math.hypot(f.P[0], f.P[1]); if (rl*SC < 4) return;
+  const rh = [f.P[0]/rl, f.P[1]/rl], len = f.unknown ? 70 : Math.max(18, f.F*fpx);
+  const dot = f.u[0]*rh[0] + f.u[1]*rh[1], perp = [f.u[0] - dot*rh[0], f.u[1] - dot*rh[1]];
+  const Ps = toS(f.P), c = col(f.color);
+  ctx.globalAlpha = 0.75 * (f.ghost ? 0.5 : 1);
+  if (Math.abs(dot)*len > 6){ const t = [Ps[0] + rh[0]*dot*len, Ps[1] - rh[1]*dot*len]; arrow(Ps, t, 2.2, c, 9, [5,4]); pill("F∥", t[0] + rh[0]*14*Math.sign(dot), t[1] - rh[1]*14*Math.sign(dot), {color:c, size:12.5}); }
+  const pl = Math.hypot(perp[0], perp[1]);
+  if (pl*len > 6){ const t = [Ps[0] + perp[0]*len, Ps[1] - perp[1]*len]; arrow(Ps, t, 2.2, c, 9, [5,4]); pill("F⊥", t[0] + perp[0]/pl*14, t[1] - perp[1]/pl*14, {color:c, size:12.5}); }
+  ctx.globalAlpha = 1;
+}
+function drawForce(f, fpx){
+  const Ps = toS(f.P), len = f.unknown ? 70 : Math.max(18, f.F*fpx), c = col(f.color);
+  const us = [f.u[0], -f.u[1]], tip = [Ps[0] + us[0]*len, Ps[1] + us[1]*len];
+  ctx.globalAlpha = f.ghost ? 0.38 : 1;
+  arrow(Ps, tip, 3.5, c, 13);
+  ctx.beginPath(); ctx.arc(Ps[0], Ps[1], 3.5, 0, 2*Math.PI); ctx.fillStyle = c; ctx.fill();
+  const txt = f.unknown ? `${f.label} = ?` : `${f.label} = ${fmt(f.F)} N`;
+  let lx = tip[0] + us[0]*10, ly = tip[1] + us[1]*10;
+  const align = us[0] > 0.35 ? "left" : us[0] < -0.35 ? "right" : "center";
+  const base = us[1] > 0.35 ? "top" : us[1] < -0.35 ? "bottom" : "middle";
+  if (f.side){ lx = tip[0] + 10; ly = tip[1]; }
+  pill(txt, lx, ly, {color:c, align: f.side ? "left" : align, base: f.side ? "middle" : base});
+  ctx.globalAlpha = 1;
+  return {tail:Ps, tip};
+}
+function drawLegend(){
+  const x = W - 16, y = 22, ink = col("muted");
+  ctx.font = FONT(12.5, true); ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = ink;
+  ctx.fillText("+ is counterclockwise", x, y);
+  const tw = ctx.measureText("+ is counterclockwise").width, cx = x - tw - 16;
+  ctx.beginPath(); ctx.arc(cx, y, 8, -0.2, -5.2, true); ctx.lineWidth = 1.8; ctx.strokeStyle = ink; ctx.stroke();
+  const a = -5.2, ex = cx + 8*Math.cos(a), ey = y + 8*Math.sin(a);
+  ctx.beginPath(); ctx.moveTo(ex+4, ey+3); ctx.lineTo(ex-1, ey-2); ctx.lineTo(ex-3, ey+5); ctx.closePath(); ctx.fillStyle = ink; ctx.fill();
+}
+
+function render(){
+  css = getComputedStyle(document.documentElement);
+  const r = cw.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)){ cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H); PLACED = [];
+  ctx.fillStyle = col("paper"); ctx.fillRect(0,0,W,H);
+  const g = col("grid"); ctx.lineWidth = 1; ctx.strokeStyle = g; ctx.beginPath();
+  for (let x = 0.5; x < W; x += 24){ ctx.moveTo(x,0); ctx.lineTo(x,H); } for (let y = 0.5; y < H; y += 24){ ctx.moveTo(0,y); ctx.lineTo(W,y); } ctx.stroke();
+
+  const sc = getScene(), [x0,x1,y0,y1] = sc.bounds, pad = 30, topPad = 40;
+  SC = Math.min((W-2*pad)/(x1-x0), (H-pad-topPad)/(y1-y0));
+  OX = W/2 - (x0+x1)/2*SC; OY = topPad + (H-pad-topPad)/2 + (y0+y1)/2*SC;
+  const still = Math.abs(S.phi) < 1e-9 && S.t === 0;
+  (sc.props || []).forEach(pr => { if (pr.hideOnRun && !still) return; drawProp(pr); });
+  drawBody(sc.body, S.phi);
+  if (still){ (sc.dims || []).forEach(drawDim); (sc.arcs || []).forEach(drawArcSpec); }
+  drawPivot(sc.pivot);
+
+  const wf = worldForces(sc, S.phi), T = S.tog;
+  const fpx = sc.fpx || 110/Math.max(...wf.map(f => f.F));
+  const onB = wf.filter(f => f.onBody !== false);
+  if (T.loa || T.lever) onB.forEach(f => drawLOA(f, T.loa ? 0.75 : 0.45));
+  if (T.rt) onB.forEach(drawR);
+  if (T.comp) onB.forEach(f => drawComp(f, fpx));
+  const ls = {zero:false};
+  if (T.lever) onB.forEach(f => drawLever(f, ls));
+  S.hit = [];
+  wf.forEach((f,i) => { const h = drawForce(f, fpx); if (sc.sandbox && i < S.sb.forces.length) S.hit.push(Object.assign({i}, h)); });
+  if (T.lever && ls.zero){ const O = toS([0,0]); const lft = O[0] < W/2; pill("Forces at the pivot: r⊥ = 0", O[0] + (lft ? 14 : -14), O[1] + 30, {color:col("muted"), align: lft ? "left" : "right", base:"top", size:12, avoid:[0,1]}); }
+  if (sc.caption){ ctx.font = FONT(13, false); ctx.fillStyle = col("muted"); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(sc.caption, 14, 22); }
+  drawLegend();
+  updateTable(sc);
+  updateRead(sc);
+}
+
+/* ---------- Motion ---------- */
+let last = null;
+function tick(ts){
+  if (!S.running){ last = null; return; }
+  const dt = last === null ? 0 : Math.min(0.033, (ts - last)/1000); last = ts;
+  const p = S.mode === "problems" ? cur() : null;
+  if (p && p.motion === "pulley"){
+    S.t += dt; S.alpha = -24.5; S.omega = -24.5*S.t; S.phi = -0.5*24.5*S.t*S.t;
+    if (0.5*4.9*S.t*S.t > 1.05) S.running = false;
+  } else {
+    const n = 10, h = dt/n;
+    for (let i = 0; i < n; i++){
+      const sc = getScene(), a = netTorque(sc, S.phi)/sc.body.I;
+      S.omega += a*h; S.phi += S.omega*h; S.t += h; S.alpha = a;
+    }
+    const maxT = p ? (p.maxT || 4) : 30;
+    if (S.t >= maxT) S.running = false;
+  }
+  render(); updateRunbar();
+  if (S.running) requestAnimationFrame(tick);
+}
+function resetMotion(){ S.running = false; S.phi = 0; S.omega = 0; S.alpha = 0; S.t = 0; }
+
+/* ---------- UI: nav, toggles, runbar ---------- */
+function renderNav(){
+  const nav = $("#nav"), sel = $("#navSelect");
+  let h = "", o = "";
+  [1,2,3,4].forEach(L => {
+    h += `<h2>Level ${L}: ${LEVELS[L]}</h2>`;
+    o += `<optgroup label="Level ${L}: ${LEVELS[L]}">`;
+    P.forEach((p,i) => { if (p.level !== L) return;
+      const s = PS(p), done = s.solved, seen = !done && s.revealed;
+      h += `<button data-i="${i}" aria-current="${i === S.pi}"><span class="st ${done ? "done" : seen ? "seen" : ""}" aria-hidden="true">${done ? "✓" : ""}</span>${p.title}${done ? '<span class="sr" style="position:absolute;left:-9999px"> (solved)</span>' : ""}</button>`;
+      o += `<option value="${i}" ${i === S.pi ? "selected" : ""}>${done ? "✓ " : ""}${p.title}</option>`;
+    });
+    o += "</optgroup>";
+  });
+  nav.innerHTML = h; sel.innerHTML = o;
+  nav.style.visibility = S.mode === "problems" ? "visible" : "hidden";
+  sel.style.display = S.mode === "problems" ? "" : "none";
+  if (S.mode === "problems" && window.matchMedia("(min-width:1151px)").matches) sel.style.display = "none";
+}
+const TOG = [{k:"lever", label:"Lever arm"}, {k:"loa", label:"Line of action"}, {k:"rt", label:"r and θ"}, {k:"comp", label:"Components"}, {k:"tq", label:"Torque values"}];
+function tqLocked(){ return S.mode === "problems" && !unlocked(cur()); }
+function renderToggles(){
+  $("#toggles").innerHTML = TOG.map(t => {
+    const locked = t.k === "tq" && tqLocked(), on = S.tog[t.k] && !locked;
+    return `<button class="chip" data-k="${t.k}" aria-pressed="${on}" ${locked ? 'aria-disabled="true" title="Unlocks after you solve the problem"' : ""}><span class="box" aria-hidden="true">${on ? "✓" : ""}</span>${t.label}${locked ? " (locked)" : ""}</button>`;
+  }).join("");
+}
+function updateRunbar(){
+  const rb = $("#runbar"), dyn = isDynamic();
+  rb.hidden = !dyn; if (!dyn) return;
+  const run = $("#runBtn");
+  if (S.mode === "sandbox"){ run.textContent = S.running ? "Pause" : (S.t > 0 ? "Resume" : "Release"); run.disabled = false; run.title = ""; }
+  else {
+    const p = cur(), ok = unlocked(p), finished = !S.running && S.t > 0 && (p.motion === "pulley" ? 0.5*4.9*S.t*S.t > 1.05 : S.t >= (p.maxT || 4));
+    run.textContent = S.running ? "Pause" : finished ? "Run again" : S.t > 0 ? "Resume" : "Run";
+    run.disabled = !ok; run.title = ok ? "" : "Solve it to run the motion";
+  }
+}
+function updateRead(sc){
+  if (!isDynamic()) return;
+  const el = $("#read");
+  if (S.mode === "problems" && !unlocked(cur()) && S.t === 0){ el.innerHTML = `<span>Solve the problem to run the motion.</span>`; return; }
+  const a = S.t === 0 && sc ? netTorque(sc, 0)/sc.body.I : S.alpha;
+  el.innerHTML = `<span>t = <b>${S.t.toFixed(2)} s</b></span><span>ω = <b>${sfmt(S.omega)} rad/s</b></span><span>α = <b>${sfmt(a)} rad/s²</b></span>`;
+}
+
+/* ---------- Torque table ---------- */
+function updateTable(sc){
+  const el = $("#tq"); if (!el) return;
+  if (!S.tog.tq){ el.innerHTML = `<p class="muted">Turn on Torque values to see each force’s torque.</p>`; return; }
+  if (tqLocked()){ el.innerHTML = `<p class="muted">Torque values unlock after you solve the problem.</p>`; return; }
+  const wf = worldForces(sc, S.phi).filter(f => f.onBody !== false);
+  let net = 0, mx = 0, rows = "";
+  wf.forEach(f => { const t = torqueOf(f); net += t; mx += Math.abs(t);
+    rows += `<tr><td><span class="sw" style="background:${col(f.color)}"></span>${f.label}</td><td>${fmt(f.F)}</td><td>${fmt(rperpOf(f))}</td><td>${sfmt(t)}${dirSym(t)}</td></tr>`; });
+  let extra = "";
+  const dyn = isDynamic();
+  if (dyn){ const I = sc.body.I; extra = `<p style="margin:10px 0 0">I = <b>${fmt(I)} kg·m²</b> &nbsp; α = τ<sub>net</sub> ÷ I = <b>${sfmt(net/I)} rad/s²</b></p>`; }
+  else extra = `<p style="margin:10px 0 0">${Math.abs(net) < 0.05 ? "Net torque is zero: the object is in rotational equilibrium." : "Net torque isn’t zero, so this object would start to rotate."}</p>`;
+  const pct = mx > 0 ? Math.max(-1, Math.min(1, net/(mx || 1))) : 0;
+  const left = pct >= 0 ? 50 : 50 + pct*50, width = Math.abs(pct)*50;
+  el.innerHTML = `<table class="tq"><thead><tr><th>Force</th><th>F (N)</th><th>r⊥ (m)</th><th>τ (N·m)</th></tr></thead><tbody>${rows}<tr class="net"><td>Net</td><td></td><td></td><td>${sfmt(net)}${dirSym(net)}</td></tr></tbody></table>
+  <div class="meter" aria-hidden="true"><span>CW</span><div class="track"><div class="fill" style="left:${left}%;width:${width}%"></div><div class="zero"></div></div><span>CCW</span></div>${extra}`;
+}
+
+/* ---------- Problem panel ---------- */
+function renderPanel(){
+  const panel = $("#panel");
+  if (S.mode === "sandbox"){ renderSandboxPanel(); return; }
+  const p = cur(), s = PS(p), ok = unlocked(p), needPred = p.predict && s.pred === null;
+  let h = `<div class="lvl">Level ${p.level}: ${LEVELS[p.level]}</div><h2>${p.title}</h2><p class="statement">${p.text}</p>
+    <ul class="given">${p.given.map(g => `<li>${g}</li>`).join("")}</ul>`;
+  if (p.predict){
+    h += `<div class="box2"><p><b>Predict first.</b> ${p.predict.q}</p>`;
+    if (needPred) h += `<div class="opts">${p.predict.opts.map((o,i) => `<button class="opt" data-pred="${i}">${o}</button>`).join("")}</div>`;
+    else { const right = s.pred === p.predict.ans;
+      h += `<div class="fb ${right ? "ok" : "bad"}" style="margin-top:0">You said “${p.predict.opts[s.pred]}.” ${right ? "Good call." : `The answer is “${p.predict.opts[p.predict.ans]}.”`} ${p.predict.why}</div>`; }
+    h += `</div>`;
+  }
+  h += `<div class="box2"><p><b>Solve.</b> ${p.ask.note || ""}</p>
+    <div class="ansrow"><label for="ans">${p.ask.sym} =</label><input id="ans" inputmode="decimal" autocomplete="off" value="${s.input || ""}" ${needPred || ok ? "disabled" : ""} aria-describedby="fb"><span>${p.ask.unit}</span>
+    <button class="btn" id="checkBtn" ${needPred || ok ? "disabled" : ""}>Check</button></div>
+    ${needPred ? `<p class="muted" style="margin:8px 0 0">Make a prediction to unlock this.</p>` : ""}
+    ${s.fb ? `<div class="fb ${s.fb.k}" id="fb">${s.fb.m}</div>` : `<div id="fb"></div>`}
+    ${s.hints ? p.hints.slice(0, s.hints).map(t => `<p class="hint">${t}</p>`).join("") : ""}
+    <div class="row">
+      ${!ok && s.hints < p.hints.length ? `<button class="btn ghost small" id="hintBtn" ${needPred ? "disabled" : ""}>Show a hint (${s.hints + 1} of ${p.hints.length})</button>` : ""}
+      ${!ok && s.attempts >= 2 ? `<button class="btn ghost small" id="revealBtn">Show answer</button>` : ""}
+    </div></div>`;
+  if (ok) h += `<div class="explain"><p>${p.explain}</p></div>
+    <div class="row">${p.dynamic ? `<span class="muted" style="align-self:center">Press Run under the diagram to watch it move.</span>` : ""}${S.pi < P.length - 1 ? `<button class="btn" id="nextBtn">Next problem</button>` : `<span class="muted">That’s the last problem. Try the Sandbox.</span>`}</div>`;
+  h += `<h3>Torque values</h3><div id="tq"></div>`;
+  panel.innerHTML = h;
+}
+function check(){
+  const p = cur(), s = PS(p), inp = $("#ans");
+  const v = parseFloat((inp.value || "").replace(/,/g, ".").replace(/[^\d.\-eE+]/g, ""));
+  s.input = inp.value;
+  if (isNaN(v)){ s.fb = {k:"bad", m:"Enter a number."}; renderPanel(); $("#ans").focus(); return; }
+  s.attempts++;
+  const val = Math.abs(v), ans = p.ask.value;
+  if (Math.abs(val - ans) <= 0.02*ans){
+    s.solved = true; S.solved.add(p.id); saveSolved();
+    s.fb = {k:"ok", m:`Correct: ${p.ask.sym} = ${parseFloat(ans.toPrecision(4))} ${p.ask.unit}. Torque values are unlocked.`};
+  } else {
+    const trap = (p.traps || []).find(t => Math.abs(val - t.v) <= 0.02*Math.abs(t.v));
+    s.fb = {k:"bad", m: trap ? trap.m : "Not yet. Check each lever arm and which way each torque turns, or take a hint."};
+  }
+  refreshAll();
+  if (s.solved){ const n = $("#nextBtn"); if (n) n.focus(); } else { const a = $("#ans"); if (a) a.focus(); }
+}
+function refreshAll(){ renderNav(); renderToggles(); renderPanel(); updateRunbar(); render(); }
+function goTo(i){ S.pi = i; resetMotion(); refreshAll(); window.scrollTo && document.querySelector(".stage").scrollIntoView({block:"nearest"}); }
+
+/* ---------- Sandbox panel ---------- */
+function renderSandboxPanel(){
+  const s = S.sb, panel = $("#panel");
+  let h = `<h2>Sandbox</h2><p class="statement">Drag a force’s tip to change its size and direction, or drag its tail along the beam. Then release the beam and watch it turn.</p>
+  <div class="ctrl"><label for="sbL">Beam length</label><output id="oL">${s.L.toFixed(1)} m</output><input type="range" id="sbL" data-k="L" min="1" max="4" step="0.1" value="${s.L}"></div>
+  <div class="ctrl"><label for="sbP">Pivot, measured from the left end</label><output id="oP">${s.pivot.toFixed(2)} m</output><input type="range" id="sbP" data-k="pivot" min="0" max="${s.L}" step="0.05" value="${s.pivot}"></div>
+  <div class="ctrl"><label for="sbM">Beam mass</label><output id="oM">${s.m.toFixed(1)} kg</output><input type="range" id="sbM" data-k="m" min="0.5" max="10" step="0.5" value="${s.m}"></div>
+  <label class="check"><input type="checkbox" id="sbW" ${s.weight ? "checked" : ""}> Include the beam’s weight</label>
+  <h3>Forces</h3>`;
+  s.forces.forEach((f,i) => {
+    h += `<fieldset><legend><span class="sw" style="background:var(--f${i+1})"></span>F${i+1}</legend>
+    <div class="ctrl"><label for="fx${i}">Position, from the left end</label><output id="ofx${i}">${f.x.toFixed(2)} m</output><input type="range" id="fx${i}" data-f="${i}" data-fk="x" min="0" max="${s.L}" step="0.05" value="${f.x}"></div>
+    <div class="ctrl"><label for="fF${i}">Size</label><output id="ofF${i}">${f.F} N</output><input type="range" id="fF${i}" data-f="${i}" data-fk="F" min="0" max="100" step="1" value="${f.F}"></div>
+    <div class="ctrl"><label for="fa${i}">Direction (0° points right)</label><output id="ofa${i}">${f.ang}°</output><input type="range" id="fa${i}" data-f="${i}" data-fk="ang" min="-180" max="180" step="5" value="${f.ang}"></div>
+    <button class="btn ghost small" data-rm="${i}">Remove F${i+1}</button></fieldset>`;
+  });
+  if (s.forces.length < 4) h += `<button class="btn ghost small" id="addF">Add a force</button>`;
+  h += `<h3>Torque values</h3><div id="tq"></div>`;
+  panel.innerHTML = h;
+}
+function syncSandboxInputs(){
+  const s = S.sb;
+  s.forces.forEach((f,i) => {
+    const set = (id, v, txt) => { const e = document.getElementById(id); if (e){ e.value = v; } const o = document.getElementById("o" + id); if (o) o.textContent = txt; };
+    set(`fx${i}`, f.x, `${f.x.toFixed(2)} m`); set(`fF${i}`, f.F, `${f.F} N`); set(`fa${i}`, f.ang, `${f.ang}°`);
+  });
+}
+
+/* ---------- Events ---------- */
+$("#nav").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b) goTo(+b.dataset.i); });
+$("#navSelect").addEventListener("change", e => goTo(+e.target.value));
+$("#toggles").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  const k = b.dataset.k;
+  if (k === "tq" && tqLocked()) return;
+  S.tog[k] = !S.tog[k]; renderToggles(); render();
+  const nb = document.querySelector(`.chip[data-k="${k}"]`); if (nb) nb.focus();
+});
+$("#panel").addEventListener("click", e => {
+  const t = e.target;
+  if (S.mode === "problems"){
+    const p = cur(), s = PS(p);
+    if (t.dataset.pred !== undefined){ s.pred = +t.dataset.pred; renderPanel(); const a = $("#ans"); if (a && !a.disabled) a.focus(); return; }
+    if (t.id === "checkBtn") check();
+    else if (t.id === "hintBtn"){ s.hints++; s.input = ($("#ans") || {}).value || s.input; renderPanel(); }
+    else if (t.id === "revealBtn"){ s.revealed = true; s.fb = {k:"info", m:`Answer: ${p.ask.sym} = ${parseFloat(p.ask.value.toPrecision(4))} ${p.ask.unit}. Read the solution below, then try the next one.`}; refreshAll(); }
+    else if (t.id === "nextBtn") goTo(S.pi + 1);
+  } else {
+    if (t.id === "addF"){ const i = S.sb.forces.length; S.sb.forces.push({x:S.sb.L/2 + (i%2 ? -0.5 : 0.5), F:30, ang:i%2 ? -90 : 45}); S.sb.forces.forEach(f => f.x = Math.min(f.x, S.sb.L)); resetMotion(); renderSandboxPanel(); updateRunbar(); render(); }
+    else if (t.dataset.rm !== undefined){ S.sb.forces.splice(+t.dataset.rm, 1); resetMotion(); renderSandboxPanel(); updateRunbar(); render(); }
+  }
+});
+$("#panel").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "ans"){ e.preventDefault(); check(); } });
+$("#panel").addEventListener("input", e => {
+  if (S.mode !== "sandbox") return;
+  const t = e.target, s = S.sb;
+  if (t.id === "sbW"){ s.weight = t.checked; }
+  else if (t.dataset.k){
+    const k = t.dataset.k, v = +t.value; s[k] = v;
+    if (k === "L"){ s.pivot = Math.min(s.pivot, v); s.forces.forEach(f => f.x = Math.min(f.x, v));
+      document.querySelectorAll('input[data-fk="x"], #sbP').forEach(el => el.max = v);
+      $("#sbP").value = s.pivot; $("#oP").textContent = `${s.pivot.toFixed(2)} m`; syncSandboxInputs(); $("#oL").textContent = `${v.toFixed(1)} m`; }
+    if (k === "pivot") $("#oP").textContent = `${v.toFixed(2)} m`;
+    if (k === "m") $("#oM").textContent = `${v.toFixed(1)} kg`;
+  } else if (t.dataset.f !== undefined){
+    const f = s.forces[+t.dataset.f], k = t.dataset.fk; f[k] = +t.value;
+    const o = document.getElementById("o" + t.id); if (o) o.textContent = k === "x" ? `${f.x.toFixed(2)} m` : k === "F" ? `${f.F} N` : `${f.ang}°`;
+  }
+  resetMotion(); updateRunbar(); render();
+});
+$("#panel").addEventListener("change", e => { if (S.mode === "sandbox" && e.target.id === "sbW"){ S.sb.weight = e.target.checked; resetMotion(); updateRunbar(); render(); } });
+
+$("#runBtn").addEventListener("click", () => {
+  if (S.running){ S.running = false; updateRunbar(); return; }
+  if (S.mode === "problems"){ const p = cur(); if (!unlocked(p)) return;
+    const done = p.motion === "pulley" ? 0.5*4.9*S.t*S.t > 1.05 : S.t >= (p.maxT || 4); if (done) resetMotion(); }
+  S.running = true; last = null; updateRunbar(); requestAnimationFrame(tick);
+});
+$("#resetBtn").addEventListener("click", () => { resetMotion(); updateRunbar(); render(); });
+
+function setMode(m){
+  S.mode = m; resetMotion();
+  $("#tab-problems").setAttribute("aria-selected", m === "problems");
+  $("#tab-sandbox").setAttribute("aria-selected", m === "sandbox");
+  cv.style.touchAction = m === "sandbox" ? "none" : "auto";
+  refreshAll();
+}
+$("#tab-problems").addEventListener("click", () => setMode("problems"));
+$("#tab-sandbox").addEventListener("click", () => setMode("sandbox"));
+
+/* Sandbox dragging */
+let drag = null;
+const ptr = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+function nearest(m){
+  let best = null;
+  S.hit.forEach(h => {
+    const dt = Math.hypot(m[0]-h.tip[0], m[1]-h.tip[1]), dl = Math.hypot(m[0]-h.tail[0], m[1]-h.tail[1]);
+    if (dt < 18 && (!best || dt < best.d)) best = {i:h.i, part:"tip", d:dt};
+    else if (dl < 14 && (!best || dl < best.d)) best = {i:h.i, part:"tail", d:dl};
+  });
+  return best;
+}
+cv.addEventListener("pointerdown", e => {
+  if (S.mode !== "sandbox" || S.running || S.t > 0) return;
+  const b = nearest(ptr(e)); if (!b) return;
+  drag = b; cv.setPointerCapture(e.pointerId); e.preventDefault();
+});
+cv.addEventListener("pointermove", e => {
+  if (S.mode !== "sandbox") return;
+  const m = ptr(e);
+  if (!drag){ cv.style.cursor = (!S.running && S.t === 0 && nearest(m)) ? "grab" : "default"; return; }
+  cv.style.cursor = "grabbing";
+  const f = S.sb.forces[drag.i], h = S.hit.find(x => x.i === drag.i);
+  if (drag.part === "tip" && h){
+    const dx = m[0] - h.tail[0], dy = m[1] - h.tail[1];
+    f.F = Math.max(0, Math.min(100, Math.round(Math.hypot(dx,dy)/1.5)));
+    f.ang = Math.round(Math.atan2(-dy, dx)/D2R/5)*5; if (f.ang === -180) f.ang = 180;
+  } else {
+    const wx = (m[0] - OX)/SC;
+    f.x = Math.max(0, Math.min(S.sb.L, Math.round((wx + S.sb.pivot)/0.05)*0.05));
+  }
+  syncSandboxInputs(); render();
+});
+const endDrag = () => { drag = null; cv.style.cursor = "default"; };
+cv.addEventListener("pointerup", endDrag); cv.addEventListener("pointercancel", endDrag);
+
+new ResizeObserver(() => render()).observe(cw);
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => render());
+window.matchMedia("(min-width:1151px)").addEventListener("change", () => renderNav());
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => render());
+refreshAll();
+</script>
+</body>
+</html>

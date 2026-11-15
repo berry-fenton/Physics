@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pit Stop Torque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E4E8EC; --panel:#F8F9FB; --ink:#18202C; --muted:#5A6473; --line:#C9D1DA; --chip:#E1E6EC;
+  --track:#CDD3DA; --trackline:#F8F9FB; --box:#E3AC14; --livery:#1F3C88; --livery2:#EE651B;
+  --tire:#23272E; --rim:#A4AEBA; --rimdark:#6E7987; --metal:#C7CED6;
+  --ok:#1D7A39; --warn:#A86908; --bad:#BE2E2A; --okbg:#DFF1E4; --warnbg:#FBEFD6; --badbg:#F8E1E0;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151B; --panel:#19202A; --ink:#E5EAF0; --muted:#9BA6B3; --line:#2D3743; --chip:#222B36;
+    --track:#262E39; --trackline:#3A4552; --box:#F2C33B; --livery:#5A80E8; --livery2:#FF8645;
+    --tire:#0A0C0F; --rim:#8A95A3; --rimdark:#59636F; --metal:#9AA4AF;
+    --ok:#62D07C; --warn:#F2B447; --bad:#FF6B66; --okbg:#163021; --warnbg:#33280F; --badbg:#3A1B1B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151B; --panel:#19202A; --ink:#E5EAF0; --muted:#9BA6B3; --line:#2D3743; --chip:#222B36;
+  --track:#262E39; --trackline:#3A4552; --box:#F2C33B; --livery:#5A80E8; --livery2:#FF8645;
+  --tire:#0A0C0F; --rim:#8A95A3; --rimdark:#59636F; --metal:#9AA4AF;
+  --ok:#62D07C; --warn:#F2B447; --bad:#FF6B66; --okbg:#163021; --warnbg:#33280F; --badbg:#3A1B1B;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--livery);outline-offset:2px}
+.disp{font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{margin:0;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:800;font-size:1.9rem;line-height:1;letter-spacing:.01em}
+header h1 span{color:var(--livery2)}
+.clock{display:flex;align-items:baseline;gap:14px}
+.clock .t{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:2.1rem;font-variant-numeric:tabular-nums;line-height:1}
+.clock .pen{color:var(--bad);font-weight:700;font-size:.95rem}
+.clock .best{color:var(--muted);font-size:.9rem}
+
+.track{position:relative;background:var(--track);border-bottom:1px solid var(--line)}
+.track svg{display:block;width:100%;height:auto;max-height:190px}
+#car{transition:transform 1.6s cubic-bezier(.2,.7,.2,1)}
+#car.leave{transition:transform 1.4s cubic-bezier(.6,0,.9,.4)}
+#frontTire{transition:opacity .5s}
+.ring{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+
+.main{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:0;align-items:start}
+.stage{padding:14px 18px}
+.canvas-wrap{position:relative;height:min(62vh,560px);min-height:340px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+canvas{display:block;width:100%;height:100%;touch-action:manipulation}
+.under{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.nutchip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px 4px 6px;cursor:pointer;font-weight:700}
+.nutchip .dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;background:var(--chip)}
+.nutchip[aria-pressed="true"]{border-color:var(--box);box-shadow:0 0 0 2px var(--box)}
+.nutchip.off .dot{background:var(--muted);color:var(--panel)}
+.nutchip.loose .dot{background:var(--warn);color:var(--panel)}
+.nutchip.tight .dot{background:var(--ok);color:var(--panel)}
+.nutchip:disabled{opacity:.5;cursor:default}
+
+.panel{background:var(--panel);border-left:1px solid var(--line);padding:18px 20px 28px;min-height:calc(100vh - 250px)}
+.step{color:var(--muted);font-size:.92rem}
+.panel h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:1.65rem;line-height:1.1;margin:2px 0 10px}
+.spec{border-left:5px solid var(--box);background:var(--bg);border-radius:0 10px 10px 0;padding:10px 14px;margin:12px 0}
+.spec p{margin:0}
+.spec .big{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:1.35rem;line-height:1.2}
+.given{color:var(--muted);margin:6px 0 0;padding-left:18px}
+.lbl{font-weight:700;font-size:.92rem;margin:14px 0 6px;display:block}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1.5px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);font-weight:700}
+.wr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wr button{border:1.5px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 6px;cursor:pointer;text-align:center}
+.wr button b{display:block;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:1.3rem;line-height:1.1}
+.wr button span{font-size:.8rem;color:var(--muted)}
+.wr button[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+.ans{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ans label{font-weight:700;font-style:italic}
+.ans input{width:130px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--panel);font-size:1.05rem}
+.go{border:0;background:var(--livery2);color:#fff;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;font-size:1.25rem;letter-spacing:.02em;padding:8px 22px;border-radius:9px;cursor:pointer}
+.go:disabled{opacity:.45;cursor:not-allowed}
+.btn{border:1.5px solid var(--ink);background:transparent;padding:6px 14px;border-radius:8px;cursor:pointer;font-weight:700}
+.fb{margin-top:12px;padding:10px 12px;border-radius:9px}
+.fb.ok{background:var(--okbg);color:var(--ok)}
+.fb.warn{background:var(--warnbg);color:var(--warn)}
+.fb.bad{background:var(--badbg);color:var(--bad)}
+.fb .calc{display:block;color:var(--ink);font-size:.92rem;margin-top:4px;font-variant-numeric:tabular-nums}
+.check{display:flex;align-items:center;gap:8px;margin-top:12px}
+.note{color:var(--muted);font-size:.92rem;margin:10px 0 0}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.results div{background:var(--bg);border-radius:10px;padding:10px 12px}
+.results b{display:block;font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-size:1.9rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.results span{color:var(--muted);font-size:.88rem}
+
+@media (max-width:900px){
+  .main{grid-template-columns:1fr}
+  .panel{border-left:0;border-top:1px solid var(--line);min-height:0}
+  .canvas-wrap{height:46vh}
+  header h1{font-size:1.5rem}
+  .clock .t{font-size:1.7rem}
+}
+@media (prefers-reduced-motion: reduce){ #car,#car.leave,#frontTire{transition:none} .ring{animation:none} }
+</style>
+</head>
+<body>
+<header>
+  <h1>Pit Stop <span>Torque</span></h1>
+  <div class="clock" aria-live="off">
+    <span class="best" id="best"></span>
+    <span class="pen" id="pen"></span>
+    <span class="t" id="time">0.0 s</span>
+  </div>
+</header>
+
+<div class="track" aria-hidden="true">
+  <svg viewBox="0 0 1000 190" preserveAspectRatio="xMidYMid meet">
+    <rect x="0" y="168" width="1000" height="22" fill="var(--trackline)" opacity=".5"/>
+    <g opacity=".9">
+      <rect x="430" y="164" width="200" height="6" fill="var(--box)"/>
+      <rect x="430" y="40" width="6" height="128" fill="var(--box)" opacity=".35"/>
+      <rect x="624" y="40" width="6" height="128" fill="var(--box)" opacity=".35"/>
+      <text x="530" y="34" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="20" fill="var(--muted)">PIT BOX 27</text>
+    </g>
+    <g id="car" style="transform:translateX(-460px)">
+      <rect x="2" y="62" width="48" height="9" rx="2" fill="var(--livery)"/>
+      <rect x="20" y="70" width="8" height="34" fill="var(--rimdark)"/>
+      <path d="M8,124 L34,98 L118,94 L146,74 L188,72 L206,90 L300,102 L352,112 L362,124 L330,130 L10,132 Z" fill="var(--livery)"/>
+      <path d="M118,106 L300,108 L346,118 L120,120 Z" fill="var(--livery2)"/>
+      <path d="M148,76 Q170,52 196,76" fill="none" stroke="var(--rimdark)" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="170" cy="84" r="9" fill="var(--livery2)"/>
+      <text x="238" y="117" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="20" fill="#fff">27</text>
+      <rect x="312" y="132" width="62" height="6" rx="2" fill="var(--livery)"/>
+      <g><circle cx="74" cy="134" r="34" fill="var(--tire)"/><circle cx="74" cy="134" r="16" fill="var(--rim)"/></g>
+      <g id="frontTire"><circle cx="290" cy="136" r="32" fill="var(--tire)"/><circle cx="290" cy="136" r="15" fill="var(--rim)"/></g>
+      <circle id="ring" cx="290" cy="136" r="40" fill="none" stroke="var(--box)" stroke-width="4" stroke-dasharray="8 6" opacity="0"/>
+    </g>
+  </svg>
+</div>
+
+<div class="main">
+  <section class="stage">
+    <div class="canvas-wrap" id="cw"><canvas id="cv" aria-label="Close-up of the front wheel and its five lug nuts"></canvas></div>
+    <div class="under" id="chips" role="group" aria-label="Choose a lug nut"></div>
+  </section>
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+</div>
+
+<script>
+"use strict";
+const D2R = Math.PI/180, R_GUN = 0.050, MAX_PULL = 350, WRENCHES = [0.30, 0.45, 0.60];
+const STAR_HINT = "Tighten in a star pattern: skip one nut each time (like 1, 3, 5, 2, 4).";
+const $ = s => document.querySelector(s);
+const ri = (a, b) => a + Math.floor(Math.random()*(b - a + 1));
+const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const OBST = {
+  90:"Nothing in the way. You can pull straight across the handle.",
+  80:"The wheel rim tips your hand a little.",
+  70:"The suspension arm forces an angle.",
+  60:"The brake duct blocks a straight pull.",
+  50:"The front wing endplate is in the way.",
+  45:"The tire wall pushes your hand out of line.",
+  40:"The brake duct and wing both crowd the wrench."
+};
+const SHORT = {90:"", 80:"rim", 70:"suspension", 60:"brake duct", 50:"wing endplate", 45:"tire wall", 40:"brake duct"};
+
+let best = null;
+try { const b = parseFloat(localStorage.getItem("pitStopTorque.best")); if (!isNaN(b)) best = b; } catch(e) {}
+
+const G = {};
+function newRound(){
+  const angles = [90, 80, 70, 60, 50, 45, 40];
+  G.nuts = [0,1,2,3,4].map(i => {
+    const rmin = 5*ri(19, 30), rmax = rmin + 5*ri(3, 6);
+    const th = angles[ri(0, angles.length - 1)], w = 5*ri(2, 4);
+    const upper = Math.max(16, Math.min(28, Math.floor((0.6*MAX_PULL*Math.sin(th*D2R) - w)/5)));
+    const tmin = 5*ri(16, upper);
+    return {rem:{min:rmin, max:rmax}, tig:{min:tmin, max:tmin + w, theta:th, hdir:[-12, 6, 18, -22, 0][i]}, state:"on", spin:0};
+  });
+  Object.assign(G, {phase:"arrive", sel:0, dir:"loosen", wrench:null, t0:null, tEnd:null, penalty:0, mistakes:0,
+    lastTight:null, starBreaks:0, fb:null, input:"", lever:false, fx:null, fresh:false});
+  const car = $("#car");
+  car.classList.remove("leave"); car.style.transition = "none"; car.style.transform = "translateX(-460px)";
+  $("#frontTire").style.opacity = 1; $("#ring").setAttribute("opacity", 0); $("#ring").classList.remove("ring");
+  void car.getBoundingClientRect(); car.style.transition = "";
+  refresh();
+  setTimeout(() => { car.style.transform = "translateX(240px)"; }, 60);
+  setTimeout(() => { G.phase = "gun"; G.t0 = performance.now(); $("#ring").setAttribute("opacity", 1); $("#ring").classList.add("ring"); refresh(); }, reduce ? 100 : 1750);
+}
+
+/* ---------- Timer ---------- */
+function elapsed(){ if (!G.t0) return 0; return ((G.tEnd || performance.now()) - G.t0)/1000 + G.penalty; }
+function tickClock(){
+  $("#time").textContent = elapsed().toFixed(1) + " s";
+  $("#pen").textContent = G.penalty ? `+${G.penalty} s penalty` : "";
+  $("#best").textContent = best !== null ? `Best ${best.toFixed(1)} s` : "";
+}
+setInterval(tickClock, 100);
+function penalize(s){ G.penalty += s; G.mistakes++; tickClock(); }
+
+/* ---------- Actions ---------- */
+const fmt = (x, d) => x.toFixed(d === undefined ? (Math.abs(x) >= 100 ? 0 : 1) : d);
+function readForce(){
+  const inp = $("#force"); G.input = inp ? inp.value : "";
+  const v = parseFloat((G.input || "").replace(/,/g, ""));
+  return isNaN(v) ? null : v;
+}
+function fireGun(){
+  const n = G.nuts[G.sel], F = readForce();
+  if (F === null || F <= 0){ G.fb = {k:"warn", m:"Enter the hammer force in newtons."}; refresh(); focusForce(); return; }
+  const tau = F*R_GUN, calc = `τ = Fr = (${fmt(F,0)} N)(0.050 m) = ${fmt(tau)} N·m`;
+  if (G.dir !== "loosen"){ penalize(3); fx("rattle"); G.fb = {k:"bad", m:"The gun was set to tighten, so it drove the nut on harder. +3 s. Loosening turns the nut counterclockwise.", calc}; }
+  else if (tau < n.rem.min){ penalize(3); fx("rattle"); G.fb = {k:"warn", m:`The gun rattles but the nut won’t budge. It needs at least ${n.rem.min} N·m. +3 s.`, calc}; }
+  else if (tau > n.rem.max){ penalize(5); fx("strip"); G.fb = {k:"bad", m:`Stripped! Anything above ${n.rem.max} N·m chews up the threads. The crew cleans them up. +5 s.`, calc}; }
+  else {
+    fx("off", G.sel); G.fb = {k:"ok", m:`Nut ${G.sel + 1} is off.`, calc}; G.input = "";
+    n.state = "off";
+    const next = G.nuts.findIndex(x => x.state === "on");
+    if (next === -1){ setTimeout(gunBreaks, reduce ? 50 : 700); }
+    else G.sel = next;
+  }
+  refresh(); if (G.phase === "gun") focusForce();
+}
+function gunBreaks(){
+  G.phase = "swap"; G.fb = null; refresh();
+  $("#frontTire").style.opacity = 0.15;
+  setTimeout(() => { G.fresh = true; $("#frontTire").style.opacity = 1; refresh(); const b = $("#toWrench"); if (b) b.focus(); }, reduce ? 50 : 1100);
+}
+function startWrench(){
+  G.nuts.forEach(n => n.state = "loose");
+  G.phase = "wrench"; G.sel = 0; G.dir = "tighten"; G.wrench = null; G.fb = null; G.input = "";
+  refresh();
+}
+function pull(){
+  const n = G.nuts[G.sel], t = n.tig, F = readForce();
+  if (G.wrench === null){ G.fb = {k:"warn", m:"Pick a wrench first."}; refresh(); return; }
+  if (F === null || F <= 0){ G.fb = {k:"warn", m:"Enter how hard to pull, in newtons."}; refresh(); focusForce(); return; }
+  const L = WRENCHES[G.wrench], tau = F*L*Math.sin(t.theta*D2R);
+  const calc = `τ = Fr sin θ = (${fmt(F,0)} N)(${L.toFixed(2)} m)(sin ${t.theta}°) = ${fmt(tau)} N·m`;
+  if (F > MAX_PULL){ penalize(2); fx("rattle"); G.fb = {k:"warn", m:`The mechanic can only pull ${MAX_PULL} N. Try a longer wrench. +2 s.`}; }
+  else if (G.dir !== "tighten"){ penalize(3); fx("rattle"); G.fb = {k:"bad", m:"That loosened the nut. Tightening turns it clockwise. +3 s.", calc}; }
+  else if (tau < t.min){ penalize(3); fx("rattle"); G.fb = {k:"warn", m:`Still loose. Nut ${G.sel + 1} needs at least ${t.min} N·m. +3 s.`, calc}; }
+  else if (tau > t.max){ penalize(5); fx("strip"); G.fb = {k:"bad", m:`Stripped! Above ${t.max} N·m damages the stud. The crew re-chases the thread. +5 s.`, calc}; }
+  else {
+    let extra = "";
+    if (G.lastTight !== null){ const d = (G.sel - G.lastTight + 5) % 5; if (d !== 2 && d !== 3){ penalize(2); G.starBreaks++; extra = ` Out of star order, though: +2 s. ${STAR_HINT}`; } }
+    fx("tight", G.sel); n.state = "tight"; G.lastTight = G.sel; G.input = "";
+    G.fb = {k: extra ? "warn" : "ok", m:`Nut ${G.sel + 1} is torqued to spec.${extra}`, calc};
+    if (G.nuts.every(x => x.state === "tight")){ setTimeout(release, reduce ? 50 : 600); }
+    else { const s1 = (G.sel + 2) % 5, s2 = (G.sel + 3) % 5;
+      G.sel = G.nuts[s1].state === "loose" ? s1 : G.nuts[s2].state === "loose" ? s2 : G.nuts.findIndex(x => x.state === "loose"); }
+  }
+  refresh(); if (G.phase === "wrench") focusForce();
+}
+function release(){
+  G.tEnd = performance.now(); G.phase = "done";
+  const total = elapsed(); G.total = total; G.newBest = best === null || total < best;
+  if (G.newBest){ best = total; try { localStorage.setItem("pitStopTorque.best", String(best)); } catch(e) {} }
+  $("#ring").setAttribute("opacity", 0); $("#ring").classList.remove("ring");
+  const car = $("#car"); car.classList.add("leave"); car.style.transform = "translateX(1150px)";
+  refresh();
+}
+function focusForce(){ const f = $("#force"); if (f) f.focus(); }
+
+/* ---------- Effects ---------- */
+function fx(kind, nut){ G.fx = {kind, nut: nut === undefined ? G.sel : nut, t0: performance.now()}; if (!reduce) requestAnimationFrame(loop); else draw(); }
+function loop(){ draw(); if (G.fx && performance.now() - G.fx.t0 < 700) requestAnimationFrame(loop); else { G.fx = null; draw(); } }
+
+/* ---------- Canvas ---------- */
+const cv = $("#cv"), cw = $("#cw"), ctx = cv.getContext("2d");
+let W = 0, H = 0, css, geo = {};
+const col = n => css.getPropertyValue("--" + n).trim();
+const FONT = (s, b) => `${b ? "700 " : ""}${s}px "Atkinson Hyperlegible", system-ui, sans-serif`;
+const DFONT = s => `700 ${s}px "Barlow Condensed", "Arial Narrow", sans-serif`;
+function line(a, b, w, c, dash){ ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.lineWidth = w; ctx.strokeStyle = c; ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]); }
+function arrow(a, b, w, c, h){
+  h = h || 13; const dx = b[0]-a[0], dy = b[1]-a[1], L = Math.hypot(dx, dy); if (L < 1) return;
+  const ux = dx/L, uy = dy/L; line(a, [b[0]-ux*h*.8, b[1]-uy*h*.8], w, c);
+  ctx.beginPath(); ctx.moveTo(b[0], b[1]); ctx.lineTo(b[0]-ux*h-uy*h*.5, b[1]-uy*h+ux*h*.5); ctx.lineTo(b[0]-ux*h+uy*h*.5, b[1]-uy*h-ux*h*.5); ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+}
+function label(t, x, y, c, o){
+  o = o || {}; ctx.font = o.font || FONT(13, true);
+  const tw = ctx.measureText(t).width, th = 16;
+  let x0 = o.align === "left" ? x : o.align === "right" ? x - tw : x - tw/2, y0 = y - th/2;
+  ctx.fillStyle = col("panel"); ctx.globalAlpha = .88; ctx.fillRect(x0 - 4, y0 - 2, tw + 8, th + 4); ctx.globalAlpha = 1;
+  ctx.fillStyle = c || col("ink"); ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(t, x0, y);
+}
+const dirv = deg => [Math.cos(deg*D2R), -Math.sin(deg*D2R)]; // screen vector for a math angle
+
+function nutPos(i){ const a = (90 - 72*i)*D2R; return [geo.cx + geo.rn*Math.cos(a), geo.cy - geo.rn*Math.sin(a)]; }
+function drawHex(x, y, s, rot, fill, stroke){
+  ctx.beginPath(); for (let k = 0; k < 6; k++){ const a = rot + k*Math.PI/3; const p = [x + s*Math.cos(a), y + s*Math.sin(a)]; k ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+  ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = stroke; ctx.stroke();
+}
+
+function draw(){
+  css = getComputedStyle(document.documentElement);
+  const r = cw.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)){ cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr); }
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = col("panel"); ctx.fillRect(0,0,W,H);
+
+  const narrow = W < 560;
+  geo.cx = narrow ? W*0.36 : W*0.32; geo.cy = H*0.5;
+  geo.R = Math.min(narrow ? W*0.33 : W*0.27, H*0.44); geo.rn = geo.R*0.24; geo.ns = geo.R*0.07;
+  const {cx, cy, R} = geo, ink = col("ink"), muted = col("muted");
+  const now = performance.now(), fxp = G.fx ? Math.min(1, (now - G.fx.t0)/700) : 1;
+  let shake = 0; if (G.fx && G.fx.kind === "rattle") shake = Math.sin(fxp*40)*4*(1 - fxp);
+
+  ctx.save(); ctx.translate(shake, 0);
+  const swapping = G.phase === "swap" && !G.fresh;
+  ctx.globalAlpha = swapping ? 0.25 : 1;
+  // tire
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*Math.PI); ctx.fillStyle = col("tire"); ctx.fill();
+  if (G.fresh || G.phase === "wrench" || G.phase === "done"){ ctx.beginPath(); ctx.arc(cx, cy, R*0.9, 0, 2*Math.PI); ctx.lineWidth = 4; ctx.strokeStyle = col("livery2"); ctx.stroke(); }
+  else { ctx.setLineDash([3, 9]); ctx.beginPath(); ctx.arc(cx, cy, R*0.88, 0, 2*Math.PI); ctx.lineWidth = 3; ctx.strokeStyle = col("rimdark"); ctx.stroke(); ctx.setLineDash([]); }
+  // rim
+  ctx.beginPath(); ctx.arc(cx, cy, R*0.74, 0, 2*Math.PI); ctx.fillStyle = col("rim"); ctx.fill();
+  for (let k = 0; k < 5; k++){ const a = (54 - 72*k)*D2R; ctx.beginPath(); ctx.ellipse(cx + Math.cos(a)*R*0.54, cy - Math.sin(a)*R*0.54, R*0.11, R*0.075, -a, 0, 2*Math.PI); ctx.fillStyle = col("rimdark"); ctx.fill(); }
+  ctx.beginPath(); ctx.arc(cx, cy, R*0.36, 0, 2*Math.PI); ctx.fillStyle = col("metal"); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = col("rimdark"); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, R*0.1, 0, 2*Math.PI); ctx.fillStyle = col("rimdark"); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // nuts
+  G.nuts.forEach((n, i) => {
+    const [x, y] = nutPos(i), s = geo.ns;
+    ctx.beginPath(); ctx.arc(x, y, s*0.45, 0, 2*Math.PI); ctx.fillStyle = col("rimdark"); ctx.fill(); // stud
+    let alpha = 1, rot = n.spin, fill = col("metal"), stroke = ink;
+    const isFx = G.fx && G.fx.nut === i;
+    if (n.state === "off"){ if (isFx && G.fx.kind === "off"){ alpha = 1 - fxp; rot += fxp*8; } else alpha = 0; }
+    if (n.state === "loose") fill = col("warnbg"), stroke = col("warn");
+    if (n.state === "tight"){ fill = col("okbg"); stroke = col("ok"); if (isFx && G.fx.kind === "tight") rot -= (1 - fxp)*4; }
+    if (isFx && G.fx.kind === "strip"){ stroke = col("bad"); }
+    if (swapping) alpha = 0;
+    ctx.globalAlpha = alpha; drawHex(x, y, s, rot, fill, stroke); ctx.globalAlpha = 1;
+    if (isFx && G.fx.kind === "strip"){ for (let k = 0; k < 8; k++){ const a = k*Math.PI/4 + fxp; const d = s*(1.2 + fxp*1.6); line([x + Math.cos(a)*s*1.1, y + Math.sin(a)*s*1.1], [x + Math.cos(a)*d, y + Math.sin(a)*d], 2, col("bad")); } }
+    // number tag
+    const a = (90 - 72*i)*D2R, tx = cx + R*0.47*Math.cos(a), ty = cy - R*0.47*Math.sin(a);
+    ctx.font = DFONT(Math.max(15, R*0.1)); ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(String(i + 1), tx, ty);
+    if (i === G.sel && (G.phase === "gun" || G.phase === "wrench")){ ctx.beginPath(); ctx.arc(x, y, s*1.7, 0, 2*Math.PI); ctx.lineWidth = 3; ctx.strokeStyle = col("box"); ctx.stroke(); }
+  });
+  ctx.restore();
+
+  if (G.phase === "gun") drawGun();
+  if (G.phase === "wrench") drawWrench();
+  if (G.phase === "swap"){ label(G.fresh ? "Fresh tire on. Nuts are finger-tight." : "Swapping the tire…", W/2, 24, muted, {font:DFONT(20)}); }
+  if (G.phase === "arrive") label("Car incoming…", W/2, H/2, muted, {font:DFONT(26)});
+  if (G.phase === "done") label("Released!", W*0.75, H/2, col("ok"), {font:DFONT(32)});
+}
+
+function drawGun(){
+  const [x, y] = nutPos(G.sel), s = geo.ns, ink = col("ink"), body = col("livery");
+  // gun body
+  const gx = Math.min(W - 70, x + geo.R*0.9), gy = Math.min(H - 50, y + geo.R*0.55);
+  ctx.save(); ctx.globalAlpha = 0.92;
+  ctx.lineCap = "round"; line([x, y], [gx, gy], s*2.2, body); line([gx, gy], [gx + 6, gy + 62], s*1.8, body); ctx.lineCap = "butt";
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(x, y, s*1.35, 0, 2*Math.PI); ctx.fillStyle = col("rimdark"); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = ink; ctx.stroke();
+  // hammer radius
+  const hr = Math.max(34, geo.R*0.2);
+  ctx.beginPath(); ctx.arc(x, y, hr, 0, 2*Math.PI); ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5; ctx.strokeStyle = col("muted"); ctx.stroke(); ctx.setLineDash([]);
+  line([x, y], [x, y - hr], 2, col("muted"));
+  label("r = 5.0 cm", x + 8, y - hr/2, col("muted"), {align:"left"});
+  const loos = G.dir === "loosen", fc = col("livery2");
+  const tip = [x + (loos ? -1 : 1)*Math.max(56, geo.R*0.3), y - hr];
+  arrow([x, y - hr], tip, 3.5, fc);
+  label("F", tip[0] + (loos ? -14 : 14), tip[1], fc, {font:FONT(15, true)});
+  label(loos ? "Set to loosen ↺" : "Set to tighten ↻", gx + 6, Math.min(H - 14, gy + 78), ink);
+}
+function drawWrench(){
+  const n = G.nuts[G.sel], t = n.tig, [x, y] = nutPos(G.sel), s = geo.ns, ink = col("ink"), muted = col("muted");
+  const maxLen = Math.max(120, Math.min(W - x - 34, H*0.9));
+  const hd = dirv(t.hdir);
+  if (G.wrench === null){
+    label("Pick a wrench →", Math.min(W - 80, x + maxLen*0.5), y - 40, muted, {font:DFONT(20)});
+    return;
+  }
+  const L = WRENCHES[G.wrench], Lp = L/0.6*maxLen, end = [x + hd[0]*Lp, y + hd[1]*Lp];
+  // handle
+  ctx.lineCap = "round"; line([x, y], end, 16, col("rimdark")); line([x, y], end, 11, col("metal")); ctx.lineCap = "butt";
+  ctx.beginPath(); ctx.arc(x, y, s*1.5, 0, 2*Math.PI); ctx.lineWidth = 7; ctx.strokeStyle = col("rimdark"); ctx.stroke();
+  label(`${Math.round(L*100)} cm`, (x + end[0])/2 + hd[1]*18, (y + end[1])/2 - hd[0]*18, muted);
+  // pull direction (clockwise for tighten = rotate force clockwise from handle)
+  const tight = G.dir === "tighten", pd = t.hdir + (tight ? -t.theta : t.theta), pv = dirv(pd);
+  // obstacle where a perpendicular pull would go
+  if (t.theta < 90){
+    const perp = dirv(t.hdir + (tight ? -90 : 90)), ox = end[0] + perp[0]*58, oy = end[1] + perp[1]*58;
+    ctx.save(); ctx.translate(ox, oy); ctx.rotate(-t.hdir*D2R);
+    ctx.fillStyle = col("chip"); ctx.fillRect(-30, -14, 60, 28); ctx.strokeStyle = muted; ctx.lineWidth = 1.5; ctx.strokeRect(-30, -14, 60, 28);
+    ctx.beginPath(); for (let k = -30; k < 30; k += 8){ ctx.moveTo(k, 14); ctx.lineTo(k + 8, -14); } ctx.stroke();
+    ctx.restore();
+    label(SHORT[t.theta], ox, oy + 26, muted, {font:FONT(12, true)});
+  }
+  // angle arc
+  const ha = t.hdir*D2R, pa = pd*D2R, lo = Math.min(ha, pa), hi = Math.max(ha, pa);
+  line(end, [end[0] + hd[0]*46, end[1] + hd[1]*46], 1.5, muted, [4, 4]);
+  ctx.beginPath(); ctx.arc(end[0], end[1], 30, -hi, -lo); ctx.lineWidth = 1.6; ctx.strokeStyle = muted; ctx.stroke();
+  const mid = (lo + hi)/2; label(`${t.theta}°`, end[0] + Math.cos(mid)*48, end[1] - Math.sin(mid)*48, muted);
+  // lever arm
+  if (G.lever){
+    const E = 2000, c = col("livery");
+    line([end[0] - pv[0]*E, end[1] - pv[1]*E], [end[0] + pv[0]*E, end[1] + pv[1]*E], 1.5, c, [7, 6]);
+    const along = (x - end[0])*pv[0] + (y - end[1])*pv[1], Q = [end[0] + pv[0]*along, end[1] + pv[1]*along];
+    if (Math.hypot(Q[0]-x, Q[1]-y) > 3){
+      line([x, y], Q, 4.5, c);
+      const v = [(x - Q[0]), (y - Q[1])], vl = Math.hypot(v[0], v[1]), vu = [v[0]/vl, v[1]/vl];
+      let us = [pv[0], pv[1]]; if ((end[0]-Q[0])*us[0] + (end[1]-Q[1])*us[1] < 0) us = [-us[0], -us[1]];
+      const k = 9; ctx.beginPath(); ctx.moveTo(Q[0]+us[0]*k, Q[1]+us[1]*k); ctx.lineTo(Q[0]+us[0]*k+vu[0]*k, Q[1]+us[1]*k+vu[1]*k); ctx.lineTo(Q[0]+vu[0]*k, Q[1]+vu[1]*k); ctx.lineWidth = 1.5; ctx.strokeStyle = c; ctx.stroke();
+      label(`r⊥ = ${(L*Math.sin(t.theta*D2R)).toFixed(2)} m`, (x + Q[0])/2 - us[0]*16, (y + Q[1])/2 - us[1]*16, c);
+    }
+  }
+  const fc = col("livery2"), tip = [end[0] + pv[0]*80, end[1] + pv[1]*80];
+  arrow(end, tip, 4, fc, 15);
+  label("F", tip[0] + pv[0]*14, tip[1] + pv[1]*14, fc, {font:FONT(15, true)});
+  label(tight ? "Turning to tighten ↻" : "Turning to loosen ↺", Math.min(W - 90, Math.max(90, x)), H - 18, ink);
+}
+
+/* ---------- Panel ---------- */
+function chips(){
+  const el = $("#chips"), active = G.phase === "gun" || G.phase === "wrench";
+  el.innerHTML = G.nuts.map((n, i) => {
+    const can = active && ((G.phase === "gun" && n.state === "on") || (G.phase === "wrench" && n.state === "loose"));
+    const st = n.state === "on" ? "on" : n.state;
+    const word = {on:"on", off:"off", loose:"loose", tight:"tight"}[st];
+    return `<button class="nutchip ${st}" data-n="${i}" aria-pressed="${active && i === G.sel}" ${can ? "" : "disabled"}><span class="dot">${n.state === "tight" ? "✓" : i + 1}</span>Nut ${i + 1}: ${word}</button>`;
+  }).join("");
+}
+function fbHTML(){ return G.fb ? `<div class="fb ${G.fb.k}">${G.fb.m}${G.fb.calc ? `<span class="calc">${G.fb.calc}</span>` : ""}</div>` : ""; }
+function dirHTML(){
+  return `<span class="lbl">Direction</span><div class="seg" role="group" aria-label="Direction">
+    <button data-dir="loosen" aria-pressed="${G.dir === "loosen"}">Loosen ↺</button><button data-dir="tighten" aria-pressed="${G.dir === "tighten"}">Tighten ↻</button></div>`;
+}
+function renderPanel(){
+  const p = $("#panel"); let h = "";
+  if (G.phase === "arrive"){
+    h = `<div class="step">Get ready</div><h2>Car 27 is coming in</h2><p>The clock starts when the car stops in the box. Remove all five lug nuts, swap the tire, and torque the nuts back on. The car can’t leave until every nut is in spec.</p>`;
+  } else if (G.phase === "gun"){
+    const n = G.nuts[G.sel], left = G.nuts.filter(x => x.state === "on").length;
+    h = `<div class="step">Step 1 of 2: impact gun (${5 - left} of 5 off)</div><h2>Remove nut ${G.sel + 1}</h2>
+      <div class="spec"><p class="big">Breaks loose at ${n.rem.min} N·m</p><p class="big">Strips above ${n.rem.max} N·m</p></div>
+      <ul class="given"><li>The gun’s hammer spins at r = 5.0 cm (0.050 m).</li><li>The hammer force is perpendicular to r.</li></ul>
+      ${dirHTML()}
+      <span class="lbl">Set the hammer force</span>
+      <div class="ans"><label for="force">F =</label><input id="force" inputmode="decimal" autocomplete="off" value="${G.input}"><span>N</span><button class="go" id="fire">Fire gun</button></div>
+      ${fbHTML()}`;
+  } else if (G.phase === "swap"){
+    h = `<div class="step">Trouble</div><h2>The gun just died</h2><p>Smoke’s coming out of the impact gun. The crew swaps the tire, and the nuts go back on finger-tight. You’ll have to torque them by hand.</p>
+      <p>Each nut is crowded by a different part of the car, so you can’t always pull straight across the handle. Pick a wrench, then work out how hard to pull.</p>
+      ${G.fresh ? `<button class="go" id="toWrench">Grab the wrenches</button>` : `<p class="note">Swapping the tire…</p>`}`;
+  } else if (G.phase === "wrench"){
+    const n = G.nuts[G.sel], t = n.tig, done = G.nuts.filter(x => x.state === "tight").length;
+    h = `<div class="step">Step 2 of 2: wrenches (${done} of 5 tight)</div><h2>Tighten nut ${G.sel + 1}</h2>
+      <div class="spec"><p class="big">Torque to ${t.min}–${t.max} N·m</p><p>${OBST[t.theta]} ${t.theta < 90 ? `You have to pull at ${t.theta}° to the handle.` : ""}</p></div>
+      <ul class="given"><li>The mechanic can pull at most ${MAX_PULL} N.</li><li>${STAR_HINT}</li></ul>
+      <span class="lbl">Pick a wrench</span>
+      <div class="wr" role="group" aria-label="Wrench length">${WRENCHES.map((L, i) => `<button data-w="${i}" aria-pressed="${G.wrench === i}"><b>${Math.round(L*100)} cm</b><span>${L.toFixed(2)} m</span></button>`).join("")}</div>
+      ${dirHTML()}
+      <span class="lbl">How hard to pull</span>
+      <div class="ans"><label for="force">F =</label><input id="force" inputmode="decimal" autocomplete="off" value="${G.input}"><span>N</span><button class="go" id="pull">Pull</button></div>
+      <label class="check"><input type="checkbox" id="lever" ${G.lever ? "checked" : ""}> Show the lever arm</label>
+      ${fbHTML()}`;
+  } else if (G.phase === "done"){
+    h = `<div class="step">Car released</div><h2>${G.newBest ? "New best time!" : "Car 27 is back on track"}</h2>
+      <div class="results">
+        <div><b>${G.total.toFixed(1)} s</b><span>Total pit stop</span></div>
+        <div><b>${G.penalty} s</b><span>Penalty time</span></div>
+        <div><b>${G.mistakes}</b><span>Mistakes</span></div>
+        <div><b>${best.toFixed(1)} s</b><span>Your best</span></div>
+      </div>
+      ${G.starBreaks ? `<p class="note">${G.starBreaks} nut${G.starBreaks > 1 ? "s were" : " was"} tightened out of star order.</p>` : ""}
+      <p>Every car gets new specs, so each round is a fresh set of calculations.</p>
+      <button class="go" id="again">Next car</button>`;
+  }
+  p.innerHTML = h;
+}
+function refresh(){ renderPanel(); chips(); draw(); tickClock(); }
+
+/* ---------- Events ---------- */
+$("#panel").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.dir){ G.input = ($("#force") || {}).value || G.input; G.dir = b.dataset.dir; refresh(); return; }
+  if (b.dataset.w !== undefined){ G.input = ($("#force") || {}).value || G.input; G.wrench = +b.dataset.w; refresh(); focusForce(); return; }
+  if (b.id === "fire") fireGun();
+  else if (b.id === "pull") pull();
+  else if (b.id === "toWrench") startWrench();
+  else if (b.id === "again") newRound();
+});
+$("#panel").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.id === "force"){ e.preventDefault(); G.phase === "gun" ? fireGun() : pull(); } });
+$("#panel").addEventListener("change", e => { if (e.target.id === "lever"){ G.lever = e.target.checked; draw(); } });
+$("#panel").addEventListener("input", e => { if (e.target.id === "force") G.input = e.target.value; });
+function selectNut(i){
+  const n = G.nuts[i];
+  if ((G.phase === "gun" && n.state === "on") || (G.phase === "wrench" && n.state === "loose")){ G.sel = i; G.fb = null; refresh(); focusForce(); }
+}
+$("#chips").addEventListener("click", e => { const b = e.target.closest("button[data-n]"); if (b) selectNut(+b.dataset.n); });
+cv.addEventListener("click", e => {
+  const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  G.nuts.forEach((n, i) => { const [x, y] = nutPos(i); if (Math.hypot(mx - x, my - y) < geo.ns*2) selectNut(i); });
+});
+new ResizeObserver(() => draw()).observe(cw);
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw());
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => draw());
+newRound();
+</script>
+</body>
+</html>
