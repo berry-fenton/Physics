@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Momentum Collisions: Players on the Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E7ECE6; --surface:#FFFFFF; --ink:#15201A; --muted:#56635B; --line:#C7D1C9;
+  --a:#1F5FAD; --b:#D16A12; --sys:#5B45A8; --accent:#2E6A34; --accent-ink:#FFFFFF;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1411; --surface:#17201B; --ink:#E4EBE6; --muted:#9BA9A0; --line:#2D3B33;
+    --a:#6EA7EE; --b:#F0A157; --sys:#A898EE; --accent:#3F9150; --accent-ink:#FFFFFF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1411; --surface:#17201B; --ink:#E4EBE6; --muted:#9BA9A0; --line:#2D3B33;
+  --a:#6EA7EE; --b:#F0A157; --sys:#A898EE; --accent:#3F9150; --accent-ink:#FFFFFF;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 18px 48px}
+.num,h1,h2,.play,.big{font-family:"Saira Condensed","Arial Narrow","Roboto Condensed",sans-serif}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px 24px;margin-bottom:16px}
+h1{font-weight:700;font-size:clamp(2.1rem,5vw,3.3rem);line-height:.95;margin:0}
+.sub{margin:8px 0 0;color:var(--muted);max-width:62ch}
+.toggles{display:flex;flex-wrap:wrap;gap:10px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:999px;padding:3px;background:var(--surface);position:relative}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{padding:6px 15px;border-radius:999px;cursor:pointer;font-weight:600;font-size:.95rem;color:var(--muted);user-select:none}
+.seg input:checked+label{background:var(--ink);color:var(--surface)}
+.seg input:focus-visible+label{outline:2px solid var(--a);outline-offset:2px}
+
+.stage{border-radius:14px;overflow:hidden;border:1.5px solid var(--line);background:var(--surface)}
+#scene{display:block;width:100%;height:clamp(250px,36vw,360px);background:#367234}
+.transport{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:12px 14px}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.play{font-size:1.25rem;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:6px 26px;min-width:120px}
+.play:disabled{opacity:.45;cursor:not-allowed}
+.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 16px;font-weight:600}
+.check{display:inline-flex;align-items:center;gap:7px;color:var(--ink);font-weight:500;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+.transport .spacer{flex:1}
+.small-seg label{padding:4px 12px;font-size:.9rem}
+
+.grid{display:grid;grid-template-columns:minmax(270px,340px) 1fr;gap:18px;margin-top:18px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:16px}
+h2{font-size:1.35rem;font-weight:600;margin:0 0 4px;line-height:1.1}
+fieldset{border:0;margin:0 0 16px;padding:2px 0 2px 12px;border-left:5px solid var(--line)}
+fieldset.pa{border-left-color:var(--a)}
+fieldset.pb{border-left-color:var(--b)}
+fieldset.neutral{border-left-color:var(--ink)}
+legend{font-family:"Saira Condensed","Arial Narrow",sans-serif;font-weight:600;font-size:1.2rem;padding:0;margin-bottom:4px}
+.row{margin:8px 0 12px}
+.row .lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:500}
+.row .lab input[type=number]{width:84px;font:inherit;font-weight:600;text-align:right;padding:2px 6px;border:1.5px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.unit{color:var(--muted);font-weight:400;margin-left:4px}
+input[type=range]{width:100%;margin:6px 0 0}
+.pa input[type=range]{accent-color:var(--a)}
+.pb input[type=range]{accent-color:var(--b)}
+.neutral input[type=range]{accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:.9rem;margin:2px 0 0}
+.stack-seg{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.choice{display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:6px 8px;border-radius:8px;border:1.5px solid var(--line)}
+.choice input{margin-top:4px;accent-color:var(--ink)}
+.choice:has(input:checked){border-color:var(--ink)}
+.choice small{display:block;color:var(--muted)}
+.hide{display:none!important}
+
+.graphs{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:620px){.graphs{grid-template-columns:1fr}}
+figure{margin:0;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:12px}
+figure.wide{grid-column:1/-1}
+figure canvas{display:block;width:100%}
+.ft{height:230px}
+.bars{height:300px}
+figcaption{color:var(--muted);font-size:.9rem;margin-top:6px}
+
+.tablewrap{margin-top:18px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:.92rem}
+th:first-child,td:first-child{text-align:left}
+td.who{font-weight:600}
+td.who .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+tr.sys td{border-bottom:0;font-weight:600}
+.tablehead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.note{color:var(--muted);font-size:.92rem;margin:10px 0 0;max-width:80ch}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 id="title">Momentum on the field</h1>
+      <p class="sub">Set up two players, run the hit, and compare momentum before and after. The force graphs show each player’s impulse.</p>
+    </div>
+    <div class="toggles">
+      <div class="seg" role="radiogroup" aria-label="Sport">
+        <input type="radio" name="sport" id="sp-fb" value="football" checked><label for="sp-fb">Football</label>
+        <input type="radio" name="sport" id="sp-hk" value="hockey"><label for="sp-hk">Hockey</label>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="Interaction">
+        <input type="radio" name="mode" id="md-col" value="collision" checked><label for="md-col">Collision</label>
+        <input type="radio" name="mode" id="md-push" value="push"><label for="md-push">Push-off</label>
+      </div>
+    </div>
+  </header>
+
+  <section class="stage" aria-label="Simulation">
+    <canvas id="scene" role="img" aria-label="Two players on a field moving toward each other"></canvas>
+    <div class="transport">
+      <button class="play" id="play">Play</button>
+      <button class="ghost" id="reset">Reset</button>
+      <div class="seg small-seg" role="radiogroup" aria-label="Playback speed">
+        <input type="radio" name="speed" id="spd1" value="1" checked><label for="spd1">1×</label>
+        <input type="radio" name="speed" id="spd4" value="0.25"><label for="spd4">¼×</label>
+      </div>
+      <label class="check"><input type="checkbox" id="slow" checked> Slow motion at the hit</label>
+      <span class="spacer"></span>
+    </div>
+  </section>
+
+  <div class="grid">
+    <aside class="panel" aria-label="Settings">
+      <fieldset class="pa">
+        <legend>Player A</legend>
+        <div class="row">
+          <div class="lab"><label for="mA-r">Mass</label><span><input type="number" id="mA-n" min="50" max="150" step="5"><span class="unit">kg</span></span></div>
+          <input type="range" id="mA-r" min="50" max="150" step="5">
+        </div>
+        <div class="row vel">
+          <div class="lab"><label for="vA-r">Velocity</label><span><input type="number" id="vA-n" min="-10" max="10" step="0.5"><span class="unit">m/s</span></span></div>
+          <input type="range" id="vA-r" min="-10" max="10" step="0.5">
+        </div>
+      </fieldset>
+      <fieldset class="pb">
+        <legend>Player B</legend>
+        <div class="row">
+          <div class="lab"><label for="mB-r">Mass</label><span><input type="number" id="mB-n" min="50" max="150" step="5"><span class="unit">kg</span></span></div>
+          <input type="range" id="mB-r" min="50" max="150" step="5">
+        </div>
+        <div class="row vel">
+          <div class="lab"><label for="vB-r">Velocity</label><span><input type="number" id="vB-n" min="-10" max="10" step="0.5"><span class="unit">m/s</span></span></div>
+          <input type="range" id="vB-r" min="-10" max="10" step="0.5">
+        </div>
+        <p class="hint vel">Right is positive. A negative velocity means moving left.</p>
+      </fieldset>
+
+      <fieldset class="neutral" id="typeBox">
+        <legend>Type of collision</legend>
+        <div class="stack-seg">
+          <label class="choice"><input type="radio" name="ctype" value="elastic" checked><span>Bounce apart<small>Elastic: kinetic energy is kept</small></span></label>
+          <label class="choice"><input type="radio" name="ctype" value="inelastic"><span>Partial bounce<small>Inelastic: some kinetic energy is lost</small></span></label>
+          <label class="choice"><input type="radio" name="ctype" value="perfect"><span id="stickLabel">Tackle and hold on<small>Perfectly inelastic: they move together</small></span></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="neutral hide" id="pushBox">
+        <legend>The push</legend>
+        <div class="row">
+          <div class="lab"><label for="J-r">Push strength (impulse)</label><span><input type="number" id="J-n" min="50" max="600" step="10"><span class="unit">N·s</span></span></div>
+          <input type="range" id="J-r" min="50" max="600" step="10">
+        </div>
+        <div class="row">
+          <div class="lab"><label for="v0-r">Starting velocity (both)</label><span><input type="number" id="v0-n" min="-4" max="4" step="0.5"><span class="unit">m/s</span></span></div>
+          <input type="range" id="v0-r" min="-4" max="4" step="0.5">
+        </div>
+      </fieldset>
+
+      <fieldset class="neutral">
+        <legend>Contact time</legend>
+        <div class="row">
+          <div class="lab"><label for="dt-r">How long they touch</label><span><input type="number" id="dt-n" min="0.05" max="0.5" step="0.01"><span class="unit">s</span></span></div>
+          <input type="range" id="dt-r" min="0.05" max="0.5" step="0.01">
+        </div>
+        <p class="hint">More padding means a longer hit. Same impulse, smaller peak force.</p>
+      </fieldset>
+
+      <fieldset class="neutral" style="margin-bottom:0">
+        <legend>Display</legend>
+        <label class="check" style="margin:4px 0 8px"><input type="checkbox" id="showKE"> Show kinetic energy</label><br>
+        <label class="check"><input type="checkbox" id="predict"> Predict mode (hide final numbers)</label>
+      </fieldset>
+    </aside>
+
+    <section class="graphs" aria-label="Graphs">
+      <figure>
+        <canvas id="ftA" class="ft" role="img" aria-label="Force versus time graph for Player A"></canvas>
+      </figure>
+      <figure>
+        <canvas id="ftB" class="ft" role="img" aria-label="Force versus time graph for Player B"></canvas>
+      </figure>
+      <figure class="wide">
+        <canvas id="bars" class="bars" role="img" aria-label="Momentum bar chart before and after"></canvas>
+        <figcaption>The shaded area under each force–time curve is the impulse, and it equals that player’s change in momentum. The two forces are equal and opposite, so the impulses cancel and the system’s momentum stays the same.</figcaption>
+      </figure>
+    </section>
+  </div>
+
+  <section class="panel tablewrap" aria-label="Data table">
+    <div class="tablehead">
+      <h2>Data</h2>
+      <button class="ghost hide" id="reveal">Reveal final values</button>
+    </div>
+    <div class="scroll"><table id="data"></table></div>
+  </section>
+</div>
+
+<script>
+(function(){
+const W_M = 20, XC = 10;
+const E = {elastic:1, inelastic:0.4, perfect:0};
+const S = {sport:'football', mode:'collision', mA:100, vA:6, mB:120, vB:-4, type:'elastic',
+           dtc:0.10, push:300, v0:0, speed:1, slow:true, showKE:false, predict:false, revealed:false};
+let plan=null, simT=0, running=false, started=false, finished=false, lastTs=0;
+let C = {};
+const $ = id => document.getElementById(id);
+
+function readColors(){
+  const cs = getComputedStyle(document.documentElement);
+  ['bg','surface','ink','muted','line','a','b','sys','accent'].forEach(k=>C[k]=cs.getPropertyValue('--'+k).trim());
+}
+function fmt(x,d){ if(!isFinite(x)) return '—'; let v=Math.abs(x)<0.5*Math.pow(10,-d)?0:x; let s=v.toFixed(d); if(d===0) s=Number(s).toLocaleString('en-US'); return s.replace('-','−'); }
+function niceStep(range,n){ const raw=range/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p; return (f<1.5?1:f<3?2:f<7?5:10)*p; }
+function halfW(m){ return 0.42+0.30*(m-50)/100; }
+
+/* ---------- physics plan ---------- */
+function computePlan(){
+  const hA=halfW(S.mA), hB=halfW(S.mB), d=hA+hB, dtc=S.dtc;
+  const cA=XC-d/2, cB=XC+d/2;
+  let vA,vB,vA1,vB1,T0;
+  if(S.mode==='collision'){
+    vA=S.vA; vB=S.vB;
+    if(vA<=vB){
+      return {never:true,hA,hB,d,dtc,vA,vB,vA1:vA,vB1:vB,T:Infinity,xA0:cA-2.5,xB0:cB+2.5,J:0,Fmax:0};
+    }
+    const e=E[S.type], M=S.mA+S.mB, P=S.mA*vA+S.mB*vB;
+    vA1=(P+S.mB*e*(vB-vA))/M;
+    vB1=(P+S.mA*e*(vA-vB))/M;
+    T0=1.6;
+  } else {
+    vA=vB=S.v0;
+    vA1=S.v0-S.push/S.mA;
+    vB1=S.v0+S.push/S.mB;
+    T0=0.7;
+  }
+  const lim=(c,v,h)=> v>0?(c-h-0.2)/v : v<0?(W_M-h-0.2-c)/(-v) : Infinity;
+  const T=Math.max(0.3,Math.min(T0,lim(cA,vA,hA),lim(cB,vB,hB)));
+  const J=S.mA*(vA1-vA);
+  let tEnd=T+dtc+2.2;
+  if(S.mode==='collision' && S.type!=='perfect'){
+    const e=E[S.type], sEnd=d-(vA-vB)*dtc*(1-e)/2, vrel1=vB1-vA1;
+    const tSep=T+dtc+(vrel1>0?Math.max(0,(d-sEnd)/vrel1):0);
+    tEnd=tSep+0.25;
+  }
+  return {never:false,hA,hB,d,dtc,vA,vB,vA1,vB1,T,tEnd,xA0:cA-vA*T,xB0:cB-vB*T,J,Fmax:Math.PI*J/(2*dtc)};
+}
+function kin(x0,v0,dv,m,t){
+  const T=plan.T, dt=plan.dtc;
+  if(t<T) return {x:x0+v0*t,v:v0,F:0};
+  const tau=t-T;
+  if(tau<=dt){
+    const k=Math.PI*tau/dt;
+    return {x:x0+v0*T+v0*tau+dv/2*(tau-dt/Math.PI*Math.sin(k)),
+            v:v0+dv*(1-Math.cos(k))/2,
+            F:m*dv*Math.PI/(2*dt)*Math.sin(k)};
+  }
+  const xe=x0+v0*(T+dt)+dv/2*dt;
+  return {x:xe+(v0+dv)*(tau-dt),v:v0+dv,F:0};
+}
+function stateAt(t){
+  const a=kin(plan.xA0,plan.vA,plan.vA1-plan.vA,S.mA,t);
+  const b=kin(plan.xB0,plan.vB,plan.vB1-plan.vB,S.mB,t);
+  const ov=plan.d-(b.x-a.x);
+  if(ov>0){ const M=S.mA+S.mB; a.xd=a.x-ov*S.mB/M; b.xd=b.x+ov*S.mA/M; } else { a.xd=a.x; b.xd=b.x; }
+  return {a,b};
+}
+function impulseSoFar(t){
+  const tau=t-plan.T;
+  if(tau<=0) return 0;
+  if(tau>=plan.dtc) return plan.J;
+  return plan.J*(1-Math.cos(Math.PI*tau/plan.dtc))/2;
+}
+const hidden = () => S.predict && !S.revealed;
+
+/* ---------- canvases ---------- */
+const canv = {};
+function setup(id){
+  const c=$(id), r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  c.width=Math.max(1,Math.round(r.width*dpr)); c.height=Math.max(1,Math.round(r.height*dpr));
+  const ctx=c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  canv[id]={ctx,w:r.width,h:r.height};
+}
+function setupAll(){ ['scene','ftA','ftB','bars'].forEach(setup); drawAll(); }
+
+/* ---------- scene ---------- */
+const scratches=[]; (function(){let s=7; const rnd=()=>{s=(s*9301+49297)%233280; return s/233280;}; for(let i=0;i<60;i++) scratches.push([rnd(),rnd(),rnd()*0.08+0.02,rnd()*0.6-0.3]);})();
+
+function drawField(ctx,w,h,ppm){
+  if(S.sport==='football'){
+    const stripe=2.286;
+    for(let i=0;i*stripe<W_M+stripe;i++){
+      ctx.fillStyle = i%2? '#3B7A39' : '#356F33';
+      ctx.fillRect(i*stripe*ppm,0,stripe*ppm+1,h);
+    }
+    ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=3;
+    for(let k=-4;k<=4;k++){
+      const x=(XC+k*4.572)*ppm; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    }
+    ctx.lineWidth=1.5; ctx.strokeStyle='rgba(255,255,255,.6)';
+    for(let k=-20;k<=20;k++){ const x=(XC+k*0.9144)*ppm; ctx.beginPath(); ctx.moveTo(x,h*0.10); ctx.lineTo(x,h*0.13); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,h*0.95); ctx.lineTo(x,h*0.98); ctx.stroke(); }
+    ctx.fillStyle='rgba(255,255,255,.55)'; ctx.font=`700 ${Math.round(h*0.15)}px "Saira Condensed","Arial Narrow",sans-serif`; ctx.textAlign='center'; ctx.textBaseline='top';
+    [[0,'50'],[-2,'40'],[2,'40'],[-4,'30'],[4,'30']].forEach(([k,t])=>{ ctx.fillText(t,(XC+k*4.572)*ppm,h*0.17); });
+  } else {
+    const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,'#F3F8FB'); g.addColorStop(1,'#DDEAF1');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(120,150,170,.18)'; ctx.lineWidth=1;
+    scratches.forEach(([x,y,l,a])=>{ ctx.beginPath(); ctx.moveTo(x*w,y*h); ctx.lineTo(x*w+l*w,y*h+a*l*w); ctx.stroke(); });
+    ctx.strokeStyle='rgba(200,30,45,.55)'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.ellipse(XC*ppm,h*0.55,4.57*ppm,h*0.24,0,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle='#C81E2D'; ctx.fillRect((XC-0.15)*ppm,0,0.3*ppm,h);
+    ctx.fillStyle='#2457A6'; [XC-9.75,XC+9.75].forEach(x=>ctx.fillRect((x-0.15)*ppm,0,0.3*ppm,h));
+    ctx.fillStyle='#2457A6'; ctx.beginPath(); ctx.ellipse(XC*ppm,h*0.55,5,3,0,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function shade(hex,amt){
+  let c=hex.replace('#',''); if(c.length===3) c=c.split('').map(x=>x+x).join('');
+  const n=parseInt(c,16); let r=n>>16,g=(n>>8)&255,b=n&255;
+  r=Math.max(0,Math.min(255,r+amt)); g=Math.max(0,Math.min(255,g+amt)); b=Math.max(0,Math.min(255,b+amt));
+  return `rgb(${r},${g},${b})`;
+}
+
+function drawPlayer(ctx,o){
+  const {x,gy,H,wh,col,dir,phase,moving,squash,num}=o;
+  const hockey=S.sport==='hockey';
+  ctx.save(); ctx.translate(x,gy); ctx.scale(dir*(1-0.12*squash),1);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(0,2,wh*1.5,H*0.045,0,0,Math.PI*2); ctx.fill();
+  const hipY=-H*0.46, shY=-H*0.80, lean=H*0.07;
+  const sw = moving ? Math.sin(phase)*(hockey?0.35:0.55) : 0.2;
+  const pants = hockey ? '#23262B' : '#ECE6D4';
+  [1,-1].forEach(s=>{
+    const ang=s*sw;
+    const fx=Math.sin(ang)*H*0.30 + (hockey?s*H*0.06:0);
+    const kx=fx*0.45+H*0.05, ky=hipY*0.5;
+    ctx.strokeStyle=pants; ctx.lineWidth=wh*0.55;
+    ctx.beginPath(); ctx.moveTo(0,hipY); ctx.lineTo(kx,ky); ctx.stroke();
+    ctx.strokeStyle=hockey?col:shade(col,-25); ctx.lineWidth=wh*0.45;
+    ctx.beginPath(); ctx.moveTo(kx,ky); ctx.lineTo(fx,-H*0.05); ctx.stroke();
+    if(hockey){
+      ctx.fillStyle='#111'; ctx.fillRect(fx-wh*0.35,-H*0.07,wh*0.8,H*0.04);
+      ctx.strokeStyle='#9AA4AE'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(fx-wh*0.45,-H*0.012); ctx.lineTo(fx+wh*0.6,-H*0.012); ctx.stroke();
+    } else {
+      ctx.fillStyle='#111'; ctx.beginPath(); ctx.ellipse(fx+wh*0.15,-H*0.03,wh*0.42,H*0.03,0,0,Math.PI*2); ctx.fill();
+    }
+  });
+  const shW = hockey?1.05:1.3;
+  ctx.fillStyle=col;
+  ctx.beginPath();
+  ctx.moveTo(-wh*0.75,hipY); ctx.lineTo(wh*0.75,hipY);
+  ctx.lineTo(wh*shW+lean,shY+H*0.05);
+  ctx.quadraticCurveTo(wh*shW*0.9+lean,shY-H*0.04,lean,shY-H*0.03);
+  ctx.quadraticCurveTo(-wh*shW*0.9+lean,shY-H*0.04,-wh*shW+lean,shY+H*0.05);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.9)'; ctx.fillRect(-wh*0.75,hipY-H*0.04,wh*1.5,H*0.025);
+  ctx.strokeStyle=shade(col,-30); ctx.lineWidth=wh*0.4;
+  if(hockey){
+    const hx=wh*1.25+lean, hy=hipY-H*0.02;
+    ctx.beginPath(); ctx.moveTo(wh*0.5+lean,shY+H*0.06); ctx.lineTo(wh*1.0+lean,shY+H*0.2); ctx.lineTo(hx,hy); ctx.stroke();
+    ctx.strokeStyle='#8A5A2B'; ctx.lineWidth=4;
+    ctx.beginPath(); ctx.moveTo(hx-wh*0.6,hy-H*0.08); ctx.lineTo(wh*3.4,-H*0.02); ctx.lineTo(wh*4.3,-H*0.02); ctx.stroke();
+    ctx.fillStyle='#111'; ctx.beginPath(); ctx.arc(hx,hy,wh*0.22,0,Math.PI*2); ctx.fill();
+  } else {
+    ctx.beginPath(); ctx.moveTo(wh*0.6+lean,shY+H*0.06); ctx.lineTo(wh*1.4+lean,shY+H*0.17); ctx.lineTo(wh*1.85+lean,shY+H*0.07); ctx.stroke();
+  }
+  const r=H*0.105, hx=lean+wh*0.2, hy=shY-H*0.1;
+  ctx.fillStyle=col; ctx.beginPath(); ctx.arc(hx,hy,r,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(hx-r*0.25,hy-r*0.3,r*0.35,0,Math.PI*2); ctx.fill();
+  if(hockey){
+    ctx.fillStyle='rgba(170,215,240,.8)'; ctx.beginPath(); ctx.moveTo(hx+r*0.3,hy-r*0.2); ctx.lineTo(hx+r*1.15,hy-r*0.1); ctx.lineTo(hx+r*1.05,hy+r*0.45); ctx.lineTo(hx+r*0.4,hy+r*0.4); ctx.closePath(); ctx.fill();
+  } else {
+    ctx.strokeStyle='#B9BFC4'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(hx+r*0.55,hy-r*0.1); ctx.lineTo(hx+r*1.25,hy+r*0.05); ctx.moveTo(hx+r*0.6,hy+r*0.35); ctx.lineTo(hx+r*1.2,hy+r*0.45); ctx.moveTo(hx+r*1.2,hy-r*0.05); ctx.lineTo(hx+r*1.15,hy+r*0.75); ctx.stroke();
+  }
+  ctx.restore();
+  ctx.save();
+  ctx.fillStyle='#fff'; ctx.font=`700 ${Math.round(H*0.16)}px "Saira Condensed","Arial Narrow",sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(num, x+dir*lean*0.5, gy+(hipY+shY)/2+H*0.02);
+  ctx.restore();
+}
+
+function arrow(ctx,x0,y,len,col){
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=4; ctx.lineCap='round';
+  if(Math.abs(len)<3){ ctx.beginPath(); ctx.arc(x0,y,4,0,Math.PI*2); ctx.fill(); return; }
+  const s=Math.sign(len), x1=x0+len;
+  ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1-s*8,y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x1-s*12,y-7); ctx.lineTo(x1-s*12,y+7); ctx.closePath(); ctx.fill();
+}
+function chip(ctx,text,x,y,bg,fg,font){
+  ctx.font=font; const w=ctx.measureText(text).width+14, hh=22;
+  ctx.fillStyle=bg; roundRect(ctx,x-w/2,y-hh/2,w,hh,6); ctx.fill();
+  ctx.fillStyle=fg; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,x,y+1);
+}
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+function drawScene(){
+  const {ctx,w,h}=canv.scene; ctx.clearRect(0,0,w,h);
+  const ppm=w/W_M;
+  drawField(ctx,w,h,ppm);
+  const st=stateAt(simT);
+  const H=Math.min(1.9*ppm,h*0.48), gy=h*0.86;
+  const inContact = !plan.never && simT>=plan.T && simT<=plan.T+plan.dtc;
+  const sq = inContact ? Math.abs(st.a.F)/Math.max(1,Math.abs(plan.Fmax)) : 0;
+  const teamA = S.sport==='football' ? '#1F5FAD' : '#1D4E9E';
+  const teamB = S.sport==='football' ? '#D16A12' : '#C9561A';
+  const pA={x:st.a.xd*ppm,gy,H,wh:plan.hA*ppm*0.9,col:teamA,dir:1,phase:st.a.x*2.4,moving:Math.abs(st.a.v)>0.3,squash:sq,num:'A'};
+  const pB={x:st.b.xd*ppm,gy,H,wh:plan.hB*ppm*0.9,col:teamB,dir:-1,phase:st.b.x*2.4+1.3,moving:Math.abs(st.b.v)>0.3,squash:sq,num:'B'};
+  drawPlayer(ctx,pA); drawPlayer(ctx,pB);
+
+  if(inContact){
+    const cx=((st.a.xd+plan.hA)+(st.b.xd-plan.hB))/2*ppm, cy=gy-H*0.66;
+    const L=8+30*sq;
+    ctx.strokeStyle=S.sport==='football'?'#FFD84A':'#FF5A3C'; ctx.lineWidth=3;
+    for(let i=0;i<10;i++){ const an=i/10*Math.PI*2; ctx.beginPath(); ctx.moveTo(cx+Math.cos(an)*8,cy+Math.sin(an)*8); ctx.lineTo(cx+Math.cos(an)*(8+L),cy+Math.sin(an)*(8+L)); ctx.stroke(); }
+  }
+
+  const onTurf = S.sport==='football';
+  const labCol = onTurf?'rgba(255,255,255,.95)':'#1B2A33';
+  const vs=Math.min(14,w/42);
+  const fontS=`600 ${w<500?13:15}px "Barlow",system-ui,sans-serif`;
+  [[st.a,pA,'A',S.mA],[st.b,pB,'B',S.mB]].forEach(([s,p,n,m])=>{
+    const yA=gy-H-18;
+    arrow(ctx,p.x,yA,s.v*vs,p.col===teamA?(onTurf?'#CFE3FF':teamA):(onTurf?'#FFE0C2':teamB));
+    ctx.font=fontS; ctx.fillStyle=labCol; ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(`${n}: ${fmt(s.v,1)} m/s`,p.x,yA-10);
+  });
+
+  chip(ctx,`t = ${fmt(simT,3)} s`,58,20,'rgba(0,0,0,.55)','#fff',`600 14px "Barlow",system-ui,sans-serif`);
+  ctx.font=`600 14px "Barlow",system-ui,sans-serif`;
+  chip(ctx,'+ direction →',w-62,20,'rgba(0,0,0,.55)','#fff',`600 14px "Barlow",system-ui,sans-serif`);
+  if(running && S.slow && !plan.never && simT>plan.T-0.12 && simT<plan.T+plan.dtc+0.12){
+    chip(ctx,'Slow motion',w/2,20,'rgba(255,216,74,.95)','#1A1A1A',`700 14px "Barlow",system-ui,sans-serif`);
+  }
+  if(plan.never){
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font=`700 ${w<500?20:26}px "Saira Condensed","Arial Narrow",sans-serif`;
+    ctx.fillText('These players never meet',w/2,h/2-16);
+    ctx.font=`500 ${w<500?13:16}px "Barlow",system-ui,sans-serif`;
+    ctx.fillText('Player A’s velocity must be greater than Player B’s (right is positive).',w/2,h/2+16,w-30);
+  }
+}
+
+/* ---------- force–time graphs ---------- */
+function drawFt(id,who){
+  const {ctx,w,h}=canv[id]; ctx.clearRect(0,0,w,h);
+  const col=who==='A'?C.a:C.b, sign=who==='A'?1:-1;
+  const pad={l:62,r:12,t:44,b:38}, pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  const dtc=plan.dtc, t0=-0.25*dtc, t1=1.35*dtc;
+  const Fpk=Math.max(100,Math.abs(plan.Fmax));
+  const ystep=niceStep(Fpk*1.15,2), yMax=Math.ceil(Fpk*1.12/ystep)*ystep;
+  const X=t=>pad.l+(t-t0)/(t1-t0)*pw, Y=F=>pad.t+ph/2-F/yMax*ph/2;
+
+  ctx.font=`600 17px "Saira Condensed","Arial Narrow",sans-serif`; ctx.fillStyle=col; ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText(`Force on Player ${who}`,4,2);
+
+  ctx.strokeStyle=C.line; ctx.lineWidth=1; ctx.fillStyle=C.muted; ctx.font=`500 11.5px "Barlow",system-ui,sans-serif`;
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let F=-yMax;F<=yMax+1e-9;F+=ystep){
+    const y=Y(F); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+    ctx.fillText(fmt(F,0),pad.l-6,y);
+  }
+  const xs=niceStep(t1-t0,4); ctx.textAlign='center'; ctx.textBaseline='top';
+  const dec=Math.max(0,-Math.floor(Math.log10(xs)));
+  for(let t=Math.ceil(t0/xs)*xs;t<=t1+1e-9;t+=xs){ const x=X(t); ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke(); ctx.fillText(fmt(t,dec),x,pad.t+ph+5); }
+  ctx.fillText('Time from first contact (s)',pad.l+pw/2,h-15);
+  ctx.save(); ctx.translate(12,pad.t+ph/2); ctx.rotate(-Math.PI/2); ctx.textBaseline='middle'; ctx.fillText('Force (N)',0,0); ctx.restore();
+  ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(pad.l,Y(0)); ctx.lineTo(pad.l+pw,Y(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ph); ctx.stroke();
+
+  if(plan.never || !started){
+    ctx.fillStyle=C.muted; ctx.font=`500 13.5px "Barlow",system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(plan.never?'No collision with these settings':'Press Play to record the force',pad.l+pw/2,pad.t+ph*0.25);
+    return;
+  }
+  const tauNow=Math.min(t1,simT-plan.T);
+  const Ff=tau=> (tau<0||tau>dtc)?0: sign*plan.Fmax*Math.sin(Math.PI*tau/dtc);
+  if(tauNow>0){
+    ctx.fillStyle=col; ctx.globalAlpha=0.25; ctx.beginPath(); ctx.moveTo(X(0),Y(0));
+    const end=Math.min(tauNow,dtc);
+    for(let i=0;i<=80;i++){ const t=end*i/80; ctx.lineTo(X(t),Y(Ff(t))); }
+    ctx.lineTo(X(end),Y(0)); ctx.closePath(); ctx.fill(); ctx.globalAlpha=1;
+  }
+  if(tauNow>t0){
+    ctx.strokeStyle=col; ctx.lineWidth=2.75; ctx.beginPath();
+    const n=160; for(let i=0;i<=n;i++){ const t=t0+(tauNow-t0)*i/n; const x=X(t), y=Y(Ff(t)); i?ctx.lineTo(x,y):ctx.moveTo(x,y); }
+    ctx.stroke();
+  }
+  const Jnow=sign*impulseSoFar(simT);
+  ctx.textAlign='right'; ctx.textBaseline='top'; ctx.fillStyle=C.ink; ctx.font=`600 13.5px "Barlow",system-ui,sans-serif`;
+  const done=simT>=plan.T+plan.dtc;
+  const jTxt = hidden()&&done ? '?' : fmt(Jnow,0);
+  ctx.fillText(`Impulse (area): ${jTxt} N·s`,w-4,4);
+  ctx.fillStyle=C.muted; ctx.font=`500 12.5px "Barlow",system-ui,sans-serif`;
+  ctx.fillText(`Peak force: ${hidden()?'?':fmt(sign*plan.Fmax,0)} N`,w-4,22);
+}
+
+/* ---------- momentum bars ---------- */
+function drawBars(){
+  const {ctx,w,h}=canv.bars; ctx.clearRect(0,0,w,h);
+  const pA0=S.mA*plan.vA, pB0=S.mB*plan.vB, pS0=pA0+pB0;
+  const pA1=S.mA*plan.vA1, pB1=S.mB*plan.vB1;
+  let nowA=null,nowB=null;
+  if(started && !plan.never){ const st=stateAt(simT); nowA=S.mA*st.a.v; nowB=S.mB*st.b.v; }
+  const done = started && !plan.never && simT>=plan.T+plan.dtc;
+  const showNow = nowA!==null && !(hidden() && simT>=plan.T);
+  const mx=Math.max(50,...[pA0,pB0,pS0,pA1,pB1,pA1+pB1].map(Math.abs));
+  const ys=niceStep(mx*1.1,3), yMax=Math.ceil(mx*1.08/ys)*ys;
+  const pad={l:62,r:12,t:46,b:40}, pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  const Y=p=>pad.t+ph/2-p/yMax*ph/2;
+
+  ctx.font=`600 17px "Saira Condensed","Arial Narrow",sans-serif`; ctx.fillStyle=C.ink; ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('Momentum before and after',4,2);
+  const lx=Math.max(240,w-250);
+  ctx.font=`500 13px "Barlow",system-ui,sans-serif`; ctx.textBaseline='middle';
+  if(w>480){
+    ctx.fillStyle=C.muted; ctx.globalAlpha=0.35; ctx.fillRect(lx,12,14,14); ctx.globalAlpha=1; ctx.strokeStyle=C.muted; ctx.strokeRect(lx+0.5,12.5,13,13);
+    ctx.fillStyle=C.muted; ctx.fillText('Before',lx+20,19);
+    ctx.fillStyle=C.muted; ctx.fillRect(lx+80,12,14,14); ctx.fillText(done?'After':'Right now',lx+100,19);
+  }
+
+  ctx.strokeStyle=C.line; ctx.lineWidth=1; ctx.fillStyle=C.muted; ctx.font=`500 11.5px "Barlow",system-ui,sans-serif`; ctx.textAlign='right';
+  for(let p=-yMax;p<=yMax+1e-9;p+=ys){ const y=Y(p); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke(); ctx.fillText(fmt(p,0),pad.l-6,y); }
+  ctx.save(); ctx.translate(12,pad.t+ph/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.fillText('Momentum (kg·m/s)',0,0); ctx.restore();
+
+  const groups=[
+    {name:'Player A',col:C.a,before:pA0,now:nowA},
+    {name:'Player B',col:C.b,before:pB0,now:nowB},
+    {name:'System (A + B)',col:C.sys,before:pS0,now:nowA===null?null:nowA+nowB}
+  ];
+  const gw=pw/3, bw=Math.min(54,gw*0.28);
+  groups.forEach((g,i)=>{
+    const cx=pad.l+gw*(i+0.5);
+    const draw=(val,x,solid)=>{
+      const y0=Y(0), y1=Y(val);
+      ctx.fillStyle=g.col; ctx.globalAlpha=solid?1:0.3; ctx.fillRect(x,Math.min(y0,y1),bw,Math.abs(y1-y0)); ctx.globalAlpha=1;
+      if(!solid){ ctx.strokeStyle=g.col; ctx.lineWidth=1.5; ctx.strokeRect(x+0.75,Math.min(y0,y1)+0.75,bw-1.5,Math.max(0,Math.abs(y1-y0)-1.5)); }
+      ctx.fillStyle=C.ink; ctx.font=`600 12.5px "Barlow",system-ui,sans-serif`; ctx.textAlign='center';
+      ctx.textBaseline= val>=0?'bottom':'top';
+      ctx.fillText(fmt(val,0),x+bw/2,val>=0?y1-3:y1+3);
+    };
+    draw(g.before,cx-bw-4,false);
+    if(g.now!==null && showNow) draw(g.now,cx+4,true);
+    else if(g.now!==null){ ctx.fillStyle=C.muted; ctx.font=`700 18px "Barlow",system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText('?',cx+4+bw/2,Y(0)-4); }
+    ctx.fillStyle=g.col; ctx.font=`600 13.5px "Barlow",system-ui,sans-serif`; ctx.textAlign='center'; ctx.textBaseline='top';
+    ctx.fillText(g.name,cx,pad.t+ph+12);
+  });
+  ctx.strokeStyle=C.ink; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(pad.l,Y(0)); ctx.lineTo(pad.l+pw,Y(0)); ctx.stroke();
+}
+
+/* ---------- table ---------- */
+function renderTable(){
+  const done = started && !plan.never && simT>=plan.T+plan.dtc;
+  const hide = hidden();
+  const aft = (v,d)=> !done ? '—' : hide ? '?' : fmt(v,d);
+  const ke=(m,v)=>0.5*m*v*v;
+  const rows=[
+    {n:'Player A',c:C.a,m:S.mA,v0:plan.vA,v1:plan.vA1},
+    {n:'Player B',c:C.b,m:S.mB,v0:plan.vB,v1:plan.vB1}
+  ];
+  let head=`<tr><th>Object</th><th>Mass (kg)</th><th>v before (m/s)</th><th>v after (m/s)</th><th>p before (kg·m/s)</th><th>p after (kg·m/s)</th><th>Δp = impulse (N·s)</th>${S.showKE?'<th>KE before (J)</th><th>KE after (J)</th>':''}</tr>`;
+  let body=rows.map(r=>`<tr><td class="who"><span class="dot" style="background:${r.c}"></span>${r.n}</td><td>${fmt(r.m,0)}</td><td>${fmt(r.v0,2)}</td><td>${aft(r.v1,2)}</td><td>${fmt(r.m*r.v0,1)}</td><td>${aft(r.m*r.v1,1)}</td><td>${aft(r.m*(r.v1-r.v0),1)}</td>${S.showKE?`<td>${fmt(ke(r.m,r.v0),0)}</td><td>${aft(ke(r.m,r.v1),0)}</td>`:''}</tr>`).join('');
+  const P0=S.mA*plan.vA+S.mB*plan.vB, P1=S.mA*plan.vA1+S.mB*plan.vB1;
+  const K0=ke(S.mA,plan.vA)+ke(S.mB,plan.vB), K1=ke(S.mA,plan.vA1)+ke(S.mB,plan.vB1);
+  body+=`<tr class="sys"><td class="who"><span class="dot" style="background:${C.sys}"></span>System (A + B)</td><td>${fmt(S.mA+S.mB,0)}</td><td>—</td><td>—</td><td>${fmt(P0,1)}</td><td>${aft(P1,1)}</td><td>${aft(P1-P0,1)}</td>${S.showKE?`<td>${fmt(K0,0)}</td><td>${aft(K1,0)}</td>`:''}</tr>`;
+  $('data').innerHTML=`<thead>${head}</thead><tbody>${body}</tbody>`;
+  $('reveal').classList.toggle('hide', !(hide && done));
+}
+
+function drawAll(){ if(!canv.scene) return; drawScene(); drawFt('ftA','A'); drawFt('ftB','B'); drawBars(); }
+
+/* ---------- loop ---------- */
+let wasDone=false;
+function frame(ts){
+  if(!running) return;
+  const real=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
+  let scale=S.speed;
+  if(S.slow && simT>plan.T-0.12 && simT<plan.T+plan.dtc+0.12) scale*=Math.min(1,(plan.dtc+0.24)/2.6);
+  simT+=real*scale;
+  const tEnd=plan.tEnd;
+  const st=stateAt(simT);
+  const off=x=>x< -1.5 || x> W_M+1.5;
+  if(simT>=tEnd || (simT>plan.T+plan.dtc && off(st.a.xd) && off(st.b.xd))){ running=false; finished=true; }
+  const doneNow=simT>=plan.T+plan.dtc;
+  if(doneNow!==wasDone){ wasDone=doneNow; renderTable(); }
+  drawAll(); updateButtons();
+  if(running) requestAnimationFrame(frame);
+}
+function updateButtons(){
+  const p=$('play');
+  p.disabled=plan.never;
+  p.textContent = running ? 'Pause' : finished ? 'Replay' : started ? 'Resume' : 'Play';
+}
+function reset(){
+  running=false; started=false; finished=false; simT=0; wasDone=false; S.revealed=false;
+  plan=computePlan(); renderTable(); drawAll(); updateButtons();
+}
+$('play').addEventListener('click',()=>{
+  if(plan.never) return;
+  if(running){ running=false; updateButtons(); drawAll(); return; }
+  if(finished){ reset(); }
+  started=true; running=true; lastTs=performance.now(); updateButtons(); requestAnimationFrame(frame);
+});
+$('reset').addEventListener('click',reset);
+$('reveal').addEventListener('click',()=>{ S.revealed=true; renderTable(); drawAll(); });
+
+/* ---------- inputs ---------- */
+function bindPair(key,base,dec){
+  const r=$(base+'-r'), n=$(base+'-n');
+  r.value=S[key]; n.value=S[key];
+  const set=(v,src)=>{
+    v=parseFloat(v); if(!isFinite(v)) return;
+    v=Math.max(parseFloat(r.min),Math.min(parseFloat(r.max),v));
+    S[key]=v; if(src!==r) r.value=v; if(src!==n) n.value=Number(v.toFixed(dec));
+    reset();
+  };
+  r.addEventListener('input',()=>set(r.value,r));
+  n.addEventListener('change',()=>set(n.value,n));
+}
+bindPair('mA','mA',0); bindPair('vA','vA',1); bindPair('mB','mB',0); bindPair('vB','vB',1);
+bindPair('push','J',0); bindPair('v0','v0',1); bindPair('dtc','dt',2);
+
+document.querySelectorAll('input[name=ctype]').forEach(el=>el.addEventListener('change',()=>{ S.type=el.value; reset(); }));
+document.querySelectorAll('input[name=speed]').forEach(el=>el.addEventListener('change',()=>{ S.speed=parseFloat(el.value); }));
+$('slow').addEventListener('change',e=>{ S.slow=e.target.checked; });
+$('showKE').addEventListener('change',e=>{ S.showKE=e.target.checked; renderTable(); });
+$('predict').addEventListener('change',e=>{ S.predict=e.target.checked; S.revealed=false; renderTable(); drawAll(); });
+document.querySelectorAll('input[name=sport]').forEach(el=>el.addEventListener('change',()=>{
+  S.sport=el.value;
+  $('title').textContent = S.sport==='football' ? 'Momentum on the field' : 'Momentum on the ice';
+  $('stickLabel').firstChild.textContent = S.sport==='football' ? 'Tackle and hold on' : 'Grab and hold on';
+  drawAll();
+}));
+document.querySelectorAll('input[name=mode]').forEach(el=>el.addEventListener('change',()=>{
+  S.mode=el.value; const push=S.mode==='push';
+  document.querySelectorAll('.vel').forEach(x=>x.classList.toggle('hide',push));
+  $('typeBox').classList.toggle('hide',push);
+  $('pushBox').classList.toggle('hide',!push);
+  reset();
+}));
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ readColors(); renderTable(); drawAll(); });
+new ResizeObserver(()=>setupAll()).observe(document.querySelector('.wrap'));
+
+readColors();
+plan=computePlan();
+setupAll(); renderTable(); updateButtons();
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);
+})();
+</script>
+</body>
+</html>
