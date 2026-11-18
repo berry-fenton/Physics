@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spin Lab: Rotational Dynamics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F4; --surface:#FFFFFF; --surface-2:#F5F7F9; --ink:#17212C; --muted:#56636F; --line:#CDD5DD;
+  --body:#DCE3EA; --body-edge:#7E8B98;
+  --theta:#6A4BC4; --omega:#1C69CF; --alpha:#12805A; --torque:#C92C5E; --inertia:#9E5B00;
+  --good:#12805A; --bad:#B8322A; --focus:#1C69CF;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161D; --surface:#18212B; --surface-2:#1E2833; --ink:#E5EBF1; --muted:#9AA8B5; --line:#2E3B49;
+    --body:#2A3542; --body-edge:#8796A5;
+    --theta:#A88EF7; --omega:#62A6FF; --alpha:#41CC93; --torque:#FF6E98; --inertia:#F2AA3E;
+    --good:#41CC93; --bad:#FF7D6E; --focus:#62A6FF; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161D; --surface:#18212B; --surface-2:#1E2833; --ink:#E5EBF1; --muted:#9AA8B5; --line:#2E3B49;
+  --body:#2A3542; --body-edge:#8796A5;
+  --theta:#A88EF7; --omega:#62A6FF; --alpha:#41CC93; --torque:#FF6E98; --inertia:#F2AA3E;
+  --good:#41CC93; --bad:#FF7D6E; --focus:#62A6FF; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 160px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3,h4{font-family:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;line-height:1.15;margin:0}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:6px}
+.q{font-style:italic;font-weight:700}
+.th{color:var(--theta)} .w{color:var(--omega)} .al{color:var(--alpha)} .tq{color:var(--torque)} .in{color:var(--inertia)}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar{max-width:1200px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.brand svg{width:40px;height:40px;flex:none}
+.brand h1{font-size:1.5rem;font-weight:800;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--muted);font-size:.85rem}
+nav.tabs{max-width:1200px;margin:0 auto;padding:0 20px 12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+nav.tabs button{display:flex;align-items:center;gap:12px;text-align:left;border:2px solid var(--line);background:var(--surface-2);padding:10px 14px;border-radius:14px;cursor:pointer;color:var(--ink)}
+nav.tabs .tn{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:2px solid currentColor;font-family:"Bricolage Grotesque",sans-serif;font-weight:800}
+nav.tabs b{display:block;font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;font-weight:800;line-height:1.15}
+nav.tabs small{display:block;color:var(--muted);font-size:.85rem;line-height:1.3}
+nav.tabs button:hover:not([aria-selected="true"]){border-color:var(--ink)}
+nav.tabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+nav.tabs button[aria-selected="true"] small{color:var(--surface);opacity:.8}
+.next-sec{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.next-sec p{margin:0;font-weight:700}
+
+main{max-width:1200px;margin:0 auto;padding:22px 20px 60px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;font-size:.9rem;color:var(--muted);margin-bottom:20px}
+.legend span.chip{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.legend b{font-style:italic;font-size:1.05rem}
+.view[hidden]{display:none}
+
+/* learn */
+.learn{display:grid;grid-template-columns:240px minmax(0,1fr);gap:28px;align-items:start}
+.lesson-nav{position:sticky;top:calc(env(safe-area-inset-top,0px) + 164px);display:flex;flex-direction:column;gap:6px}
+.lesson-nav button{display:flex;gap:12px;align-items:center;text-align:left;border:1px solid transparent;background:transparent;border-radius:12px;padding:10px 12px;cursor:pointer}
+.lesson-nav button .n{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--line);font-weight:700;font-size:.9rem}
+.lesson-nav button[aria-current="true"]{background:var(--surface);border-color:var(--line)}
+.lesson-nav button[aria-current="true"] .n{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.lesson-nav small{display:block;color:var(--muted);font-size:.8rem}
+.lesson{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:30px clamp(18px,4vw,44px) 36px}
+.lesson[hidden]{display:none}
+.lesson h2{font-size:clamp(1.7rem,3vw,2.2rem);font-weight:800;margin-bottom:6px}
+.lesson .lede{font-size:1.15rem;color:var(--muted);max-width:62ch;margin:0 0 22px}
+.lesson h3{font-size:1.3rem;margin:34px 0 10px}
+.lesson p,.lesson li{max-width:68ch}
+.eq{margin:16px 0;padding:12px 18px;background:var(--surface-2);border-left:4px solid var(--ink);border-radius:0 10px 10px 0;font-size:1.12rem;max-width:62ch}
+.eq small{display:block;color:var(--muted);font-size:.88rem;margin-top:4px}
+.life{margin:20px 0;padding:16px 18px;border:1px dashed var(--body-edge);border-radius:12px;max-width:68ch}
+.life h4{font-size:1rem;margin-bottom:6px}
+.life p{margin:.3em 0}
+table.map{border-collapse:collapse;margin:14px 0;min-width:420px}
+table.map th,table.map td{border-bottom:1px solid var(--line);padding:8px 14px;text-align:left}
+table.map th{font-size:.9rem;color:var(--muted);font-weight:700}
+.scroll-x{overflow-x:auto;max-width:100%}
+.widget{margin:24px 0;border:1px solid var(--line);border-radius:16px;background:var(--surface-2);overflow:hidden}
+.widget canvas{display:block;width:100%;background:var(--surface)}
+.widget .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px 22px;padding:16px 18px;border-top:1px solid var(--line)}
+.widget .cap{padding:10px 18px;font-size:.92rem;color:var(--muted);border-top:1px solid var(--line)}
+.ctl label{display:block;font-size:.92rem;font-weight:700}
+.ctl label output{float:right;margin-left:8px}
+.ctl output{font-variant-numeric:tabular-nums;font-weight:700}
+input[type=range]{width:100%;accent-color:var(--ink)}
+.ctl.v-w input{accent-color:var(--omega)} .ctl.v-a input{accent-color:var(--alpha)} .ctl.v-t input{accent-color:var(--torque)} .ctl.v-i input{accent-color:var(--inertia)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--surface);padding:8px 16px;border-radius:999px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:hover{filter:brightness(1.12)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin:0;background:var(--surface);border-top:1px solid var(--line)}
+.readouts div{background:var(--surface);padding:8px 14px;box-shadow:inset -1px -1px 0 var(--line)}
+.readouts dt{font-size:.8rem;color:var(--muted)}
+.readouts dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums;font-size:1.05rem}
+.status{padding:10px 18px;border-top:1px solid var(--line);font-weight:700;min-height:2.6em}
+.check{margin:30px 0 8px;padding:18px 20px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);max-width:72ch}
+.check .qtext{font-weight:700;margin:0 0 12px}
+.check .opts{display:flex;flex-direction:column;gap:8px}
+.check .opts button{text-align:left;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.check .opts button.right{border-color:var(--good);box-shadow:inset 4px 0 0 var(--good)}
+.check .opts button.wrong{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+.fb{margin:12px 0 0;min-height:1em}
+.fb.good{color:var(--good)} .fb.bad{color:var(--bad)}
+.lesson-foot{display:flex;justify-content:space-between;gap:10px;margin-top:36px;padding-top:20px;border-top:1px solid var(--line);flex-wrap:wrap}
+ol.steps li{margin-bottom:6px}
+.shapes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.shape{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface-2);text-align:center}
+.shape svg{width:70px;height:60px;display:block;margin:0 auto 6px}
+.shape b{display:block}
+.shape span{font-size:1.05rem}
+
+/* simulator */
+.sim{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(290px,1fr);gap:22px;align-items:start}
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+#stage{display:block;width:100%;aspect-ratio:4/3}
+.stage-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--line)}
+.toggles{display:flex;gap:14px;flex-wrap:wrap;font-size:.92rem}
+.toggles label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.graphs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;background:var(--line);border-top:1px solid var(--line)}
+.graphs canvas{display:block;width:100%;aspect-ratio:16/11;background:var(--surface)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 18px 18px}
+.panel details{border-bottom:1px solid var(--line);padding:10px 0}
+.panel details:last-of-type{border-bottom:0}
+.panel summary{cursor:pointer;font-weight:700;font-family:"Bricolage Grotesque",sans-serif;font-size:1.08rem;padding:4px 0}
+.panel .grp{display:flex;flex-direction:column;gap:12px;padding:10px 0 4px}
+.seg{display:flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{flex:1;border:0;background:transparent;padding:7px 6px;font-weight:700;cursor:pointer;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.note{font-size:.88rem;color:var(--muted);margin:0}
+.presets{display:flex;flex-direction:column;gap:8px}
+.presets button{text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:10px 12px;cursor:pointer}
+.presets button b{display:block}
+.presets button span{font-size:.86rem;color:var(--muted)}
+.sim-read{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.sim-read .readouts{border-top:0}
+
+/* practice */
+.practice{display:grid;grid-template-columns:270px minmax(0,1fr);gap:26px;align-items:start}
+.plist{display:flex;flex-direction:column;gap:6px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 164px)}
+.plist button{text-align:left;border:1px solid transparent;background:transparent;border-radius:12px;padding:9px 12px;cursor:pointer;display:grid;grid-template-columns:28px 1fr 18px;gap:8px;align-items:center}
+.plist button .n{font-weight:700;color:var(--muted)}
+.plist button small{display:block;color:var(--muted);font-size:.8rem}
+.plist button[aria-current="true"]{background:var(--surface);border-color:var(--line)}
+.plist .done{color:var(--good);font-weight:700}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px clamp(18px,4vw,40px)}
+.pcard .topic{color:var(--muted);font-size:.92rem;margin:0 0 4px}
+.pcard h2{font-size:clamp(1.5rem,2.6vw,2rem);font-weight:800;margin-bottom:14px}
+.ptop{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;align-items:start}
+.ptop p{margin-top:0;max-width:64ch}
+.diagram{border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:8px}
+.diagram svg{display:block;width:100%;height:auto}
+.answers{margin:22px 0;display:flex;flex-direction:column;gap:12px}
+.arow{display:grid;grid-template-columns:minmax(0,1.4fr) 140px auto;gap:10px;align-items:center}
+.arow label{font-weight:700}
+.arow .inp{display:flex;align-items:center;gap:6px}
+.arow input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);font-variant-numeric:tabular-nums}
+.arow .unit{color:var(--muted);font-size:.9rem;white-space:nowrap}
+.arow .res{font-size:.92rem;font-weight:700;grid-column:1/-1;min-height:0}
+.arow .res.good{color:var(--good)} .arow .res.bad{color:var(--bad)}
+.walk{margin-top:26px;border-top:1px solid var(--line);padding-top:18px}
+.walk h3{font-size:1.2rem;margin-bottom:8px}
+.walk ol{padding-left:0;list-style:none;counter-reset:s;margin:12px 0}
+.walk li{counter-increment:s;position:relative;padding:12px 14px 12px 52px;margin-bottom:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);max-width:72ch}
+.walk li::before{content:counter(s);position:absolute;left:14px;top:12px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--surface);display:grid;place-items:center;font-weight:700;font-size:.85rem}
+.walk li b.t{display:block;margin-bottom:2px}
+.walk li p{margin:.3em 0}
+.pnav{display:flex;justify-content:space-between;margin-top:26px;gap:10px;flex-wrap:wrap}
+.foot{color:var(--muted);font-size:.85rem;margin-top:12px}
+
+/* diagram strokes */
+.s-ink{stroke:var(--ink);fill:none;stroke-width:2.5}
+.s-mut{stroke:var(--muted);fill:none;stroke-width:1.5}
+.s-dash{stroke:var(--muted);fill:none;stroke-width:1.5;stroke-dasharray:5 4}
+.f-body{fill:var(--body);stroke:var(--body-edge);stroke-width:2}
+.f-ink{fill:var(--ink)} .f-in{fill:var(--inertia)}
+.s-w{stroke:var(--omega);fill:none;stroke-width:3} .s-t{stroke:var(--torque);fill:none;stroke-width:3} .s-a{stroke:var(--alpha);fill:none;stroke-width:3} .s-th{stroke:var(--theta);fill:none;stroke-width:3}
+.f-w{fill:var(--omega)} .f-t{fill:var(--torque)} .f-a{fill:var(--alpha)} .f-th{fill:var(--theta)}
+svg text{fill:var(--ink);font-family:"Atkinson Hyperlegible",sans-serif;font-size:13px}
+svg text.mut{fill:var(--muted);font-size:11px}
+svg text.tw{fill:var(--omega);font-weight:700;font-style:italic} svg text.tt{fill:var(--torque);font-weight:700;font-style:italic}
+
+@media (max-width:900px){
+  .learn,.practice,.sim{grid-template-columns:1fr}
+  .lesson-nav,.plist{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px}
+  .lesson-nav button,.plist button{flex:none;min-width:200px}
+  .ptop{grid-template-columns:1fr}
+  .ptop .diagram{max-width:340px}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .brand p{display:none}
+  nav.tabs{gap:6px;padding:0 12px 10px}
+  nav.tabs button{flex-direction:column;justify-content:center;gap:4px;padding:8px 4px;text-align:center}
+  nav.tabs small{display:none}
+  nav.tabs .tn{width:26px;height:26px;font-size:.85rem}
+  .arow{grid-template-columns:1fr}
+  .graphs{grid-template-columns:1fr}
+  table.map{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="mk-ink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-ink"/></marker>
+    <marker id="mk-w" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-w"/></marker>
+    <marker id="mk-t" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-t"/></marker>
+  </defs>
+</svg>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="11" class="f-body"/><line x1="20" y1="20" x2="28" y2="16" class="s-th"/><circle cx="20" cy="20" r="2.5" class="f-ink"/><path d="M 34 22 A 14.5 14.5 0 0 1 10 31" class="s-t" marker-end="url(#mk-t)"/></svg>
+      <div><h1>Spin Lab</h1><p>Rotational dynamics for AP Physics 1</p></div>
+    </div>
+  </div>
+  <nav class="tabs" aria-label="Sections">
+    <button data-view="learn" aria-selected="true"><span class="tn">1</span><span><b>Learn</b><small>4 short lessons with mini-sims</small></span></button>
+    <button data-view="lab" aria-selected="false"><span class="tn">2</span><span><b>Simulator</b><small>Experiment with torque and spin</small></span></button>
+    <button data-view="practice" aria-selected="false"><span class="tn">3</span><span><b>Practice</b><small>12 AP problems with walkthroughs</small></span></button>
+  </nav>
+</header>
+
+<main>
+  <div class="legend" aria-label="Color key">
+    <span>Every quantity keeps its color everywhere:</span>
+    <span class="chip"><b class="th">θ</b> angle</span>
+    <span class="chip"><b class="w">ω</b> angular velocity</span>
+    <span class="chip"><b class="al">α</b> angular acceleration</span>
+    <span class="chip"><b class="tq">τ</b> torque</span>
+    <span class="chip"><b class="in">I</b> rotational inertia</span>
+  </div>
+
+  <!-- LEARN -->
+  <section class="view" id="view-learn">
+    <div class="learn">
+      <nav class="lesson-nav" aria-label="Lessons">
+        <button data-lesson="1"><span class="n">1</span><span>Describing rotation<small>θ, ω, α and the kinematics equations</small></span></button>
+        <button data-lesson="2"><span class="n">2</span><span>Rotational inertia<small>Why mass placement matters</small></span></button>
+        <button data-lesson="3"><span class="n">3</span><span>Net torque makes α<small>Newton’s second law for rotation</small></span></button>
+        <button data-lesson="4"><span class="n">4</span><span>Strings and pulleys<small>Rotation and translation together</small></span></button>
+      </nav>
+
+      <div>
+      <!-- Lesson 1 -->
+      <article class="lesson" id="lesson-1">
+        <h2>Describing rotation</h2>
+        <p class="lede">Turn on a ceiling fan. The blade tips race around while the part near the motor barely moves, yet every piece of the blade finishes a turn at the same moment. That’s why we describe spinning with angles instead of distances.</p>
+
+        <h3>Angular position and displacement, <span class="q th">θ</span></h3>
+        <p>Pick a line painted on the object (the purple line in the simulations). Its angle from a reference direction is the angular position <span class="q th">θ</span>. How far it turns is the angular displacement <span class="q th">Δθ</span>.</p>
+        <p>Physics measures angles in <b>radians</b>. One radian is the angle where the arc length equals the radius, so a point at distance <i>r</i> from the axis travels an arc</p>
+        <div class="eq"><i>s</i> = <i>r</i> <span class="q th">Δθ</span> &nbsp;&nbsp;and&nbsp;&nbsp; 1 revolution = 2π rad = 360°<small>This formula only works with θ in radians. Set your calculator accordingly when you use sin for torque, but keep rotation angles in radians.</small></div>
+
+        <h3>Angular velocity, <span class="q w">ω</span></h3>
+        <p>How fast the angle changes: <span class="q w">ω</span> = <span class="q th">Δθ</span>/Δ<i>t</i>, in rad/s. Every point on a rigid object shares the same <span class="q w">ω</span>.</p>
+        <div class="life"><h4>In real life</h4><p>A washing machine’s spin cycle runs around 1200 rpm. Convert: 1200 rev/min × 2π rad/rev ÷ 60 s/min ≈ 126 rad/s. That’s what flings water out of your clothes.</p></div>
+
+        <h3>Angular acceleration, <span class="q al">α</span></h3>
+        <p>How fast <span class="q w">ω</span> changes: <span class="q al">α</span> = Δ<span class="q w">ω</span>/Δ<i>t</i>, in rad/s². When you switch the fan on, <span class="q al">α</span> points the same way as <span class="q w">ω</span> and it speeds up. Switch it off and air drag gives an <span class="q al">α</span> opposite <span class="q w">ω</span>, so it slows.</p>
+        <p><b>Signs.</b> AP problems usually call counterclockwise positive and clockwise negative. Pick a direction and stick to it, just like choosing +x in a force problem. This connects to the right-hand rule you already know: curl your fingers the way the object spins and your thumb points along the axis in the direction of <span class="q w">ω</span>.</p>
+
+        <h3>You already know these equations</h3>
+        <p>Every linear quantity has a rotational twin. When <span class="q al">α</span> is constant, the kinematics equations have the same form with new letters.</p>
+        <div class="scroll-x"><table class="map">
+          <thead><tr><th>Linear</th><th>Rotational</th></tr></thead>
+          <tbody>
+            <tr><td>position <i>x</i></td><td>angle <span class="q th">θ</span></td></tr>
+            <tr><td>velocity <i>v</i></td><td>angular velocity <span class="q w">ω</span></td></tr>
+            <tr><td>acceleration <i>a</i></td><td>angular acceleration <span class="q al">α</span></td></tr>
+            <tr><td><i>v</i> = <i>v</i>₀ + <i>at</i></td><td><span class="q w">ω</span> = <span class="q w">ω</span>₀ + <span class="q al">α</span><i>t</i></td></tr>
+            <tr><td><i>x</i> = <i>x</i>₀ + <i>v</i>₀<i>t</i> + ½<i>at</i>²</td><td><span class="q th">θ</span> = <span class="q th">θ</span>₀ + <span class="q w">ω</span>₀<i>t</i> + ½<span class="q al">α</span><i>t</i>²</td></tr>
+            <tr><td><i>v</i>² = <i>v</i>₀² + 2<i>a</i>Δ<i>x</i></td><td><span class="q w">ω</span>² = <span class="q w">ω</span>₀² + 2<span class="q al">α</span><span class="q th">Δθ</span></td></tr>
+          </tbody>
+        </table></div>
+        <p>To jump between a point’s motion and the object’s rotation, multiply by that point’s distance from the axis:</p>
+        <div class="eq"><i>v</i> = <i>r</i><span class="q w">ω</span> &nbsp;&nbsp;&nbsp; <i>a</i><sub>t</sub> = <i>r</i><span class="q al">α</span><small>Tangential speed and tangential acceleration of a point at distance r.</small></div>
+        <div class="life"><h4>In real life</h4><p>On a carousel, the horses on the outer ring and inner ring complete a lap together (same <span class="q w">ω</span>), but the outer horses cover more ground, so they move faster. Kids who want the thrill ride the outside.</p></div>
+
+        <figure class="widget" id="w1">
+          <canvas style="aspect-ratio:16/9"></canvas>
+          <div class="controls">
+            <div class="ctl v-w"><label for="w1-w0">Starting <span class="q w">ω</span>₀ <output id="w1-w0-v"></output></label><input type="range" id="w1-w0" min="-6" max="6" step="0.5" value="1"></div>
+            <div class="ctl v-a"><label for="w1-al"><span class="q al">α</span> (constant) <output id="w1-al-v"></output></label><input type="range" id="w1-al" min="-2" max="2" step="0.1" value="0.5"></div>
+            <div class="btns"><button class="btn" id="w1-play">Play</button><button class="btn ghost" id="w1-reset">Reset</button></div>
+          </div>
+          <dl class="readouts">
+            <div><dt>Time</dt><dd id="w1-t"></dd></div>
+            <div><dt><span class="th">θ</span> turned</dt><dd class="th" id="w1-th"></dd></div>
+            <div><dt>Revolutions</dt><dd class="th" id="w1-rev"></dd></div>
+            <div><dt><span class="w">ω</span> now</dt><dd class="w" id="w1-w"></dd></div>
+            <div><dt>Dot speed (r = 0.40 m)</dt><dd id="w1-v"></dd></div>
+          </dl>
+          <figcaption class="cap">The shaded wedge is the angle swept since you pressed Play. The arrow on the dot is its velocity, <i>v</i> = <i>r</i><span class="q w">ω</span>. Try a negative <span class="q al">α</span> with a positive <span class="q w">ω</span>₀ and watch the wheel stop, then reverse.</figcaption>
+        </figure>
+
+        <h3>Reading graphs</h3>
+        <p>AP loves graphs, and the rules carry over too. The slope of a <span class="q th">θ</span>–<i>t</i> graph is <span class="q w">ω</span>. The slope of an <span class="q w">ω</span>–<i>t</i> graph is <span class="q al">α</span>. The area under an <span class="q w">ω</span>–<i>t</i> graph is <span class="q th">Δθ</span>. The Simulator tab draws all three live.</p>
+
+        <div class="check" id="qc1">
+          <p class="qtext">A carousel turns at a steady rate. Horse A rides 2 m from the center and horse B rides 4 m from the center. Which is true?</p>
+          <div class="opts">
+            <button>B has the greater angular velocity.</button>
+            <button>They have the same angular velocity, and B has twice the linear speed.</button>
+            <button>They have the same angular velocity and the same linear speed.</button>
+            <button>A has the greater angular velocity because it’s closer to the center.</button>
+          </div>
+          <p class="fb" aria-live="polite"></p>
+        </div>
+
+        <div class="lesson-foot"><span></span><button class="btn" data-go="2">Next: Rotational inertia</button></div>
+      </article>
+
+      <!-- Lesson 2 -->
+      <article class="lesson" id="lesson-2" hidden>
+        <h2>Rotational inertia</h2>
+        <p class="lede">Mass tells you how hard it is to change an object’s straight-line motion. Rotational inertia, <span class="q in">I</span>, tells you how hard it is to change its spin. The twist: it depends on where the mass sits, not just how much there is.</p>
+
+        <h3>Point masses: <span class="q in">I</span> = <i>mr</i>²</h3>
+        <p>For a small mass <i>m</i> at distance <i>r</i> from the rotation axis, <span class="q in">I</span> = <i>mr</i>². For a collection of small masses, add them up:</p>
+        <div class="eq"><span class="q in">I</span> = Σ <i>m</i><sub>i</sub><i>r</i><sub>i</sub>² &nbsp;&nbsp;&nbsp; units: kg·m²<small>r is measured from the axis of rotation, so the same object has a different I about a different axis.</small></div>
+        <p><b>Why r squared?</b> Two reasons stack. A mass farther out has to reach a bigger speed (<i>v</i> = <i>r</i><span class="q w">ω</span>) for the same spin, so it needs more force. And that force is applied over a longer lever arm, which takes more torque. One factor of <i>r</i> from each.</p>
+
+        <figure class="widget" id="w2">
+          <canvas style="aspect-ratio:16/9"></canvas>
+          <div class="controls">
+            <div class="ctl v-i"><label for="w2-m">Each mass <i>m</i> <output id="w2-m-v"></output></label><input type="range" id="w2-m" min="0.5" max="5" step="0.5" value="2"></div>
+            <div class="ctl v-i"><label for="w2-d">Distance from axis <i>r</i> <output id="w2-d-v"></output></label><input type="range" id="w2-d" min="0.1" max="1" step="0.05" value="0.5"></div>
+            <div class="btns"><button class="btn" id="w2-go">Twist with 4 N·m for 1 s</button><button class="btn ghost" id="w2-reset">Reset</button></div>
+          </div>
+          <dl class="readouts">
+            <div style="grid-column:1/-1"><dt>Rotational inertia</dt><dd class="in" id="w2-I"></dd></div>
+            <div><dt><span class="al">α</span> during the twist</dt><dd class="al" id="w2-al"></dd></div>
+            <div><dt><span class="w">ω</span> after the twist</dt><dd class="w" id="w2-w"></dd></div>
+          </dl>
+          <figcaption class="cap">Two equal masses on a light rod spinning about its center. Give it the same twist with the masses close in, then far out. Doubling <i>r</i> makes <span class="q in">I</span> four times bigger, so the final spin is four times slower.</figcaption>
+        </figure>
+
+        <div class="life"><h4>In real life</h4>
+          <p><b>Choking up on a bat.</b> Sliding your hands up moves the axis of your swing closer to the bat’s heavy barrel. Less mass far from your hands means smaller <span class="q in">I</span>, so you can swing it around faster.</p>
+          <p><b>The tightrope walker’s pole.</b> A long pole puts mass far from the walker, giving a huge <span class="q in">I</span>. When she starts to tip, she rotates slowly, which buys her time to correct.</p>
+          <p><b>Spinning in an office chair.</b> Pull your arms and legs in and you speed up; stick them out and you slow down. You’re changing your <span class="q in">I</span> mid-spin. (You’ll study why the speed changes in the angular momentum unit.)</p>
+        </div>
+
+        <h3>Common shapes</h3>
+        <p>Real objects are made of countless tiny masses, so their <span class="q in">I</span> is a sum worked out with calculus. You won’t derive these on the AP exam; problems give you the formula. What you need is the pattern: <b>the more mass near the rim, the bigger the number in front of <i>MR</i>².</b></p>
+        <div class="shapes">
+          <div class="shape"><svg viewBox="0 0 70 60"><circle cx="35" cy="30" r="24" fill="none" stroke="var(--body-edge)" stroke-width="5"/><circle cx="35" cy="30" r="2.5" class="f-ink"/></svg><b>Hoop or thin ring</b><span><i>MR</i>²</span></div>
+          <div class="shape"><svg viewBox="0 0 70 60"><circle cx="35" cy="30" r="24" class="f-body"/><circle cx="35" cy="30" r="2.5" class="f-ink"/></svg><b>Solid disk or cylinder</b><span>½<i>MR</i>²</span></div>
+          <div class="shape"><svg viewBox="0 0 70 60"><circle cx="35" cy="30" r="24" class="f-body"/><ellipse cx="35" cy="30" rx="8" ry="24" class="s-mut"/><circle cx="35" cy="30" r="2.5" class="f-ink"/></svg><b>Solid sphere</b><span>⅖<i>MR</i>²</span></div>
+          <div class="shape"><svg viewBox="0 0 70 60"><rect x="6" y="27" width="58" height="6" rx="3" class="f-body"/><circle cx="35" cy="30" r="2.5" class="f-ink"/></svg><b>Rod, axis at center</b><span>¹⁄₁₂<i>ML</i>²</span></div>
+          <div class="shape"><svg viewBox="0 0 70 60"><rect x="6" y="27" width="58" height="6" rx="3" class="f-body"/><circle cx="9" cy="30" r="2.5" class="f-ink"/></svg><b>Rod, axis at end</b><span>⅓<i>ML</i>²</span></div>
+        </div>
+        <p><b>Moving the axis.</b> If you know <span class="q in">I</span> about the center of mass, the parallel-axis theorem gives it about any parallel axis a distance <i>d</i> away:</p>
+        <div class="eq"><span class="q in">I</span> = <span class="q in">I</span><sub>cm</sub> + <i>Md</i>²<small>Check it: rod about its end = ¹⁄₁₂ML² + M(L/2)² = ⅓ML². The center-of-mass axis always gives the smallest I.</small></div>
+
+        <div class="check" id="qc2">
+          <p class="qtext">Why does a long, heavy pole help a tightrope walker stay balanced?</p>
+          <div class="opts">
+            <button>It makes her heavier, so gravity can’t tip her over.</button>
+            <button>It gives her a large rotational inertia, so she tips slowly and has time to correct.</button>
+            <button>It cancels the torque from gravity completely.</button>
+          </div>
+          <p class="fb" aria-live="polite"></p>
+        </div>
+
+        <div class="lesson-foot"><button class="btn ghost" data-go="1">Back: Describing rotation</button><button class="btn" data-go="3">Next: Net torque makes α</button></div>
+      </article>
+
+      <!-- Lesson 3 -->
+      <article class="lesson" id="lesson-3" hidden>
+        <h2>Net torque makes <span class="al">α</span></h2>
+        <p class="lede">You already know how to find each torque with <i>rF</i> sin θ and add them up with signs. Now for the payoff: what the net torque actually does.</p>
+
+        <h3>Newton’s second law for rotation</h3>
+        <p>A net force causes linear acceleration: <i>a</i> = <i>F</i><sub>net</sub>/<i>m</i>. A net torque causes angular acceleration, and rotational inertia plays the role of mass:</p>
+        <div class="eq"><span class="q al">α</span> = <span class="q tq">τ</span><sub>net</sub> / <span class="q in">I</span> &nbsp;&nbsp;&nbsp;&nbsp; or &nbsp;&nbsp;&nbsp;&nbsp; <span class="q tq">τ</span><sub>net</sub> = <span class="q in">I</span><span class="q al">α</span><small>α always points in the same direction as τnet. Not necessarily the same direction as ω.</small></div>
+
+        <h3>Zero net torque does not mean “not spinning”</h3>
+        <p>If <span class="q tq">τ</span><sub>net</sub> = 0, then <span class="q al">α</span> = 0, so <span class="q w">ω</span> stays constant. Constant could mean at rest, or it could mean spinning at a steady rate forever. This is the rotational version of Newton’s first law, and it shows up on the AP exam constantly.</p>
+        <div class="life"><h4>In real life</h4>
+          <p><b>A ceiling fan at full speed</b> has zero net torque. The motor’s torque exactly balances the torque from air drag. Nothing is speeding up, but it’s definitely spinning.</p>
+          <p><b>A bike wheel spun on a repair stand</b> gradually slows down. The only unbalanced torque is friction in the axle, which points opposite <span class="q w">ω</span>, so <span class="q al">α</span> is opposite <span class="q w">ω</span>.</p>
+          <p><b>Car brakes</b> clamp pads onto a disc attached to the wheel. Friction from the pads acts at a distance from the axle, producing a torque opposite the wheel’s spin.</p>
+        </div>
+
+        <figure class="widget" id="w3">
+          <canvas style="aspect-ratio:16/9"></canvas>
+          <div class="controls">
+            <div class="ctl v-t"><label for="w3-t1">Counterclockwise torque <output id="w3-t1-v"></output></label><input type="range" id="w3-t1" min="0" max="3" step="0.25" value="0"></div>
+            <div class="ctl v-t"><label for="w3-t2">Clockwise torque <output id="w3-t2-v"></output></label><input type="range" id="w3-t2" min="0" max="3" step="0.25" value="0"></div>
+            <div class="btns"><button class="btn" id="w3-spin">Spin it at 3 rad/s CCW</button><button class="btn ghost" id="w3-reset">Stop and reset</button></div>
+          </div>
+          <dl class="readouts">
+            <div><dt><span class="tq">τ</span><sub>net</sub> (+ = CCW)</dt><dd class="tq" id="w3-tn"></dd></div>
+            <div><dt><span class="in">I</span> (disk, 4 kg, 0.5 m)</dt><dd class="in">0.50 kg·m²</dd></div>
+            <div><dt><span class="al">α</span> = <span class="tq">τ</span><sub>net</sub>/<span class="in">I</span></dt><dd class="al" id="w3-al"></dd></div>
+            <div><dt><span class="w">ω</span></dt><dd class="w" id="w3-w"></dd></div>
+          </dl>
+          <p class="status" id="w3-status" aria-live="polite"></p>
+        </figure>
+
+        <h3>A strategy that always works</h3>
+        <ol class="steps">
+          <li>Draw the object and mark the axis. Show each force where it acts, the way you’d draw an FBD but with locations.</li>
+          <li>Choose a positive direction (usually counterclockwise).</li>
+          <li>Find each torque with <i>rF</i> sin θ and give it a sign. Forces acting at the axis, or pointing straight through it, contribute zero.</li>
+          <li>Add them to get <span class="q tq">τ</span><sub>net</sub>, then divide by <span class="q in">I</span> to get <span class="q al">α</span>.</li>
+          <li>If you need how fast or how far, switch to the rotational kinematics from lesson 1.</li>
+        </ol>
+
+        <div class="check" id="qc3">
+          <p class="qtext">A wheel is spinning clockwise at 5 rad/s. Two people then apply torques of 3 N·m counterclockwise and 3 N·m clockwise. What happens over the next few seconds?</p>
+          <div class="opts">
+            <button>It stops, because the torques cancel.</button>
+            <button>It slows down gradually.</button>
+            <button>It keeps spinning clockwise at 5 rad/s.</button>
+            <button>It speeds up, since there’s 6 N·m of torque on it.</button>
+          </div>
+          <p class="fb" aria-live="polite"></p>
+        </div>
+
+        <div class="lesson-foot"><button class="btn ghost" data-go="2">Back: Rotational inertia</button><button class="btn" data-go="4">Next: Strings and pulleys</button></div>
+      </article>
+
+      <!-- Lesson 4 -->
+      <article class="lesson" id="lesson-4" hidden>
+        <h2>Strings and pulleys</h2>
+        <p class="lede">Many AP problems link a spinning object to one moving in a straight line: a bucket on a rope wound around a drum, a block hanging from a pulley that has mass. You’ll use both versions of Newton’s second law at once.</p>
+
+        <div class="life"><h4>In real life</h4>
+          <p>An old well lowers its bucket by unwinding rope from a crank drum. A fishing reel spins as the line pulls out. Elevator cables wrap around a heavy hoist drum. In each, the rope’s tension pulls the hanging object up and twists the drum at the same time.</p>
+        </div>
+
+        <h3>Two objects, two laws</h3>
+        <p><b>The hanging mass</b> only translates. Draw its FBD (you’re good at this): weight <i>mg</i> down, tension <i>T</i> up. Taking down as positive:</p>
+        <div class="eq"><i>mg</i> − <i>T</i> = <i>ma</i></div>
+        <p><b>The drum</b> only rotates. Gravity and the axle’s push act at the axis, so they make no torque. The rope pulls tangentially at the rim, so its torque is <i>TR</i>:</p>
+        <div class="eq"><i>TR</i> = <span class="q in">I</span><span class="q al">α</span></div>
+        <p><b>The link.</b> If the rope doesn’t slip, the rim and the rope move together, so the hanging mass’s acceleration equals the rim’s tangential acceleration:</p>
+        <div class="eq"><i>a</i> = <i>R</i><span class="q al">α</span></div>
+        <p>Three equations, three unknowns (<i>a</i>, <i>T</i>, <span class="q al">α</span>). Substitute <span class="q al">α</span> = <i>a</i>/<i>R</i> into the drum equation to get <i>T</i> = <span class="q in">I</span><i>a</i>/<i>R</i>², then plug into the mass equation:</p>
+        <div class="eq"><i>a</i> = <i>mg</i> / (<i>m</i> + <span class="q in">I</span>/<i>R</i>²)<small>For a solid-cylinder drum, I/R² = ½M, so a = mg / (m + ½M).</small></div>
+        <p>Read it like a sentence: gravity on the bucket drives the system, and both the bucket’s mass and the drum’s rotational inertia resist. A massless pulley (<span class="q in">I</span> = 0) gives <i>a</i> = <i>g</i>, free fall. A heavy drum slows everything down.</p>
+
+        <figure class="widget" id="w4">
+          <canvas style="aspect-ratio:16/10"></canvas>
+          <div class="controls">
+            <div class="ctl v-i"><label for="w4-M">Drum mass <i>M</i> (solid cylinder) <output id="w4-M-v"></output></label><input type="range" id="w4-M" min="0" max="20" step="1" value="8"></div>
+            <div class="ctl"><label for="w4-m">Hanging mass <i>m</i> <output id="w4-m-v"></output></label><input type="range" id="w4-m" min="0.5" max="10" step="0.5" value="4"></div>
+            <div class="btns"><button class="btn" id="w4-go">Release</button><button class="btn ghost" id="w4-reset">Reset</button></div>
+          </div>
+          <dl class="readouts">
+            <div><dt>Mass’s acceleration <i>a</i></dt><dd id="w4-a"></dd></div>
+            <div><dt>Drum’s <span class="al">α</span> (<i>R</i> = 0.20 m)</dt><dd class="al" id="w4-al"></dd></div>
+            <div><dt>Tension <i>T</i></dt><dd id="w4-T"></dd></div>
+            <div><dt>Weight <i>mg</i></dt><dd id="w4-mg"></dd></div>
+          </dl>
+          <figcaption class="cap">Set the drum mass to 0 for a massless pulley and the tension vanishes. Raise it and tension climbs toward <i>mg</i> while the acceleration drops.</figcaption>
+        </figure>
+
+        <h3>Common traps</h3>
+        <ul>
+          <li>Tension equals <i>mg</i> only if the hanging mass isn’t accelerating. While it falls, <i>T</i> &lt; <i>mg</i>.</li>
+          <li>Use the drum’s radius for the torque, and the drum’s own <span class="q in">I</span>, not the hanging mass.</li>
+          <li>Keep signs consistent: the direction the mass moves should match the direction the drum turns.</li>
+        </ul>
+
+        <div class="check" id="qc4">
+          <p class="qtext">A bucket is falling and speeding up as its rope unwinds from a heavy drum. Compare the rope tension <i>T</i> to the bucket’s weight <i>mg</i>.</p>
+          <div class="opts">
+            <button><i>T</i> &gt; <i>mg</i>, because the rope has to turn the heavy drum.</button>
+            <button><i>T</i> = <i>mg</i>, because the rope supports the bucket.</button>
+            <button><i>T</i> &lt; <i>mg</i>, but greater than zero.</button>
+            <button><i>T</i> = 0, because the bucket is falling.</button>
+          </div>
+          <p class="fb" aria-live="polite"></p>
+        </div>
+
+        <div class="lesson-foot"><button class="btn ghost" data-go="3">Back: Net torque makes α</button><button class="btn" data-view-go="lab">Go to 2: Simulator</button></div>
+      </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIMULATOR -->
+  <section class="view" id="view-lab" hidden>
+    <div class="sim">
+      <div>
+        <div class="stage-card">
+          <canvas id="stage" aria-label="Rotating object simulation"></canvas>
+          <div class="stage-bar">
+            <div class="btns"><button class="btn" id="s-play">Play</button><button class="btn ghost" id="s-reset">Reset</button></div>
+            <div class="toggles">
+              <label><input type="checkbox" id="s-arm" checked> Show lever arms</label>
+              <label><input type="checkbox" id="s-vec" checked> Show force vectors</label>
+            </div>
+          </div>
+          <div class="graphs">
+            <canvas id="g-th" aria-label="Angle versus time graph"></canvas>
+            <canvas id="g-w" aria-label="Angular velocity versus time graph"></canvas>
+            <canvas id="g-al" aria-label="Angular acceleration versus time graph"></canvas>
+          </div>
+        </div>
+        <div class="sim-read">
+          <dl class="readouts">
+            <div><dt><span class="tq">τ</span> from F<sub>A</sub></dt><dd class="tq" id="r-tA"></dd></div>
+            <div><dt><span class="tq">τ</span> from F<sub>B</sub></dt><dd class="tq" id="r-tB"></dd></div>
+            <div><dt><span class="tq">τ</span> from string</dt><dd class="tq" id="r-tS"></dd></div>
+            <div><dt><span class="tq">τ</span> from friction</dt><dd class="tq" id="r-tF"></dd></div>
+            <div><dt><span class="tq">τ</span><sub>net</sub> on wheel</dt><dd class="tq" id="r-tN"></dd></div>
+            <div><dt><span class="in">I</span></dt><dd class="in" id="r-I"></dd></div>
+            <div><dt><span class="al">α</span></dt><dd class="al" id="r-al"></dd></div>
+            <div><dt><span class="w">ω</span></dt><dd class="w" id="r-w"></dd></div>
+            <div><dt><span class="th">θ</span></dt><dd class="th" id="r-th"></dd></div>
+            <div><dt>Time</dt><dd id="r-t"></dd></div>
+            <div><dt>Tension <i>T</i></dt><dd id="r-T"></dd></div>
+            <div><dt>Mass’s <i>a</i> (down +)</dt><dd id="r-a"></dd></div>
+          </dl>
+        </div>
+        <div class="next-sec"><p>Done experimenting? Test yourself on AP-style problems.</p><button class="btn" data-view-go="practice">Go to 3: Practice</button></div>
+      </div>
+
+      <div class="panel">
+        <details open>
+          <summary>Object</summary>
+          <div class="grp">
+            <div class="seg" role="group" aria-label="Shape">
+              <button data-shape="disk" aria-pressed="true">Solid disk</button>
+              <button data-shape="hoop" aria-pressed="false">Hoop</button>
+              <button data-shape="sphere" aria-pressed="false">Sphere</button>
+            </div>
+            <div class="ctl v-i"><label for="s-M">Mass <i>M</i> <output id="s-M-v"></output></label><input type="range" id="s-M" min="1" max="20" step="0.5" value="4"></div>
+            <div class="ctl"><label for="s-R">Radius <i>R</i> <output id="s-R-v"></output></label><input type="range" id="s-R" min="0.1" max="0.6" step="0.01" value="0.4"></div>
+            <p class="note" id="s-Itxt"></p>
+          </div>
+        </details>
+        <details open>
+          <summary>Force A (twists counterclockwise)</summary>
+          <div class="grp">
+            <div class="ctl"><label for="s-FA">Force <output id="s-FA-v"></output></label><input type="range" id="s-FA" min="0" max="50" step="1" value="10"></div>
+            <div class="ctl"><label for="s-rA">Distance from axis <i>r</i> <output id="s-rA-v"></output></label><input type="range" id="s-rA" min="0" max="0.4" step="0.01" value="0.4"></div>
+            <div class="ctl"><label for="s-pA">Angle between <i>r</i> and <i>F</i> <output id="s-pA-v"></output></label><input type="range" id="s-pA" min="0" max="180" step="5" value="90"></div>
+          </div>
+        </details>
+        <details>
+          <summary>Force B (twists clockwise)</summary>
+          <div class="grp">
+            <div class="ctl"><label for="s-FB">Force <output id="s-FB-v"></output></label><input type="range" id="s-FB" min="0" max="50" step="1" value="0"></div>
+            <div class="ctl"><label for="s-rB">Distance from axis <i>r</i> <output id="s-rB-v"></output></label><input type="range" id="s-rB" min="0" max="0.4" step="0.01" value="0.4"></div>
+            <div class="ctl"><label for="s-pB">Angle between <i>r</i> and <i>F</i> <output id="s-pB-v"></output></label><input type="range" id="s-pB" min="0" max="180" step="5" value="90"></div>
+          </div>
+        </details>
+        <details>
+          <summary>Friction, hanging mass, start</summary>
+          <div class="grp">
+            <div class="ctl v-t"><label for="s-fr">Axle friction torque (max) <output id="s-fr-v"></output></label><input type="range" id="s-fr" min="0" max="5" step="0.1" value="0"></div>
+            <div class="ctl"><label for="s-m">Hanging mass on a string <output id="s-m-v"></output></label><input type="range" id="s-m" min="0" max="10" step="0.5" value="0"></div>
+            <div class="ctl v-w"><label for="s-w0">Starting <span class="q w">ω</span>₀ <output id="s-w0-v"></output></label><input type="range" id="s-w0" min="-10" max="10" step="0.5" value="0"></div>
+            <p class="note">The string wraps around the left side of the rim; the mass has 1.5 m to fall. g = 9.8 m/s². Counterclockwise is positive.</p>
+          </div>
+        </details>
+        <details open>
+          <summary>Try these</summary>
+          <div class="grp presets">
+            <button data-preset="balanced"><b>Balanced but spinning</b><span>Equal and opposite torques, already turning. Does it stop?</span></button>
+            <button data-preset="radial"><b>Push along the radius</b><span>A big force pointed through the axis. What’s the torque?</span></button>
+            <button data-preset="angles"><b>Competing torques at angles</b><span>A 30 N force at 25° vs. a 20 N force at 70°. Predict which way the disk turns.</span></button>
+            <button data-preset="moving"><b>Already spinning, torques fighting it</b><span>Starts at 8 rad/s counterclockwise while a bigger clockwise torque acts. What happens to ω?</span></button>
+            <button data-preset="well"><b>Bucket in a well</b><span>Matches practice problem 8. Predict <i>a</i> and <i>T</i> first.</span></button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRACTICE -->
+  <section class="view" id="view-practice" hidden>
+    <div class="practice">
+      <nav class="plist" id="plist" aria-label="Problems"></nav>
+      <article class="pcard" id="pcard" aria-live="polite"></article>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+"use strict";
+const g = 9.8, TAU = Math.PI*2, D2R = Math.PI/180;
+const $ = s => document.querySelector(s);
+const root = document.documentElement;
+const C = {};
+function readColors(){ const cs = getComputedStyle(root); ['bg','surface','surface-2','ink','muted','line','body','body-edge','theta','omega','alpha','torque','inertia'].forEach(k => C[k] = cs.getPropertyValue('--'+k).trim()); }
+readColors();
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors); } catch(e){}
+
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('spinlab-'+k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem('spinlab-'+k, JSON.stringify(v)); } catch(e){} }
+};
+
+function fmt(x, d=2){ if (!isFinite(x)) return '—'; const s = x.toFixed(d); return (parseFloat(s) === 0) ? (0).toFixed(d) : s.replace('-', '−'); }
+function fit(cv){
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+  if (cv.width !== w*dpr || cv.height !== h*dpr){ cv.width = w*dpr; cv.height = h*dpr; }
+  const c = cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); return {c, w, h};
+}
+function font(c, size, weight=700, italic=false){ c.font = (italic?'italic ':'') + weight + ' ' + size + 'px "Atkinson Hyperlegible", system-ui, sans-serif'; }
+function arrow(c, x1, y1, x2, y2, color, lw=3){
+  const L = Math.hypot(x2-x1, y2-y1); if (L < 3) return;
+  const a = Math.atan2(y2-y1, x2-x1), hl = Math.min(13, L*0.5);
+  c.strokeStyle = color; c.fillStyle = color; c.lineWidth = lw; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2 - hl*0.7*Math.cos(a), y2 - hl*0.7*Math.sin(a)); c.stroke();
+  c.beginPath(); c.moveTo(x2,y2); c.lineTo(x2 - hl*Math.cos(a-0.42), y2 - hl*Math.sin(a-0.42)); c.lineTo(x2 - hl*Math.cos(a+0.42), y2 - hl*Math.sin(a+0.42)); c.closePath(); c.fill();
+}
+// physics angles: CCW positive from +x; screen y down
+function arcArrow(c, cx, cy, r, a0, sw, color, lw=3, label){
+  if (Math.abs(sw) < 0.04) return;
+  const n = 30; c.strokeStyle = color; c.fillStyle = color; c.lineWidth = lw; c.lineCap = 'round';
+  const s = Math.sign(sw), h = 9 + lw, endTrim = Math.min(Math.abs(sw)*0.5, (h*0.7)/r);
+  c.beginPath();
+  for (let i=0;i<=n;i++){ const a = a0 + (sw - s*endTrim)*i/n; const x = cx + r*Math.cos(a), y = cy - r*Math.sin(a); i ? c.lineTo(x,y) : c.moveTo(x,y); }
+  c.stroke();
+  const ae = a0 + sw, ex = cx + r*Math.cos(ae), ey = cy - r*Math.sin(ae);
+  const ang = Math.atan2(-Math.cos(ae)*s, -Math.sin(ae)*s);
+  c.beginPath(); c.moveTo(ex,ey); c.lineTo(ex - h*Math.cos(ang-0.45), ey - h*Math.sin(ang-0.45)); c.lineTo(ex - h*Math.cos(ang+0.45), ey - h*Math.sin(ang+0.45)); c.closePath(); c.fill();
+  if (label){ const la = a0 + sw*0.5; font(c, 15, 700, true); c.textAlign='center'; c.textBaseline='middle'; c.fillText(label, cx + (r+17)*Math.cos(la), cy - (r+17)*Math.sin(la)); }
+}
+function drawBody(c, cx, cy, R, ang, shape){
+  c.save(); c.translate(cx, cy);
+  if (shape === 'sphere'){
+    const gr = c.createRadialGradient(-R*0.35, -R*0.35, R*0.08, 0, 0, R);
+    gr.addColorStop(0, C.surface); gr.addColorStop(1, C.body);
+    c.fillStyle = gr; c.beginPath(); c.arc(0,0,R,0,TAU); c.fill();
+    c.strokeStyle = C['body-edge']; c.lineWidth = 2; c.stroke();
+  }
+  c.rotate(-ang);
+  if (shape === 'hoop'){
+    c.strokeStyle = C.line; c.lineWidth = 2;
+    for (let i=0;i<3;i++){ const a = i*TAU/3 + Math.PI/3; c.beginPath(); c.moveTo(0,0); c.lineTo(R*0.88*Math.cos(a), R*0.88*Math.sin(a)); c.stroke(); }
+    const lw = Math.max(7, R*0.14); c.strokeStyle = C['body-edge']; c.lineWidth = lw; c.beginPath(); c.arc(0,0,R-lw/2,0,TAU); c.stroke();
+  } else if (shape === 'disk'){
+    c.fillStyle = C.body; c.beginPath(); c.arc(0,0,R,0,TAU); c.fill();
+    c.strokeStyle = C['body-edge']; c.lineWidth = 2; c.stroke();
+    c.strokeStyle = C.line; c.lineWidth = 1.5;
+    for (let i=1;i<4;i++){ const a = i*TAU/4; c.beginPath(); c.moveTo(R*0.15*Math.cos(a), R*0.15*Math.sin(a)); c.lineTo(R*0.95*Math.cos(a), R*0.95*Math.sin(a)); c.stroke(); }
+  } else if (shape === 'sphere'){
+    c.strokeStyle = C['body-edge']; c.lineWidth = 1.5; c.globalAlpha = 0.55;
+    c.beginPath(); c.ellipse(0,0,R*0.38,R,0,0,TAU); c.stroke();
+    c.beginPath(); c.moveTo(-R,0); c.lineTo(R,0); c.stroke(); c.globalAlpha = 1;
+  }
+  c.strokeStyle = C.theta; c.lineWidth = 3.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(0,0); c.lineTo(R*0.8,0); c.stroke();
+  c.fillStyle = C.theta; c.beginPath(); c.arc(R*0.8, 0, 6, 0, TAU); c.fill();
+  c.restore();
+  c.fillStyle = C.ink; c.beginPath(); c.arc(cx, cy, 5, 0, TAU); c.fill();
+}
+function sweep(v, scale){ if (Math.abs(v) < 1e-6) return 0; return Math.sign(v)*Math.min(1.15, 0.3 + Math.abs(v)/scale*0.85); }
+
+const widgets = [];
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now - last)/1000); last = now;
+  for (const w of widgets){ if (w.el.offsetParent !== null){ if (w.step) w.step(dt); w.draw(); } }
+  requestAnimationFrame(loop);
+}
+function bind(id, onChange, fmtFn){
+  const inp = $('#'+id), out = $('#'+id+'-v');
+  const upd = (silent) => { const v = parseFloat(inp.value); if (out) out.textContent = fmtFn(v); if (!silent) onChange(v); else onChange(v, true); };
+  inp.addEventListener('input', () => upd(false));
+  upd(true); return inp;
+}
+function setRange(id, v){ const inp = $('#'+id); inp.value = v; inp.dispatchEvent(new Event('input')); }
+
+/* ---------- Tabs ---------- */
+const VIEWS = ['learn','lab','practice'];
+function showView(v){
+  if (!VIEWS.includes(v)) v = 'learn';
+  VIEWS.forEach(n => { $('#view-'+n).hidden = (n !== v); });
+  document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === v ? 'true' : 'false'));
+}
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.view; }));
+document.querySelectorAll('[data-view-go]').forEach(b => b.addEventListener('click', () => { location.hash = b.dataset.viewGo; window.scrollTo(0,0); }));
+window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+
+/* ---------- Lessons ---------- */
+function showLesson(n){
+  for (let i=1;i<=4;i++) $('#lesson-'+i).hidden = (i !== n);
+  document.querySelectorAll('.lesson-nav button').forEach(b => b.setAttribute('aria-current', +b.dataset.lesson === n ? 'true' : 'false'));
+  store.set('lesson', n);
+}
+document.querySelectorAll('.lesson-nav button').forEach(b => b.addEventListener('click', () => showLesson(+b.dataset.lesson)));
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => { showLesson(+b.dataset.go); const top = $('#view-learn').getBoundingClientRect().top + window.scrollY - 170; window.scrollTo({top: Math.max(0, top)}); }));
+
+const QC = {
+  qc1: {correct:1, fb:[
+    'Not quite. Every point on a rigid object sweeps the same angle in the same time, so they share one ω.',
+    'Right. They share ω, and v = rω, so doubling r doubles the linear speed.',
+    'Same ω, yes. But v = rω, so B, at twice the radius, moves twice as fast.',
+    'Being closer doesn’t change ω; both horses finish a lap together. It only lowers A’s linear speed.']},
+  qc2: {correct:1, fb:[
+    'Extra weight alone doesn’t prevent tipping; gravity’s torque grows with weight too.',
+    'Right. The pole’s mass is far from her body, so I is large, α = τ/I is small, and she tips slowly enough to react.',
+    'Gravity still exerts a torque whenever she leans. The pole makes her respond to it slowly instead.']},
+  qc3: {correct:2, fb:[
+    'Canceling torques give α = 0, which means ω doesn’t change. It doesn’t mean ω becomes zero.',
+    'Slowing would need a net torque opposite ω. Here τnet = +3 − 3 = 0.',
+    'Right. τnet = 0, so α = 0 and ω stays at 5 rad/s clockwise, the rotational version of Newton’s first law.',
+    'Torques have directions. +3 N·m and −3 N·m add to zero, not 6.']},
+  qc4: {correct:2, fb:[
+    'If T were bigger than mg, the net force on the bucket would point up and it would slow down, not speed up.',
+    'T = mg would mean zero net force on the bucket, so it couldn’t be accelerating.',
+    'Right. The bucket accelerates down, so mg − T = ma > 0 means T < mg. T is still positive because the rope has to twist the drum.',
+    'If T were zero, the drum would get no torque and couldn’t spin up; the bucket would be in free fall.']}
+};
+Object.keys(QC).forEach(id => {
+  const box = $('#'+id), q = QC[id], btns = box.querySelectorAll('.opts button'), fb = box.querySelector('.fb');
+  btns.forEach((b, i) => b.addEventListener('click', () => {
+    btns.forEach(x => x.classList.remove('right','wrong'));
+    b.classList.add(i === q.correct ? 'right' : 'wrong');
+    fb.textContent = q.fb[i]; fb.className = 'fb ' + (i === q.correct ? 'good' : 'bad');
+  }));
+});
+
+/* ---------- Widget 1: kinematics ---------- */
+(function(){
+  const el = $('#w1'), cv = el.querySelector('canvas');
+  const s = {w0:1, al:0.5, th:0, w:1, t:0, run:false};
+  const play = $('#w1-play');
+  function reset(){ s.t = 0; s.th = 0; s.w = s.w0; s.run = false; play.textContent = 'Play'; }
+  bind('w1-w0', v => { s.w0 = v; reset(); }, v => fmt(v,1)+' rad/s');
+  bind('w1-al', v => { s.al = v; reset(); }, v => fmt(v,1)+' rad/s²');
+  play.addEventListener('click', () => { if (s.t >= 10) reset(); s.run = !s.run; play.textContent = s.run ? 'Pause' : 'Play'; });
+  $('#w1-reset').addEventListener('click', reset);
+  reset();
+  widgets.push({el,
+    step(dt){ if (!s.run) return; s.t = Math.min(10, s.t + dt); s.w = s.w0 + s.al*s.t; s.th = s.w0*s.t + 0.5*s.al*s.t*s.t; if (s.t >= 10){ s.run = false; play.textContent = 'Play again'; } },
+    draw(){
+      const {c,w,h} = fit(cv); c.clearRect(0,0,w,h);
+      const cx = w*0.5, cy = h*0.53, R = Math.min(h*0.3, w*0.22);
+      c.setLineDash([4,4]); c.strokeStyle = C.muted; c.lineWidth = 1.5; c.beginPath(); c.moveTo(cx,cy); c.lineTo(cx+R*1.15,cy); c.stroke(); c.setLineDash([]);
+      font(c, 12, 400); c.fillStyle = C.muted; c.textAlign = 'left'; c.textBaseline = 'bottom'; c.fillText('θ = 0', cx+R*1.02, cy-4);
+      drawBody(c, cx, cy, R, s.th, 'disk');
+      // swept wedge
+      c.fillStyle = C.theta; c.globalAlpha = 0.28; c.beginPath();
+      if (Math.abs(s.th) >= TAU){ c.arc(cx,cy,R*0.55,0,TAU); } else if (Math.abs(s.th) > 1e-4){ c.moveTo(cx,cy); c.arc(cx,cy,R*0.55,0,-s.th, s.th > 0); c.closePath(); }
+      c.fill(); c.globalAlpha = 1;
+      // velocity arrow at dot (r = 0.40 m of a 0.50 m wheel)
+      const px = cx + R*0.8*Math.cos(s.th), py = cy - R*0.8*Math.sin(s.th);
+      const v = 0.4*s.w, L = Math.max(-140, Math.min(140, v*45));
+      arrow(c, px, py, px + L*(-Math.sin(s.th)), py + L*(-Math.cos(s.th)), C.omega, 3);
+      if (Math.abs(L) > 14){ font(c, 14, 700, true); c.fillStyle = C.omega; c.textAlign='center'; c.textBaseline='middle'; c.fillText('v', px + (L+12*Math.sign(L))*(-Math.sin(s.th)), py + (L+12*Math.sign(L))*(-Math.cos(s.th))); }
+      arcArrow(c, cx, cy, R*1.18, Math.PI*0.62, sweep(s.w, 4), C.omega, 3, 'ω');
+      font(c, 13, 400); c.fillStyle = C.muted; c.textAlign = 'left'; c.textBaseline = 'top'; c.fillText('Counterclockwise is +', 12, 10);
+      $('#w1-t').textContent = fmt(s.t,2)+' s';
+      $('#w1-th').textContent = fmt(s.th,2)+' rad';
+      $('#w1-rev').textContent = fmt(s.th/TAU,2)+' rev';
+      $('#w1-w').textContent = fmt(s.w,2)+' rad/s';
+      $('#w1-v').textContent = fmt(Math.abs(v),2)+' m/s';
+    }});
+})();
+
+/* ---------- Widget 2: dumbbell inertia ---------- */
+(function(){
+  const el = $('#w2'), cv = el.querySelector('canvas');
+  const s = {m:2, d:0.5, th:0, w:0, phase:'idle', tp:0, tau:4};
+  const I = () => 2*s.m*s.d*s.d;
+  function reset(){ s.th = 0; s.w = 0; s.phase = 'idle'; s.tp = 0; }
+  bind('w2-m', v => { s.m = v; reset(); }, v => fmt(v,1)+' kg');
+  bind('w2-d', v => { s.d = v; reset(); }, v => fmt(v,2)+' m');
+  $('#w2-go').addEventListener('click', () => { reset(); s.phase = 'push'; });
+  $('#w2-reset').addEventListener('click', reset);
+  widgets.push({el,
+    step(dt){
+      if (s.phase === 'push'){ const h = Math.min(dt, 1 - s.tp); s.w += s.tau/I()*h; s.th += s.w*h; s.tp += h; if (s.tp >= 1 - 1e-9){ s.phase = 'coast'; s.th += s.w*(dt-h); } }
+      else if (s.phase === 'coast'){ s.th += s.w*dt; }
+    },
+    draw(){
+      const {c,w,h} = fit(cv); c.clearRect(0,0,w,h);
+      const cx = w*0.5, cy = h*0.5, sc = (Math.min(w*0.45, h*0.46) - 22)/1.0, r = s.d*sc;
+      c.setLineDash([4,5]); c.strokeStyle = C.line; c.lineWidth = 1.5; c.beginPath(); c.arc(cx,cy,r,0,TAU); c.stroke(); c.setLineDash([]);
+      const ex = Math.cos(s.th)*r, ey = -Math.sin(s.th)*r;
+      c.strokeStyle = C['body-edge']; c.lineWidth = 5; c.lineCap='round'; c.beginPath(); c.moveTo(cx-ex, cy-ey); c.lineTo(cx+ex, cy+ey); c.stroke();
+      const br = 7 + s.m*2.6;
+      c.fillStyle = C.inertia; [[1],[-1]].forEach(([k]) => { c.beginPath(); c.arc(cx+k*ex, cy+k*ey, br, 0, TAU); c.fill(); });
+      c.fillStyle = C.theta; c.beginPath(); c.arc(cx+ex, cy+ey, 3.5, 0, TAU); c.fill();
+      c.fillStyle = C.ink; c.beginPath(); c.arc(cx,cy,5,0,TAU); c.fill();
+      if (s.phase === 'push') arcArrow(c, cx, cy, Math.max(r, 40) + br + 14, Math.PI*0.6, 0.9, C.torque, 4, 'τ');
+      arcArrow(c, cx, cy, 30, -Math.PI*0.4, sweep(s.w, 6)*0.9, C.omega, 3);
+      font(c, 13, 400); c.fillStyle = C.muted; c.textAlign='left'; c.textBaseline='top';
+      c.fillText(s.phase === 'push' ? 'Twisting… ' + fmt(1 - s.tp, 1) + ' s left' : (s.phase === 'coast' ? 'Twist over: no torque, so ω stays constant' : 'Ready'), 12, 10);
+      const Iv = I();
+      $('#w2-I').innerHTML = '<span class="q in">I</span> = 2<i>mr</i>² = 2 × ' + fmt(s.m,1) + ' kg × (' + fmt(s.d,2) + ' m)² = ' + fmt(Iv,3) + ' kg·m²';
+      $('#w2-al').textContent = fmt(s.tau/Iv,2)+' rad/s²';
+      $('#w2-w').textContent = s.phase === 'idle' ? '—' : (s.phase === 'push' ? 'twisting…' : fmt(s.w,2)+' rad/s');
+    }});
+})();
+
+/* ---------- Widget 3: net torque ---------- */
+(function(){
+  const el = $('#w3'), cv = el.querySelector('canvas');
+  const s = {t1:0, t2:0, th:0, w:0, I:0.5, cap:false};
+  bind('w3-t1', v => { s.t1 = v; }, v => fmt(v,2)+' N·m');
+  bind('w3-t2', v => { s.t2 = v; }, v => fmt(v,2)+' N·m');
+  $('#w3-spin').addEventListener('click', () => { s.w = 3; s.cap = false; });
+  $('#w3-reset').addEventListener('click', () => { s.w = 0; s.th = 0; s.cap = false; setRange('w3-t1', 0); setRange('w3-t2', 0); });
+  widgets.push({el,
+    step(dt){ const al = (s.t1 - s.t2)/s.I; s.w += al*dt; if (Math.abs(s.w) > 25){ s.w = 25*Math.sign(s.w); s.cap = true; } else s.cap = false; s.th += s.w*dt; },
+    draw(){
+      const {c,w,h} = fit(cv); c.clearRect(0,0,w,h);
+      const cx = w*0.5, cy = h*0.54, R = Math.min(h*0.29, w*0.22);
+      drawBody(c, cx, cy, R, s.th, 'disk');
+      if (s.t1 > 0) arcArrow(c, cx, cy, R*1.25, Math.PI*0.62, 0.25 + s.t1*0.32, C.torque, 3 + s.t1, 'CCW');
+      if (s.t2 > 0) arcArrow(c, cx, cy, R*1.25, Math.PI*0.38, -(0.25 + s.t2*0.32), C.torque, 3 + s.t2, 'CW');
+      arcArrow(c, cx, cy, R*1.25, -Math.PI/2 - sweep(s.w,6)/2, sweep(s.w, 6), C.omega, 3, 'ω');
+      const tn = s.t1 - s.t2, al = tn/s.I;
+      $('#w3-tn').textContent = fmt(tn,2)+' N·m'; $('#w3-al').textContent = fmt(al,2)+' rad/s²'; $('#w3-w').textContent = fmt(s.w,2)+' rad/s';
+      let msg;
+      const still = Math.abs(s.w) < 0.005;
+      if (Math.abs(tn) < 1e-9) msg = still ? 'Net torque is zero and it isn’t spinning, so it stays at rest. Now press “Spin it”.' : 'Net torque is zero, so α = 0 and ω stays constant. It keeps spinning forever (no friction here).';
+      else if (still) msg = 'Net torque is not zero, so it starts to spin in the direction of τnet.';
+      else if (Math.sign(tn) === Math.sign(s.w)) msg = s.cap ? 'Net torque matches ω, so it keeps speeding up (capped at 25 rad/s for this demo).' : 'Net torque points the same way as ω, so it speeds up.';
+      else msg = 'Net torque points opposite ω, so it slows down. Keep the torque on and it will stop, then spin the other way.';
+      $('#w3-status').textContent = msg;
+    }});
+})();
+
+/* ---------- Widget 4: pulley ---------- */
+(function(){
+  const el = $('#w4'), cv = el.querySelector('canvas');
+  const s = {M:8, m:4, R:0.2, y:0, v:0, run:false, H:1.5};
+  const acc = () => s.m*g/(s.m + 0.5*s.M);
+  const btn = $('#w4-go');
+  function reset(){ s.y = 0; s.v = 0; s.run = false; btn.textContent = 'Release'; }
+  bind('w4-M', v => { s.M = v; reset(); }, v => fmt(v,0)+' kg');
+  bind('w4-m', v => { s.m = v; reset(); }, v => fmt(v,1)+' kg');
+  btn.addEventListener('click', () => { if (s.y >= s.H) reset(); s.run = !s.run; btn.textContent = s.run ? 'Pause' : 'Release'; });
+  $('#w4-reset').addEventListener('click', reset);
+  widgets.push({el,
+    step(dt){ if (!s.run) return; const a = acc(); s.v += a*dt*0.5; s.y += s.v*dt*0.5; if (s.y >= s.H){ s.y = s.H; s.run = false; btn.textContent = 'Release again'; } },
+    draw(){
+      const {c,w,h} = fit(cv); c.clearRect(0,0,w,h);
+      const cx = w*0.4, cy = 62, Rv = 44, a = acc(), T = s.m*(g - a);
+      c.strokeStyle = C.muted; c.lineWidth = 4; c.beginPath(); c.moveTo(cx-60, 8); c.lineTo(cx+60, 8); c.stroke();
+      c.lineWidth = 3; c.beginPath(); c.moveTo(cx, 8); c.lineTo(cx, cy); c.stroke();
+      c.strokeStyle = C.line; c.lineWidth = 2; c.beginPath(); c.moveTo(cx-90, h-12); c.lineTo(w-20, h-12); c.stroke();
+      const top0 = cy + 40, bh = 26 + s.m*3, travel = h - 12 - bh - top0;
+      const top = top0 + (s.y/s.H)*travel, sx = cx + Rv;
+      c.strokeStyle = C.ink; c.lineWidth = 2; c.beginPath(); c.moveTo(sx, cy); c.lineTo(sx, top); c.stroke();
+      if (s.M > 0) drawBody(c, cx, cy, Rv, -(top - top0)/Rv, 'disk'); else { c.strokeStyle = C['body-edge']; c.lineWidth=2; c.beginPath(); c.arc(cx,cy,Rv,0,TAU); c.stroke(); c.fillStyle=C.ink; c.beginPath(); c.arc(cx,cy,5,0,TAU); c.fill(); }
+      const bw = bh*1.1;
+      c.fillStyle = C.surface; c.strokeStyle = C.ink; c.lineWidth = 2; c.beginPath(); c.rect(sx - bw/2, top, bw, bh); c.fill(); c.stroke();
+      font(c, 12, 700); c.fillStyle = C.ink; c.textAlign='center'; c.textBaseline='middle'; c.fillText(fmt(s.m,1)+' kg', sx, top + bh/2);
+      // FBD on box (side)
+      const k = 70/98, fx = sx + bw/2 + 34, fy = top + bh/2;
+      arrow(c, fx, fy, fx, fy + s.m*g*k, C.ink, 3); arrow(c, fx, fy, fx, fy - T*k, C.ink, 3);
+      font(c, 13, 700, true); c.textAlign='left'; c.fillStyle = C.ink;
+      c.fillText('mg', fx + 8, fy + s.m*g*k*0.6); if (T > 0.5) c.fillText('T', fx + 8, fy - T*k*0.6);
+      font(c, 12, 400); c.fillStyle = C.muted; c.fillText('FBD of the mass', fx - 20, Math.max(14, fy - T*k - 14));
+      if (s.M > 0) arcArrow(c, cx, cy, Rv + 14, Math.PI*0.75, -0.9, C.alpha, 3, 'α');
+      $('#w4-a').textContent = fmt(a,2)+' m/s²'; $('#w4-al').textContent = fmt(a/s.R,1)+' rad/s²';
+      $('#w4-T').textContent = fmt(T,1)+' N'; $('#w4-mg').textContent = fmt(s.m*g,1)+' N';
+    }});
+})();
+
+/* ---------- Simulator ---------- */
+const S = {shape:'disk', M:4, R:0.4, FA:10, rA:0.4, pA:90, FB:0, rB:0.4, pB:90, fr:0, m:0, w0:0, th:0, w:0, t:0, run:false, hist:[], arm:true, vec:true, msg:'', H:1.5};
+const K = {disk:0.5, hoop:1, sphere:0.4}, KT = {disk:'½', hoop:'', sphere:'⅖'}, NAME = {disk:'solid disk', hoop:'hoop', sphere:'solid sphere'};
+const inertia = () => K[S.shape]*S.M*S.R*S.R;
+function phys(){
+  const I = inertia(), Ie = I + S.m*S.R*S.R;
+  const tA = S.rA*S.FA*Math.sin(S.pA*D2R), tB = -S.rB*S.FB*Math.sin(S.pB*D2R), tH = S.m*g*S.R;
+  const drive = tA + tB + tH; let al, tf;
+  if (Math.abs(S.w) < 1e-9){
+    if (Math.abs(drive) <= S.fr + 1e-12){ al = 0; tf = -drive; if (S.m > 0) tf = -drive; }
+    else { tf = -S.fr*Math.sign(drive); al = (drive + tf)/Ie; }
+  } else { tf = -S.fr*Math.sign(S.w); al = (drive + tf)/Ie; }
+  const T = S.m*(g - al*S.R);
+  return {I, Ie, tA, tB, tf, al, T, tS: T*S.R, tn: I*al};
+}
+const playBtn = $('#s-play');
+function simReset(){ S.th = 0; S.w = S.w0; S.t = 0; S.hist = []; S.msg = ''; S.run = false; playBtn.textContent = 'Play'; }
+function setRun(on){ S.run = on; playBtn.textContent = on ? 'Pause' : 'Play'; }
+playBtn.addEventListener('click', () => { if (S.msg && !S.run) { simReset(); } setRun(!S.run); });
+$('#s-reset').addEventListener('click', simReset);
+$('#s-arm').addEventListener('change', e => S.arm = e.target.checked);
+$('#s-vec').addEventListener('change', e => S.vec = e.target.checked);
+function updI(){ $('#s-Itxt').innerHTML = '<span class="q in">I</span> = ' + KT[S.shape] + '<i>MR</i>² = ' + KT[S.shape] + (KT[S.shape] ? ' × ' : '') + fmt(S.M,1) + ' kg × (' + fmt(S.R,2) + ' m)² = <b class="in">' + fmt(inertia(),3) + ' kg·m²</b> (' + NAME[S.shape] + ')'; }
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  S.shape = b.dataset.shape; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false')); updI();
+}));
+bind('s-M', v => { S.M = v; updI(); }, v => fmt(v,1)+' kg');
+bind('s-R', (v, init) => {
+  S.R = v; ['rA','rB'].forEach(k => { const inp = $('#s-'+k); inp.max = v; if (parseFloat(inp.value) > v || !init) { /* keep proportional when at rim */ } if (parseFloat(inp.value) > v) inp.value = v; inp.dispatchEvent(new Event('input')); });
+  updI(); if (!init) simReset();
+}, v => fmt(v,2)+' m');
+bind('s-FA', v => S.FA = v, v => fmt(v,0)+' N');
+bind('s-rA', v => S.rA = v, v => fmt(v,2)+' m');
+bind('s-pA', v => S.pA = v, v => fmt(v,0)+'°');
+bind('s-FB', v => S.FB = v, v => fmt(v,0)+' N');
+bind('s-rB', v => S.rB = v, v => fmt(v,2)+' m');
+bind('s-pB', v => S.pB = v, v => fmt(v,0)+'°');
+bind('s-fr', v => S.fr = v, v => fmt(v,1)+' N·m');
+bind('s-m', (v, init) => { S.m = v; if (!init) simReset(); }, v => v ? fmt(v,1)+' kg' : 'none');
+bind('s-w0', (v, init) => { S.w0 = v; if (!init) simReset(); }, v => fmt(v,1)+' rad/s');
+updI(); simReset();
+
+const PRESETS = {
+  balanced: {shape:'disk', M:4, R:0.4, FA:10, rA:0.4, pA:90, FB:10, rB:0.4, pB:90, fr:0, m:0, w0:4},
+  radial:   {shape:'disk', M:4, R:0.4, FA:40, rA:0.4, pA:0, FB:0, rB:0.4, pB:90, fr:0, m:0, w0:0},
+  angles:   {shape:'disk', M:4, R:0.4, FA:30, rA:0.4, pA:25, FB:20, rB:0.35, pB:70, fr:0, m:0, w0:0},
+  moving:   {shape:'disk', M:12, R:0.4, FA:10, rA:0.3, pA:50, FB:15, rB:0.4, pB:90, fr:0, m:0, w0:8},
+  well:     {shape:'disk', M:8, R:0.1, FA:0, rA:0.1, pA:90, FB:0, rB:0.1, pB:90, fr:0, m:4, w0:0}
+};
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+  const p = PRESETS[b.dataset.preset];
+  document.querySelector('.seg button[data-shape="'+p.shape+'"]').click();
+  setRange('s-R', p.R); setRange('s-M', p.M);
+  setRange('s-FA', p.FA); setRange('s-rA', p.rA); setRange('s-pA', p.pA);
+  setRange('s-FB', p.FB); setRange('s-rB', p.rB); setRange('s-pB', p.pB);
+  setRange('s-fr', p.fr); setRange('s-m', p.m); setRange('s-w0', p.w0);
+  document.querySelectorAll('.panel details').forEach(d => { if (/Force B|Friction/.test(d.querySelector('summary').textContent)) d.open = true; });
+  simReset();
+  $('#stage').scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'});
+}));
+
+function simStep(dt){
+  if (!S.run) return;
+  const n = 6, hstep = dt/n;
+  for (let i=0;i<n;i++){
+    const P = phys();
+    if (S.m > 0 && P.T < -1e-6){ S.msg = 'The string went slack: Force A spins the rim faster than the mass can fall. Lower Force A, then Reset.'; setRun(false); break; }
+    let wn = S.w + P.al*hstep;
+    if (S.fr > 0 && S.w !== 0 && Math.sign(wn) !== Math.sign(S.w)) wn = 0;
+    S.th += 0.5*(S.w + wn)*hstep; S.w = wn; S.t += hstep;
+    if (S.m > 0){
+      const y = S.R*S.th;
+      if (y >= S.H){ S.th = S.H/S.R; S.w = 0; S.msg = 'The mass hit the floor after falling 1.5 m. Press Reset to wind it back up.'; setRun(false); break; }
+      if (y <= -0.25){ S.th = -0.25/S.R; S.w = 0; S.msg = 'The mass was pulled up to the wheel. Press Reset.'; setRun(false); break; }
+    }
+  }
+  const P = phys();
+  S.hist.push({t:S.t, th:S.th, w:S.w, al:P.al});
+  while (S.hist.length && S.hist[0].t < S.t - 10.5) S.hist.shift();
+}
+function drawStage(){
+  const cv = $('#stage'), {c,w,h} = fit(cv); c.clearRect(0,0,w,h);
+  const cx = w*0.5, cy = h*0.4, Rv = Math.min(w*0.22, h*0.24), sc = Rv/S.R, P = phys();
+  const toS = (x,y) => [cx + x*sc, cy - y*sc];
+  const forces = [
+    {F:S.FA, px:S.rA, py:0, dx:Math.cos(S.pA*D2R), dy:Math.sin(S.pA*D2R), name:'A'},
+    {F:S.FB, px:0, py:S.rB, dx:Math.sin(S.pB*D2R), dy:Math.cos(S.pB*D2R), name:'B'}
+  ];
+  if (S.m > 0){ c.strokeStyle = C.line; c.lineWidth = 2; c.beginPath(); c.moveTo(cx - Rv - 70, h - 10); c.lineTo(cx - Rv + 70, h - 10); c.stroke(); }
+  drawBody(c, cx, cy, Rv, S.th, S.shape);
+  // lines of action + lever arms
+  if (S.arm){
+    forces.forEach(f => {
+      if (f.F <= 0) return;
+      const L = S.R*4, [ax,ay] = toS(f.px - L*f.dx, f.py - L*f.dy), [bx,by] = toS(f.px + L*f.dx, f.py + L*f.dy);
+      c.setLineDash([6,5]); c.strokeStyle = C.muted; c.lineWidth = 1.3; c.beginPath(); c.moveTo(ax,ay); c.lineTo(bx,by); c.stroke(); c.setLineDash([]);
+      const t = f.px*f.dx + f.py*f.dy, fx = f.px - t*f.dx, fy = f.py - t*f.dy, len = Math.hypot(fx, fy);
+      font(c, 13, 700); c.fillStyle = C.torque;
+      if (len < 0.004){ c.textAlign='left'; c.textBaseline='bottom'; c.fillText('r⊥ = 0 for F' + f.name, cx + 8, cy - 8 - (f.name === 'B' ? 16 : 0)); return; }
+      const [qx,qy] = toS(fx,fy);
+      c.strokeStyle = C.torque; c.lineWidth = 3; c.beginPath(); c.moveTo(cx,cy); c.lineTo(qx,qy); c.stroke();
+      const ux = fx/len, uy = fy/len, s8 = 9/sc;
+      const p1 = toS(fx + f.dx*s8, fy + f.dy*s8), p2 = toS(fx + f.dx*s8 - ux*s8, fy + f.dy*s8 - uy*s8), p3 = toS(fx - ux*s8, fy - uy*s8);
+      c.lineWidth = 1.5; c.beginPath(); c.moveTo(p1[0],p1[1]); c.lineTo(p2[0],p2[1]); c.lineTo(p3[0],p3[1]); c.stroke();
+      c.textAlign='center'; c.textBaseline='middle';
+      const mx = (cx+qx)/2, my = (cy+qy)/2;
+      const nx = -(qy-cy), ny = (qx-cx), nl = Math.hypot(nx,ny) || 1; c.fillStyle = C.surface; const lbl = 'r⊥ = ' + fmt(len,2) + ' m', tw = c.measureText(lbl).width; const lx = mx + nx/nl*14, ly = my + ny/nl*14; c.fillRect(lx - tw/2 - 3, ly - 9, tw + 6, 18); c.fillStyle = C.torque; c.fillText(lbl, lx, ly);
+    });
+  }
+  // hanging mass
+  if (S.m > 0){
+    const bh = 24 + S.m*2.6, bw = bh*1.1, top0 = cy + Rv*0.35, travel = h - 10 - bh - top0;
+    const top = top0 + (S.R*S.th/S.H)*travel, sx = cx - Rv;
+    c.strokeStyle = C.ink; c.lineWidth = 2; c.beginPath(); c.moveTo(sx, cy); c.lineTo(sx, top); c.stroke();
+    c.fillStyle = C.surface; c.strokeStyle = C.ink; c.beginPath(); c.rect(sx - bw/2, top, bw, bh); c.fill(); c.stroke();
+    font(c, 12, 700); c.fillStyle = C.ink; c.textAlign='center'; c.textBaseline='middle'; c.fillText(fmt(S.m,1)+' kg', sx, top + bh/2);
+    if (S.vec){
+      const k = Rv/220, ax = sx - bw/2 - 22, ay = top + bh/2;
+      arrow(c, ax, ay, ax, ay + S.m*g*k, C.ink, 2.5); if (P.T > 0.2) arrow(c, ax, ay, ax, ay - P.T*k, C.ink, 2.5);
+      font(c, 13, 700, true); c.textAlign='right'; c.fillStyle = C.ink; c.fillText('mg', ax - 6, ay + S.m*g*k*0.6); if (P.T > 0.2) c.fillText('T', ax - 6, ay - P.T*k*0.6);
+    }
+  }
+  // forces
+  if (S.vec){
+    forces.forEach(f => {
+      if (f.F <= 0) return;
+      const [x0,y0] = toS(f.px, f.py), L = Math.min(1.7*Rv, f.F*Rv/24), x1 = x0 + f.dx*L, y1 = y0 - f.dy*L;
+      arrow(c, x0, y0, x1, y1, C.ink, 3.5);
+      c.fillStyle = C.ink; c.beginPath(); c.arc(x0, y0, 4, 0, TAU); c.fill();
+      font(c, 15, 700, true); c.textAlign='center'; c.textBaseline='middle';
+      c.fillText('F', x1 + f.dx*16 - 3, y1 - f.dy*16); font(c, 11, 700); c.fillText(f.name, x1 + f.dx*16 + 6, y1 - f.dy*16 + 5);
+    });
+  }
+  // nested arcs at bottom: ω, α, τnet
+  const arcs = [[S.w, 8, C.omega, 'ω', 1.16], [P.al, 15, C.alpha, 'α', 1.3], [P.tn, 6, C.torque, 'τnet', 1.44]];
+  arcs.forEach(([v, scl, col, lab, rr]) => { const sw = sweep(v, scl); if (sw) arcArrow(c, cx, cy, Rv*rr, -Math.PI/2 - sw/2, sw, col, 3, lab); });
+  font(c, 13, 400); c.fillStyle = C.muted; c.textAlign='left'; c.textBaseline='top';
+  c.fillText('Counterclockwise is +', 12, 10);
+  if (S.fr > 0 && Math.abs(S.w) < 1e-9 && Math.abs(P.al) < 1e-12 && (Math.abs(P.tA + P.tB) > 0 || S.m > 0)) { c.fillStyle = C.ink; font(c, 14, 700); c.fillText(w < 520 ? 'Friction holds it still' : 'Friction holds it still: applied torque ≤ max friction torque', 12, 30); }
+  if (S.msg){ font(c, 14, 700); c.fillStyle = C.ink; let line = '', y = 30; for (const word of S.msg.split(' ')){ const test = line ? line + ' ' + word : word; if (c.measureText(test).width > w - 24 && line){ c.fillText(line, 12, y); y += 18; line = word; } else line = test; } c.fillText(line, 12, y); }
+  // readouts
+  $('#r-tA').textContent = fmt(P.tA,2)+' N·m'; $('#r-tB').textContent = fmt(P.tB,2)+' N·m';
+  $('#r-tS').textContent = S.m > 0 ? fmt(P.tS,2)+' N·m' : '—'; $('#r-tF').textContent = fmt(P.tf,2)+' N·m';
+  $('#r-tN').textContent = fmt(P.tn,2)+' N·m'; $('#r-I').textContent = fmt(P.I,3)+' kg·m²';
+  $('#r-al').textContent = fmt(P.al,2)+' rad/s²'; $('#r-w').textContent = fmt(S.w,2)+' rad/s';
+  $('#r-th').textContent = fmt(S.th,1)+' rad (' + fmt(S.th/TAU,2) + ' rev)'; $('#r-t').textContent = fmt(S.t,2)+' s';
+  $('#r-T').textContent = S.m > 0 ? fmt(Math.max(0,P.T),1)+' N' : '—'; $('#r-a').textContent = S.m > 0 ? fmt(P.al*S.R,2)+' m/s²' : '—';
+}
+function drawGraph(id, key, col, label){
+  const cv = $('#'+id), {c,w,h} = fit(cv); c.clearRect(0,0,w,h);
+  const L = 46, Rr = 10, T = 26, B = 22, pw = w - L - Rr, ph = h - T - B;
+  const t1 = Math.max(10, S.t), t0 = t1 - 10;
+  let lo = 0, hi = 0; for (const p of S.hist){ if (p.t >= t0){ lo = Math.min(lo, p[key]); hi = Math.max(hi, p[key]); } }
+  if (hi - lo < 1e-6){ hi = Math.max(hi, 1); lo = Math.min(lo, -1); }
+  const pad = (hi - lo)*0.1; hi += pad; lo -= pad;
+  const X = t => L + (t - t0)/10*pw, Y = v => T + (hi - v)/(hi - lo)*ph;
+  c.strokeStyle = C.line; c.lineWidth = 1; c.strokeRect(L, T, pw, ph);
+  c.strokeStyle = C.muted; c.beginPath(); c.moveTo(L, Y(0)); c.lineTo(L+pw, Y(0)); c.stroke();
+  font(c, 13, 700, true); c.fillStyle = col; c.textAlign='left'; c.textBaseline='top'; c.fillText(label, L, 5);
+  font(c, 11, 400); c.fillStyle = C.muted; c.textAlign='right'; c.textBaseline='middle';
+  c.fillText(fmt(hi - pad, Math.abs(hi) < 10 ? 1 : 0), L - 4, Y(hi - pad)); c.fillText(fmt(lo + pad, Math.abs(lo) < 10 ? 1 : 0), L - 4, Y(lo + pad)); c.fillText('0', L - 4, Y(0));
+  c.textAlign='left'; c.textBaseline='top'; c.fillText(fmt(t0,0)+' s', L, T + ph + 4); c.textAlign='right'; c.fillText(fmt(t1,0)+' s', L + pw, T + ph + 4);
+  c.strokeStyle = col; c.lineWidth = 2.5; c.lineJoin='round'; c.beginPath(); let first = true;
+  for (const p of S.hist){ if (p.t < t0) continue; const x = X(p.t), y = Y(p[key]); if (first){ c.moveTo(x,y); first = false; } else c.lineTo(x,y); }
+  c.stroke();
+}
+widgets.push({el: $('#view-lab'), step: simStep, draw(){ drawStage(); drawGraph('g-th','th',C.theta,'θ (rad) vs. t'); drawGraph('g-w','w',C.omega,'ω (rad/s) vs. t'); drawGraph('g-al','al',C.alpha,'α (rad/s²) vs. t'); }});
+
+/* ---------- Practice ---------- */
+const TH = '<span class="q th">θ</span>', DTH = '<span class="q th">Δθ</span>', W = '<span class="q w">ω</span>', AL = '<span class="q al">α</span>', TQ = '<span class="q tq">τ</span>', IN = '<span class="q in">I</span>';
+const SVG = {
+fan: `<svg viewBox="0 0 240 170"><g transform="translate(120,88)"><ellipse cx="44" cy="0" rx="46" ry="11" class="f-body"/><ellipse cx="44" cy="0" rx="46" ry="11" class="f-body" transform="rotate(120)"/><ellipse cx="44" cy="0" rx="46" ry="11" class="f-body" transform="rotate(240)"/><circle r="12" class="f-ink"/><path d="M 78 -38 A 86 86 0 0 1 -20 -84" class="s-w" marker-end="url(#mk-w)"/></g><text x="152" y="22" class="tw">ω</text><text x="8" y="160" class="mut">Starts from rest, reaches 12 rad/s in 4.0 s</text></svg>`,
+graph: `<svg viewBox="0 0 260 180"><g class="s-mut"><line x1="40" y1="140" x2="235" y2="140"/><line x1="40" y1="140" x2="40" y2="20"/></g><g stroke="var(--line)" stroke-width="1"><line x1="100" y1="40" x2="100" y2="140"/><line x1="160" y1="40" x2="160" y2="140"/><line x1="220" y1="40" x2="220" y2="140"/><line x1="40" y1="40" x2="220" y2="40"/><line x1="40" y1="80" x2="220" y2="80"/><line x1="40" y1="120" x2="220" y2="120"/></g><polyline points="40,120 160,40 220,40" class="s-w"/><text x="34" y="124" text-anchor="end" class="mut">2</text><text x="34" y="84" text-anchor="end" class="mut">6</text><text x="34" y="44" text-anchor="end" class="mut">10</text><text x="34" y="144" text-anchor="end" class="mut">0</text><text x="40" y="156" text-anchor="middle" class="mut">0</text><text x="100" y="156" text-anchor="middle" class="mut">2</text><text x="160" y="156" text-anchor="middle" class="mut">4</text><text x="220" y="156" text-anchor="middle" class="mut">6</text><text x="138" y="174" text-anchor="middle" class="mut">t (s)</text><text x="44" y="16" class="tw">ω (rad/s)</text></svg>`,
+dumbbell: `<svg viewBox="0 0 260 130"><line x1="30" y1="60" x2="230" y2="60" class="s-ink"/><circle cx="30" cy="60" r="14" class="f-in"/><circle cx="230" cy="60" r="14" class="f-in"/><circle cx="130" cy="60" r="4" class="f-ink"/><line x1="130" y1="40" x2="130" y2="80" class="s-dash"/><line x1="30" y1="34" x2="30" y2="86" class="s-dash"/><text x="130" y="100" text-anchor="middle" class="mut">axis A (center)</text><text x="30" y="104" text-anchor="middle" class="mut">axis B (end)</text><line x1="30" y1="118" x2="230" y2="118" class="s-mut" marker-start="url(#mk-ink)" marker-end="url(#mk-ink)"/><text x="130" y="128" text-anchor="middle" class="mut" dy="-14">1.20 m</text><text x="30" y="30" text-anchor="middle" class="mut">2.0 kg</text><text x="230" y="30" text-anchor="middle" class="mut">2.0 kg</text></svg>`,
+hoopdisk: `<svg viewBox="0 0 260 150"><circle cx="70" cy="70" r="46" fill="none" stroke="var(--body-edge)" stroke-width="7"/><circle cx="70" cy="70" r="3" class="f-ink"/><circle cx="190" cy="70" r="46" class="f-body"/><circle cx="190" cy="70" r="3" class="f-ink"/><line x1="70" y1="24" x2="114" y2="24" class="s-ink" marker-end="url(#mk-ink)"/><line x1="190" y1="24" x2="234" y2="24" class="s-ink" marker-end="url(#mk-ink)"/><text x="104" y="16" font-style="italic">F</text><text x="224" y="16" font-style="italic">F</text><text x="70" y="140" text-anchor="middle" class="mut">hoop: M, R</text><text x="190" y="140" text-anchor="middle" class="mut">solid disk: M, R</text></svg>`,
+mgr: `<svg viewBox="0 0 240 180"><circle cx="110" cy="92" r="70" class="f-body"/><circle cx="110" cy="92" r="4" class="f-ink"/><line x1="110" y1="92" x2="180" y2="92" class="s-dash"/><text x="140" y="86" class="mut">2.0 m</text><line x1="180" y1="92" x2="180" y2="30" class="s-ink" marker-end="url(#mk-ink)"/><text x="186" y="50" font-style="italic">F = 60 N</text><text x="10" y="174" class="mut">Top view, solid disk, 180 kg</text></svg>`,
+door: `<svg viewBox="0 0 260 170"><rect x="22" y="96" width="200" height="10" class="f-body"/><circle cx="26" cy="101" r="6" class="f-ink"/><text x="12" y="128" class="mut">hinge</text><line x1="218" y1="96" x2="168" y2="10" class="s-ink" marker-start="url(#mk-ink)"/><path d="M 188 96 A 30 30 0 0 1 203 70" class="s-mut"/><text x="174" y="80" class="mut">60°</text><text x="190" y="22" font-style="italic">F = 30 N</text><text x="122" y="146" text-anchor="middle" class="mut">0.90 m, 15 kg (top view)</text></svg>`,
+grind: `<svg viewBox="0 0 240 170"><circle cx="100" cy="85" r="62" class="f-body"/><circle cx="100" cy="85" r="4" class="f-ink"/><rect x="166" y="72" width="60" height="26" rx="4" fill="none" stroke="var(--ink)" stroke-width="2"/><text x="180" y="116" class="mut">tool</text><line x1="196" y1="85" x2="168" y2="85" class="s-ink" marker-end="url(#mk-ink)"/><text x="180" y="66" font-style="italic">N</text><line x1="162" y1="85" x2="162" y2="130" class="s-ink" marker-end="url(#mk-ink)"/><text x="168" y="138" font-style="italic">f</text><path d="M 60 26 A 72 72 0 0 1 150 30" class="s-w" marker-end="url(#mk-w)"/><text x="98" y="14" class="tw">ω</text></svg>`,
+well: `<svg viewBox="0 0 220 190"><line x1="50" y1="12" x2="170" y2="12" stroke="var(--muted)" stroke-width="4"/><line x1="130" y1="12" x2="130" y2="50" class="s-mut"/><circle cx="130" cy="50" r="30" class="f-body"/><circle cx="130" cy="50" r="3" class="f-ink"/><line x1="160" y1="50" x2="160" y2="130" stroke="var(--ink)" stroke-width="2"/><path d="M 144 130 L 176 130 L 172 168 L 148 168 Z" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/><text x="110" y="152" class="mut">4.0 kg</text><text x="10" y="100" class="mut">8.0 kg drum</text><text x="10" y="116" class="mut">R = 0.10 m</text></svg>`,
+bike: `<svg viewBox="0 0 240 170"><circle cx="120" cy="85" r="60" fill="none" stroke="var(--body-edge)" stroke-width="6"/><g class="s-mut"><line x1="120" y1="25" x2="120" y2="145"/><line x1="60" y1="85" x2="180" y2="85"/><line x1="78" y1="43" x2="162" y2="127"/><line x1="162" y1="43" x2="78" y2="127"/></g><circle cx="120" cy="85" r="5" class="f-ink"/><path d="M 40 70 A 82 82 0 0 1 80 14" class="s-t" marker-end="url(#mk-t)"/><path d="M 200 70 A 82 82 0 0 0 160 14" class="s-t" marker-end="url(#mk-t)"/><text x="10" y="46" class="tt">2 N·m</text><text x="190" y="46" class="tt">2 N·m</text></svg>`,
+flywheel: `<svg viewBox="0 0 260 200"><circle cx="120" cy="100" r="60" class="f-body"/><circle cx="120" cy="100" r="36" class="s-dash"/><circle cx="120" cy="100" r="4" class="f-ink"/><line x1="180" y1="100" x2="180" y2="40" class="s-ink" marker-end="url(#mk-ink)"/><text x="186" y="60" font-style="italic">F₁ 12 N</text><line x1="120" y1="64" x2="120" y2="18" class="s-dash"/><line x1="120" y1="64" x2="147" y2="17" class="s-ink" marker-end="url(#mk-ink)"/><text x="152" y="22" font-style="italic">F₂ 20 N</text><text x="96" y="44" class="mut">30°</text><line x1="60" y1="100" x2="16" y2="100" class="s-ink" marker-end="url(#mk-ink)"/><text x="8" y="90" font-style="italic">F₃ 8.0 N</text><text x="8" y="190" class="mut">R = 0.50 m; F₂ acts 0.30 m from the axle</text></svg>`,
+kids: `<svg viewBox="0 0 260 210"><circle cx="120" cy="110" r="75" class="f-body"/><circle cx="120" cy="110" r="50" class="s-dash"/><circle cx="120" cy="110" r="4" class="f-ink"/><line x1="120" y1="110" x2="195" y2="110" class="s-mut"/><line x1="195" y1="110" x2="240" y2="110" class="s-dash"/><line x1="195" y1="110" x2="225" y2="58" class="s-ink" marker-end="url(#mk-ink)"/><text x="252" y="46" text-anchor="end" font-style="italic">Maya 80 N</text><text x="218" y="104" class="mut">60°</text><line x1="120" y1="110" x2="70" y2="110" class="s-mut"/><line x1="70" y1="110" x2="26" y2="110" class="s-dash"/><line x1="70" y1="110" x2="24" y2="71" class="s-ink" marker-end="url(#mk-ink)"/><text x="4" y="60" font-style="italic">Theo 120 N</text><text x="28" y="104" class="mut">40°</text><text x="8" y="202" class="mut">Top view, R = 1.5 m; Theo is 1.0 m from center</text></svg>`,
+turn: `<svg viewBox="0 0 290 180"><line x1="58" y1="100" x2="16" y2="100" class="s-dash"/><rect x="58" y="96" width="184" height="8" rx="4" class="f-body"/><circle cx="150" cy="100" r="5" class="f-ink"/><line x1="240" y1="100" x2="240" y2="40" class="s-ink" marker-end="url(#mk-ink)"/><text x="234" y="50" text-anchor="end" font-style="italic">F₁ 10 N</text><line x1="90" y1="100" x2="38" y2="70" class="s-ink" marker-end="url(#mk-ink)"/><text x="4" y="60" font-style="italic">F₂ 15 N</text><text x="46" y="94" class="mut">30°</text><line x1="60" y1="100" x2="24" y2="136" class="s-ink" marker-end="url(#mk-ink)"/><text x="4" y="154" font-style="italic">F₃ 6.0 N</text><text x="18" y="116" class="mut">45°</text><text x="150" y="122" text-anchor="middle" class="mut">pin</text><line x1="60" y1="150" x2="240" y2="150" class="s-mut"/><text x="150" y="168" text-anchor="middle" class="mut">1.2 m bar; F₂ is 0.40 m left of the pin</text></svg>`
+};
+const PROBS = [
+ {title:'Ceiling fan spin-up', topic:'Angular kinematics', svg:SVG.fan,
+  text:`You flip on a ceiling fan. Starting from rest, it reaches an angular speed of 12 rad/s in 4.0 s with constant angular acceleration.`,
+  parts:[{q:`Angular acceleration ${AL}`, unit:'rad/s²', ans:3.0},{q:`Angular displacement ${DTH} in those 4.0 s`, unit:'rad', ans:24},{q:'How many revolutions is that?', unit:'rev', ans:24/TAU}],
+  steps:[
+   ['List what you know', `Treat it like a 1D kinematics problem with rotational letters. “From rest” means ${W}<sub>0</sub> = 0. Given ${W} = 12 rad/s and <i>t</i> = 4.0 s. Constant ${AL}, so the kinematics equations apply.`],
+   ['Find α', `${AL} = (${W} − ${W}<sub>0</sub>)/<i>t</i> = (12 − 0)/4.0 = <b>3.0 rad/s²</b>`],
+   ['Find Δθ', `${DTH} = ${W}<sub>0</sub><i>t</i> + ½${AL}<i>t</i>² = 0 + ½(3.0)(4.0)² = <b>24 rad</b>`],
+   ['Convert to revolutions', `24 rad ÷ 2π rad/rev ≈ <b>3.8 rev</b>. Quick check: the average ω is (0 + 12)/2 = 6 rad/s, and 6 rad/s × 4.0 s = 24 rad. ✓`]]},
+ {title:'Reading an ω–t graph', topic:'Angular kinematics', svg:SVG.graph,
+  text:`A potter’s wheel’s angular velocity is shown in the graph. It speeds up steadily for 4 s, then turns at a constant rate.`,
+  parts:[{q:`${AL} from 0 to 4 s`, unit:'rad/s²', ans:2.0},{q:`Total ${DTH} from 0 to 6 s`, unit:'rad', ans:44}],
+  steps:[
+   ['Slope gives α', `On an ${W}–<i>t</i> graph, slope = ${AL}. From 0 to 4 s: (10 − 2)/(4 − 0) = <b>2.0 rad/s²</b>.`],
+   ['Area gives Δθ', `Area under ${W}–<i>t</i> is ${DTH}. From 0 to 4 s the shape is a trapezoid: ½(2 + 10)(4) = 24 rad.`],
+   ['Add the second section', `From 4 to 6 s it’s a rectangle: 10 rad/s × 2 s = 20 rad. Total ${DTH} = 24 + 20 = <b>44 rad</b> (about 7 revolutions).`],
+   ['AP-style follow-up', `From 4 to 6 s, ${AL} = 0, so ${TQ}<sub>net</sub> = 0 even though the wheel is spinning fast. The motor torque exactly cancels friction.`]]},
+ {title:'Same rod, different axis', topic:'Rotational inertia', svg:SVG.dumbbell,
+  text:`Two 2.0 kg balls are attached to the ends of a light rod 1.20 m long (ignore the rod’s mass). The system can be spun about axis A at the center, or about axis B through one ball.`,
+  parts:[{q:`${IN} about axis A`, unit:'kg·m²', ans:1.44},{q:`${IN} about axis B`, unit:'kg·m²', ans:2.88},{q:`${AL} about axis A if the net torque is 6.0 N·m`, unit:'rad/s²', ans:6/1.44}],
+  steps:[
+   ['Use the point-mass formula', `The balls are small, so ${IN} = Σ<i>mr</i>², with each <i>r</i> measured from the axis.`],
+   ['Axis A (center)', `Each ball is 0.60 m from the center: ${IN} = (2.0)(0.60)² + (2.0)(0.60)² = <b>1.44 kg·m²</b>.`],
+   ['Axis B (end)', `The ball on the axis has <i>r</i> = 0 and contributes nothing. The other is 1.20 m away: ${IN} = (2.0)(1.20)² = <b>2.88 kg·m²</b>. Same object, double the inertia, just by moving the axis.`],
+   ['Newton’s second law for rotation', `${AL} = ${TQ}<sub>net</sub>/${IN} = 6.0/1.44 ≈ <b>4.2 rad/s²</b>. About axis B it would be only 2.1 rad/s².`]]},
+ {title:'Hoop vs. disk', topic:'Rotational inertia', svg:SVG.hoopdisk, mc:true,
+  text:`A hoop and a solid disk have the same mass <i>M</i> and radius <i>R</i>, and each can spin freely on a frictionless axle through its center. Identical strings wrapped around their rims are pulled with the same force <i>F</i>. Which has the greater angular acceleration?`,
+  opts:['The hoop, because the same mass is spread around a bigger circle.','The disk, and its α is exactly twice the hoop’s.','They’re equal, because mass, radius, and torque are all the same.','The disk, and its α is 1.5 times the hoop’s.'], correct:1,
+  steps:[
+   ['Same torque on both', `The force acts tangentially at radius <i>R</i> on each, so ${TQ} = <i>RF</i> for both.`],
+   ['Different inertias', `Hoop: all its mass is at the rim, ${IN} = <i>MR</i>². Disk: mass spread from center to rim, ${IN} = ½<i>MR</i>².`],
+   ['Compare α', `${AL} = ${TQ}/${IN}. Disk: <i>RF</i>/(½<i>MR</i>²) = 2<i>F</i>/(<i>MR</i>). Hoop: <i>F</i>/(<i>MR</i>). The disk’s ${AL} is <b>twice</b> the hoop’s. You can test it in the Simulator by switching the shape between Solid disk and Hoop.`]]},
+ {title:'Pushing a merry-go-round', topic:'Net torque and α', svg:SVG.mgr,
+  text:`A playground merry-go-round is a 180 kg solid disk of radius 2.0 m. A parent pushes tangentially on its rim with a constant 60 N force. Ignore friction. It starts from rest.`,
+  parts:[{q:`${IN} of the merry-go-round`, unit:'kg·m²', ans:360},{q:`Angular acceleration ${AL}`, unit:'rad/s²', ans:1/3},{q:`${W} after 6.0 s`, unit:'rad/s', ans:2.0},{q:'Speed of a kid on the rim at that moment', unit:'m/s', ans:4.0}],
+  steps:[
+   ['Rotational inertia', `Model it as a solid disk: ${IN} = ½<i>MR</i>² = ½(180)(2.0)² = <b>360 kg·m²</b>.`],
+   ['Torque from the push', `“Tangentially” means the force is perpendicular to the radius, so θ = 90° and sin 90° = 1. ${TQ} = <i>rF</i> sin θ = (2.0)(60)(1) = 120 N·m. No friction, so ${TQ}<sub>net</sub> = 120 N·m.`],
+   ['Angular acceleration', `${AL} = ${TQ}<sub>net</sub>/${IN} = 120/360 ≈ <b>0.33 rad/s²</b>.`],
+   ['Angular velocity after 6.0 s', `${W} = ${W}<sub>0</sub> + ${AL}<i>t</i> = 0 + (0.333)(6.0) = <b>2.0 rad/s</b>.`],
+   ['Linear speed at the rim', `<i>v</i> = <i>r</i>${W} = (2.0)(2.0) = <b>4.0 m/s</b>, a fast run for a parent trying to keep up.`]]},
+ {title:'Pushing a door at an angle', topic:'Net torque and α', svg:SVG.door,
+  text:`A uniform 15 kg door is 0.90 m wide and swings on hinges along one edge, so it acts like a rod rotating about its end (${IN} = ⅓<i>ML</i>²). You push on the outer edge with 30 N, directed at 60° from the surface of the door. Ignore hinge friction.`,
+  parts:[{q:`${IN} of the door`, unit:'kg·m²', ans:4.05},{q:`Torque ${TQ} from your push`, unit:'N·m', ans:0.9*30*Math.sin(60*D2R)},{q:`Angular acceleration ${AL}`, unit:'rad/s²', ans:0.9*30*Math.sin(60*D2R)/4.05}],
+  steps:[
+   ['Rotational inertia', `${IN} = ⅓<i>ML</i>² = ⅓(15)(0.90)² = <b>4.05 kg·m²</b>.`],
+   ['Find the angle between r and F', `The vector <i>r</i> runs from the hinge along the door to where you push, so <i>r</i> = 0.90 m. Your force makes 60° with the door’s surface, which is the angle between <i>r</i> and <i>F</i>.`],
+   ['Torque', `${TQ} = <i>rF</i> sin θ = (0.90)(30) sin 60° ≈ <b>23.4 N·m</b>. Pushing straight on (90°) would give 27 N·m, and pushing toward the hinge (0°) would give none.`],
+   ['Angular acceleration', `${AL} = ${TQ}/${IN} = 23.4/4.05 ≈ <b>5.8 rad/s²</b>.`]]},
+ {title:'Stopping a grindstone', topic:'Net torque and α', svg:SVG.grind,
+  text:`A grinding wheel is a 20 kg solid disk with radius 0.15 m, spinning at 60 rad/s after its motor is switched off. To stop it, a metal tool is pressed against the rim with a normal force of 40 N. The coefficient of kinetic friction is 0.50. Ignore axle friction.`,
+  parts:[{q:`Magnitude of ${AL}`, unit:'rad/s²', ans:3/0.225},{q:'Time to stop', unit:'s', ans:4.5},{q:`${DTH} while stopping`, unit:'rad', ans:135}],
+  steps:[
+   ['FBD at the contact point', `The tool exerts a normal force <i>N</i> = 40 N pointing straight toward the axle and a kinetic friction force <i>f</i> = μ<i>N</i> = (0.50)(40) = 20 N, tangent to the rim and opposing the motion. <i>N</i>’s line of action passes through the axis, so it makes no torque.`],
+   ['Rotational inertia', `${IN} = ½<i>MR</i>² = ½(20)(0.15)² = 0.225 kg·m².`],
+   ['Torque and α', `${TQ} = <i>Rf</i> = (0.15)(20) = 3.0 N·m, opposite ${W}. ${AL} = ${TQ}/${IN} = 3.0/0.225 ≈ <b>13.3 rad/s²</b>, slowing it down (−13.3 rad/s² if ${W} is positive).`],
+   ['Time to stop', `0 = ${W}<sub>0</sub> + ${AL}<i>t</i> → 0 = 60 − 13.3<i>t</i> → <i>t</i> = <b>4.5 s</b>.`],
+   ['Angle while stopping', `${W}² = ${W}<sub>0</sub>² + 2${AL}${DTH} → 0 = 60² − 2(13.33)${DTH} → ${DTH} = <b>135 rad</b> (about 21 revolutions).`]]},
+ {title:'Bucket in a well', topic:'Strings and pulleys', svg:SVG.well,
+  text:`A 4.0 kg bucket hangs from a rope wound around an 8.0 kg solid-cylinder drum of radius 0.10 m on a frictionless axle. The bucket is released from rest, and the rope unwinds without slipping. Use g = 9.8 m/s².`,
+  parts:[{q:'Acceleration of the bucket', unit:'m/s²', ans:4.9},{q:'Tension in the rope', unit:'N', ans:19.6},{q:`Angular acceleration ${AL} of the drum`, unit:'rad/s²', ans:49}],
+  steps:[
+   ['FBD of the bucket', `Weight <i>mg</i> = 39.2 N down, tension <i>T</i> up. Taking down as positive: <i>mg</i> − <i>T</i> = <i>ma</i>.`],
+   ['Torques on the drum', `Gravity on the drum and the axle’s force both act at the axis: zero torque. The rope pulls tangentially at <i>R</i>: <i>TR</i> = ${IN}${AL}, with ${IN} = ½<i>MR</i>² = ½(8.0)(0.10)² = 0.040 kg·m².`],
+   ['Link them', `No slipping means <i>a</i> = <i>R</i>${AL}, so ${AL} = <i>a</i>/<i>R</i>. Substitute: <i>TR</i> = ${IN}<i>a</i>/<i>R</i>, so <i>T</i> = ${IN}<i>a</i>/<i>R</i>² = ½<i>Ma</i> = 4.0<i>a</i>.`],
+   ['Solve for a', `<i>mg</i> − ½<i>Ma</i> = <i>ma</i> → <i>a</i> = <i>mg</i>/(<i>m</i> + ½<i>M</i>) = 39.2/(4.0 + 4.0) = <b>4.9 m/s²</b>. Half of g, which makes sense: the drum’s “effective mass” equals the bucket’s.`],
+   ['Tension and α', `<i>T</i> = ½<i>Ma</i> = (4.0)(4.9) = <b>19.6 N</b>, less than the 39.2 N weight, as it must be while the bucket accelerates down. ${AL} = <i>a</i>/<i>R</i> = 4.9/0.10 = <b>49 rad/s²</b>. Check: <i>TR</i> = 1.96 N·m and ${IN}${AL} = (0.040)(49) = 1.96 N·m. ✓`]]},
+ {title:'Balanced torques on a spinning wheel', topic:'Net torque and α', svg:SVG.bike, mc:true,
+  text:`A bicycle wheel spins counterclockwise at 4.0 rad/s on a frictionless stand. Two students then apply constant torques to it: 2.0 N·m counterclockwise and 2.0 N·m clockwise. What is the wheel’s angular velocity 3.0 s later?`,
+  opts:['0 rad/s, because the torques cancel and it stops.','4.0 rad/s counterclockwise.','Less than 4.0 rad/s, because the clockwise torque slows it.','More than 4.0 rad/s, because 4.0 N·m of torque is applied.'], correct:1,
+  steps:[
+   ['Add the torques with signs', `Counterclockwise positive: ${TQ}<sub>net</sub> = +2.0 − 2.0 = 0.`],
+   ['Apply Newton’s second law for rotation', `${AL} = ${TQ}<sub>net</sub>/${IN} = 0, so ${W} can’t change.`],
+   ['Conclusion', `The wheel keeps turning at <b>4.0 rad/s counterclockwise</b>. Zero net torque means constant ${W}, not zero ${W}.`]]},
+ {title:'Three ropes on a flywheel', topic:'Multiple torques', svg:SVG.flywheel,
+  text:`A workshop flywheel is a 6.0 kg solid disk of radius 0.50 m on a frictionless axle, initially at rest. Three ropes pull on it as shown. F₁ = 12 N pulls at the rim, perpendicular to the radius. F₂ = 20 N is attached 0.30 m from the axle and pulls at 30° to the radius. F₃ = 8.0 N pulls at the rim, straight outward along the radius. Counterclockwise is positive.`,
+  parts:[{q:`Torque from F₂ (include the sign)`, unit:'N·m', ans:-3.0},{q:`Net torque ${TQ}<sub>net</sub>`, unit:'N·m', ans:3.0},{q:`Angular acceleration ${AL}`, unit:'rad/s²', ans:4.0}],
+  steps:[
+   ['Rotational inertia', `Solid disk: ${IN} = ½<i>MR</i>² = ½(6.0)(0.50)² = 0.75 kg·m².`],
+   ['Torque from F₁', `It pulls perpendicular to the radius, so the angle is 90°: ${TQ}₁ = (0.50)(12) sin 90° = 6.0 N·m. Pulling up on the right side turns the wheel counterclockwise, so ${TQ}₁ = <b>+6.0 N·m</b>.`],
+   ['Torque from F₂', `${TQ}₂ = (0.30)(20) sin 30° = 3.0 N·m in size. Pulling to the right at the top turns the wheel clockwise, so ${TQ}₂ = <b>−3.0 N·m</b>. Notice F₂ is the largest force but makes less torque than F₁, because of its shorter radius and shallow angle.`],
+   ['Torque from F₃', `F₃ points straight along the radius, so the angle is 0° and sin 0° = 0. Its line of action passes through the axle: ${TQ}₃ = <b>0</b>, no matter how hard it pulls.`],
+   ['Net torque and α', `${TQ}<sub>net</sub> = +6.0 − 3.0 + 0 = <b>+3.0 N·m</b>. ${AL} = ${TQ}<sub>net</sub>/${IN} = 3.0/0.75 = <b>4.0 rad/s²</b>, counterclockwise.`]]},
+ {title:'Two kids on a merry-go-round', topic:'Multiple torques', svg:SVG.kids,
+  text:`A merry-go-round is a 150 kg solid disk with radius 1.5 m, initially at rest. Two kids push horizontally (top view). Maya pushes with 80 N at the rim, at 60° from the radius, trying to turn it counterclockwise. Theo stands 1.0 m from the center and pushes with 120 N at 40° from the radius, trying to turn it clockwise. The bearing can exert a friction torque of 10 N·m that opposes the motion.`,
+  parts:[{q:`Size of Maya’s torque`, unit:'N·m', ans:1.5*80*Math.sin(60*D2R)},{q:`Size of Theo’s torque`, unit:'N·m', ans:120*Math.sin(40*D2R)},{q:`Angular acceleration ${AL} (counterclockwise +)`, unit:'rad/s²', ans:(1.5*80*Math.sin(60*D2R)-120*Math.sin(40*D2R)-10)/168.75},{q:`${W} after 5.0 s`, unit:'rad/s', ans:5*(1.5*80*Math.sin(60*D2R)-120*Math.sin(40*D2R)-10)/168.75}],
+  steps:[
+   ['Rotational inertia', `${IN} = ½<i>MR</i>² = ½(150)(1.5)² ≈ 169 kg·m².`],
+   ['Maya’s torque', `<i>r</i> = 1.5 m (the rim), angle 60°: ${TQ} = (1.5)(80) sin 60° ≈ <b>104 N·m</b>, counterclockwise (+).`],
+   ['Theo’s torque', `<i>r</i> = 1.0 m, angle 40°: ${TQ} = (1.0)(120) sin 40° ≈ <b>77.1 N·m</b>, clockwise (−). Theo pushes harder, but closer to the center and at a smaller angle, so he loses the tug-of-war.`],
+   ['Which way does friction point?', `The kids alone give +104 − 77.1 = +26.8 N·m. That beats the 10 N·m friction can supply, so the merry-go-round starts turning counterclockwise, and friction opposes it: −10 N·m. (If the kids’ net were under 10 N·m, friction would hold it still.)`],
+   ['Net torque', `${TQ}<sub>net</sub> = +103.9 − 77.1 − 10 ≈ +16.8 N·m.`],
+   ['α and ω', `${AL} = 16.8/168.75 ≈ <b>0.10 rad/s²</b>. After 5.0 s: ${W} = 0 + (0.0995)(5.0) ≈ <b>0.50 rad/s</b>. That’s slow, which is what you’d expect when two kids mostly cancel each other out.`]]},
+ {title:'Three pushes on a turnstile arm', topic:'Multiple torques', svg:SVG.turn,
+  text:`A turnstile arm is a uniform 3.0 kg bar, 1.2 m long, that swings horizontally about a frictionless pin at its center (${IN} = ¹⁄₁₂<i>ML</i>²). It starts at rest. Seen from above, three forces act: F₁ = 10 N at the right end, perpendicular to the bar; F₂ = 15 N at 0.40 m left of the pin, at 30° to the bar; F₃ = 6.0 N at the left end, at 45° to the bar. Gravity points along the pin, so it makes no torque. Counterclockwise is positive.`,
+  parts:[{q:`${IN} of the bar`, unit:'kg·m²', ans:0.36},{q:`Net torque ${TQ}<sub>net</sub>`, unit:'N·m', ans:6-3+3.6*Math.sin(45*D2R)},{q:`Angular acceleration ${AL}`, unit:'rad/s²', ans:(6-3+3.6*Math.sin(45*D2R))/0.36},{q:`${DTH} in the first 0.50 s`, unit:'rad', ans:0.125*(6-3+3.6*Math.sin(45*D2R))/0.36}],
+  steps:[
+   ['Rotational inertia', `${IN} = ¹⁄₁₂<i>ML</i>² = ¹⁄₁₂(3.0)(1.2)² = <b>0.36 kg·m²</b>.`],
+   ['Measure each r from the pin', `The ends are half the length from the pin: <i>r</i> = 0.60 m for F₁ and F₃. F₂ acts at <i>r</i> = 0.40 m. The angle in <i>rF</i> sin θ is between the bar (the r direction) and each force.`],
+   ['Torque from F₁', `Perpendicular at the right end: ${TQ}₁ = (0.60)(10) sin 90° = 6.0 N·m. Pushing “up” on the right side turns it counterclockwise: <b>+6.0 N·m</b>.`],
+   ['Torque from F₂', `${TQ}₂ = (0.40)(15) sin 30° = 3.0 N·m. It pushes “up” on the left side, which turns the bar clockwise: <b>−3.0 N·m</b>.`],
+   ['Torque from F₃', `${TQ}₃ = (0.60)(6.0) sin 45° ≈ 2.55 N·m. It pushes “down” on the left side, which turns the bar counterclockwise: <b>+2.55 N·m</b>. Watch out: on the left of the pin, up means clockwise and down means counterclockwise, the reverse of the right side. Picture the push, or use the right-hand rule.`],
+   ['Net torque, α, and Δθ', `${TQ}<sub>net</sub> = 6.0 − 3.0 + 2.55 ≈ <b>5.55 N·m</b>. ${AL} = 5.55/0.36 ≈ <b>15.4 rad/s²</b>, counterclockwise. From rest, ${DTH} = ½${AL}<i>t</i>² = ½(15.4)(0.50)² ≈ <b>1.93 rad</b>, about 110°.`]]}
+];
+let cur = store.get('prob', 0); if (!(cur >= 0 && cur < PROBS.length)) cur = 0;
+let solved = store.get('solved', {}); if (typeof solved !== 'object' || !solved) solved = {};
+function renderList(){
+  $('#plist').innerHTML = PROBS.map((p,i) => `<button data-i="${i}" aria-current="${i===cur}"><span class="n">${i+1}</span><span>${p.title}<small>${p.topic}</small></span><span class="done" aria-label="${solved[i]?'solved':''}">${solved[i]?'✓':''}</span></button>`).join('');
+  $('#plist').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { cur = +b.dataset.i; store.set('prob', cur); renderList(); renderProb(); }));
+}
+function sig(x){ const a = Math.abs(x); return a >= 100 ? x.toFixed(0) : a >= 10 ? x.toFixed(1) : a >= 1 ? x.toFixed(2) : x.toFixed(3); }
+function renderProb(){
+  const p = PROBS[cur]; let shown = 0;
+  const ans = p.mc
+    ? `<div class="check" style="margin:20px 0"><div class="opts">${p.opts.map((o,i)=>`<button data-o="${i}">${o}</button>`).join('')}</div><p class="fb" aria-live="polite"></p></div>`
+    : `<div class="answers">${p.parts.map((pt,i)=>`<div class="arow"><label for="a${i}">${String.fromCharCode(97+i)}) ${pt.q}</label><span class="inp"><input id="a${i}" inputmode="decimal" autocomplete="off"><span class="unit">${pt.unit}</span></span><button class="btn ghost" data-k="${i}">Check</button><span class="res" id="res${i}" aria-live="polite"></span></div>`).join('')}</div>`;
+  $('#pcard').innerHTML = `<p class="topic">Problem ${cur+1} of ${PROBS.length}: ${p.topic}</p><h2>${p.title}</h2>
+    <div class="ptop"><p>${p.text}</p><div class="diagram">${p.svg}</div></div>${ans}
+    ${p.mc ? '' : '<p class="foot">Answers within 3% count as correct, so using g = 10 m/s² is fine.</p>'}
+    <div class="walk"><h3>Walkthrough</h3><p class="note">Try it first. Then reveal one step at a time and compare with your work.</p><ol id="steps"></ol>
+    <div class="btns"><button class="btn" id="next-step">Show step 1</button><button class="btn ghost" id="all-steps">Show all steps</button></div></div>
+    <div class="pnav"><button class="btn ghost" id="pprev" ${cur===0?'disabled style="visibility:hidden"':''}>Previous problem</button><button class="btn" id="pnext" ${cur===PROBS.length-1?'disabled style="visibility:hidden"':''}>Next problem</button></div>`;
+  const ol = $('#steps'), nb = $('#next-step');
+  function reveal(n){ while (shown < n && shown < p.steps.length){ const [t, b] = p.steps[shown]; const li = document.createElement('li'); li.innerHTML = `<b class="t">${t}</b><p>${b}</p>`; ol.appendChild(li); shown++; } if (shown >= p.steps.length){ nb.disabled = true; nb.textContent = 'All steps shown'; nb.classList.add('ghost'); } else nb.textContent = 'Show step ' + (shown+1); }
+  nb.addEventListener('click', () => reveal(shown+1));
+  $('#all-steps').addEventListener('click', () => reveal(p.steps.length));
+  const mark = () => { solved[cur] = true; store.set('solved', solved); renderList(); };
+  if (p.mc){
+    const box = $('#pcard .check'), btns = box.querySelectorAll('button'), fb = box.querySelector('.fb');
+    btns.forEach(b => b.addEventListener('click', () => {
+      const i = +b.dataset.o; btns.forEach(x => x.classList.remove('right','wrong'));
+      b.classList.add(i === p.correct ? 'right' : 'wrong');
+      fb.className = 'fb ' + (i === p.correct ? 'good' : 'bad');
+      fb.textContent = i === p.correct ? 'Correct. Open the walkthrough to check your reasoning.' : 'Not this one. Compare the torques and rotational inertias, or reveal the first step.';
+      if (i === p.correct) mark();
+    }));
+  } else {
+    const ok = new Set();
+    p.parts.forEach((pt, i) => {
+      const inp = $('#a'+i), res = $('#res'+i);
+      const check = () => {
+        const v = parseFloat(String(inp.value).replace(/[−–]/g,'-').replace(',', '.'));
+        if (!isFinite(v)){ res.className = 'res bad'; res.textContent = 'Enter a number.'; return; }
+        const err = Math.abs(v - pt.ans)/Math.abs(pt.ans);
+        if (err <= 0.03){ res.className = 'res good'; res.textContent = 'Correct: ' + sig(pt.ans) + ' ' + pt.unit + '.'; ok.add(i); if (ok.size === p.parts.length) mark(); }
+        else if (Math.abs(Math.abs(v) - Math.abs(pt.ans))/Math.abs(pt.ans) <= 0.03){ res.className = 'res bad'; res.textContent = 'The size is right. Check the sign (enter the magnitude).'; }
+        else { res.className = 'res bad'; res.textContent = 'Not yet. Recheck your setup, or reveal the walkthrough.'; }
+      };
+      $('#pcard').querySelector(`[data-k="${i}"]`).addEventListener('click', check);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+    });
+  }
+  const go = d => { cur += d; store.set('prob', cur); renderList(); renderProb(); const t = $('#pcard').getBoundingClientRect().top + window.scrollY - 170; if (window.scrollY > t) window.scrollTo({top: Math.max(0,t)}); };
+  $('#pprev').addEventListener('click', () => go(-1));
+  $('#pnext').addEventListener('click', () => go(1));
+}
+renderList(); renderProb();
+
+showLesson(store.get('lesson', 1));
+showView(location.hash.slice(1));
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
